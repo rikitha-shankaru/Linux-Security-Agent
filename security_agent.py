@@ -351,7 +351,7 @@ class SecurityAgent:
         int trace_syscall(struct pt_regs *ctx) {
             struct syscall_event_t event = {};
             event.pid = bpf_get_current_pid_tgid() >> 32;
-            event.syscall_num = PT_REGS_PARM1(ctx);
+            event.syscall_num = PT_REGS_SYSCALL_NR(ctx);
             bpf_get_current_comm(&event.comm, sizeof(event.comm));
             event.timestamp = bpf_ktime_get_ns();
             
@@ -488,16 +488,21 @@ class SecurityAgent:
     def _start_ebpf_monitoring(self):
         """Start eBPF-based monitoring"""
         try:
+            self.console.print("[yellow]Loading eBPF program...[/yellow]")
             # Load eBPF program
             bpf = BPF(text=self.bpf_program)
+            self.console.print("[green]eBPF program loaded successfully[/green]")
             
             # Attach to syscall tracepoint
+            self.console.print("[yellow]Attaching to syscall tracepoint...[/yellow]")
             bpf.attach_kprobe(event="sys_enter", fn_name="trace_syscall")
-            
-            self.console.print("[green]eBPF monitoring started[/green]")
+            self.console.print("[green]eBPF monitoring started - REAL system call monitoring active![/green]")
             
             # Process events
+            event_count = 0
             def process_event(cpu, data, size):
+                nonlocal event_count
+                event_count += 1
                 event = bpf["events"].event(data)
                 pid = event.pid
                 syscall_num = event.syscall_num
@@ -517,7 +522,7 @@ class SecurityAgent:
                 
                 # Display results
                 if self.args.dashboard:
-                    self._display_dashboard()
+                    self._display_dashboard(event_count)
                 elif self.args.output == 'json':
                     self._output_json()
                 else:
@@ -604,13 +609,14 @@ class SecurityAgent:
         
         return syscalls
     
-    def _display_dashboard(self):
+    def _display_dashboard(self, event_count=0):
         """Display real-time dashboard"""
         # Clear screen
         os.system('clear' if os.name == 'posix' else 'cls')
         
         # Create dashboard
-        table = Table(title="Linux Security Agent - Process Risk Dashboard", box=box.ROUNDED)
+        title = f"Linux Security Agent - Process Risk Dashboard (eBPF Events: {event_count})"
+        table = Table(title=title, box=box.ROUNDED)
         table.add_column("PID", style="cyan", no_wrap=True)
         table.add_column("Process Name", style="magenta")
         table.add_column("Risk Score", style="red")
