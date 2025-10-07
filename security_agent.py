@@ -351,7 +351,7 @@ class SecurityAgent:
         int trace_syscall(struct pt_regs *ctx) {
             struct syscall_event_t event = {};
             event.pid = bpf_get_current_pid_tgid() >> 32;
-            event.syscall_num = ctx->orig_ax;
+            event.syscall_num = ctx->orig_x0;
             bpf_get_current_comm(&event.comm, sizeof(event.comm));
             event.timestamp = bpf_ktime_get_ns();
             
