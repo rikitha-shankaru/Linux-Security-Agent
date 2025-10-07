@@ -505,7 +505,19 @@ class SecurityAgent:
             
             while self.running:
                 bpf.perf_buffer_poll()
-                time.sleep(0.1)
+                
+                # Cleanup old processes
+                self.monitor.cleanup_old_processes()
+                
+                # Display results
+                if self.args.dashboard:
+                    self._display_dashboard()
+                elif self.args.output == 'json':
+                    self._output_json()
+                else:
+                    self._output_console()
+                
+                time.sleep(1)
                 
         except Exception as e:
             self.console.print(f"[red]eBPF monitoring failed: {e}[/red]")
