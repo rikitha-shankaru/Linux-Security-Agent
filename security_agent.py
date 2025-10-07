@@ -246,6 +246,12 @@ class ProcessMonitor:
         
         # Update risk score
         current_score = process.get('risk_score', 0) or 0
+        
+        # Reset risk score if it's been too long since last activity
+        current_time = time.time()
+        if current_time - process['last_update'] > 300:  # 5 minutes
+            current_score = 0.0
+        
         process['risk_score'] = self.risk_scorer.update_risk_score(
             current_score, syscalls
         )
@@ -521,8 +527,8 @@ class SecurityAgent:
                 
         except Exception as e:
             self.console.print(f"[red]eBPF monitoring failed: {e}[/red]")
-            self.console.print("[yellow]Falling back to process monitoring...[/yellow]")
-            self._start_fallback_monitoring()
+            self.console.print("[red]eBPF is required for real monitoring. Please check your system.[/red]")
+            raise e
     
     def _start_fallback_monitoring(self):
         """Start fallback monitoring using psutil"""
