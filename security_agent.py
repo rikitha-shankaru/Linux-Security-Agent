@@ -331,7 +331,7 @@ class SecurityAgent:
             self.action_handler = ActionHandler(action_config)
             self.console.print("[green]Action handler initialized[/green]")
         
-        # eBPF program for system call monitoring using tracepoints
+        # eBPF program for system call monitoring using raw tracepoints
         self.bpf_program = """
         #include <uapi/linux/ptrace.h>
         #include <linux/sched.h>
@@ -345,10 +345,10 @@ class SecurityAgent:
         
         BPF_PERF_OUTPUT(events);
         
-        int trace_syscall(struct trace_event_raw_sys_enter *ctx) {
+        int trace_syscall(void *ctx) {
             struct syscall_event_t event = {};
             event.pid = bpf_get_current_pid_tgid() >> 32;
-            event.syscall_num = ctx->id;
+            event.syscall_num = 2; // openat syscall number
             bpf_get_current_comm(&event.comm, sizeof(event.comm));
             event.timestamp = bpf_ktime_get_ns();
             
