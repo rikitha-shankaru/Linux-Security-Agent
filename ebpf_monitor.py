@@ -19,6 +19,7 @@ try:
     BCC_AVAILABLE = True
 except ImportError:
     BCC_AVAILABLE = False
+    print("Warning: BCC not available. Install with: sudo apt install python3-bpfcc")
 
 @dataclass
 class SyscallEvent:
