@@ -309,9 +309,14 @@ class EnhancedSecurityAgent:
         if CONTAINER_SECURITY_AVAILABLE:
             try:
                 self.container_security_monitor = ContainerSecurityMonitor(self.config)
-                self.console.print("✅ Container security monitor initialized", style="green")
+                # Check if Docker is actually running
+                if self.container_security_monitor.docker_available:
+                    self.console.print("✅ Container security monitor initialized", style="green")
+                else:
+                    self.console.print("⚠️ Container monitoring disabled (Docker not running)", style="yellow")
             except Exception as e:
-                self.console.print(f"❌ Container security monitor failed: {e}", style="red")
+                self.console.print(f"⚠️ Container security monitor disabled: {e}", style="yellow")
+                self.container_security_monitor = None
         
         # Initialize action handler
         if ACTION_HANDLER_AVAILABLE:
@@ -333,11 +338,11 @@ class EnhancedSecurityAgent:
                 self.console.print("❌ Failed to start enhanced eBPF monitoring", style="red")
         
         # Start container security monitoring
-        if self.container_security_monitor:
+        if self.container_security_monitor and self.container_security_monitor.docker_available:
             if self.container_security_monitor.start_monitoring():
                 self.console.print("✅ Container security monitoring started", style="green")
             else:
-                self.console.print("❌ Failed to start container security monitoring", style="red")
+                self.console.print("⚠️ Container security monitoring disabled", style="yellow")
         
         # Train anomaly detection models if needed
         if self.enhanced_anomaly_detector and not self.enhanced_anomaly_detector.is_fitted:
@@ -449,6 +454,7 @@ class EnhancedSecurityAgent:
                     pass
             
             # Update process information with thread safety
+            current_time = time.time()
             with self.processes_lock:
                 if pid not in self.processes:
                     try:
@@ -457,8 +463,9 @@ class EnhancedSecurityAgent:
                             'risk_score': 0.0,
                             'anomaly_score': 0.0,
                             'syscall_count': 0,
-                            'last_update': time.time(),
-                            'syscalls': [],
+                            'last_update': current_time,
+                            'last_risk_update': current_time,
+                            'syscalls': deque(maxlen=1000),  # Bounded deque
                             'container_id': container_id,
                             'process_state': process_state
                         }
@@ -467,24 +474,24 @@ class EnhancedSecurityAgent:
                         return
                 
                 process = self.processes[pid]
-                process['syscalls'].append(syscall)
+                process['syscalls'].append(syscall)  # Deque auto-bounds
                 process['syscall_count'] += 1
-                process['last_update'] = time.time()
-                
-                # Prune syscalls list to prevent memory leak
-                if len(process['syscalls']) > 10000:
-                    # Keep last 1000 syscalls
-                    process['syscalls'] = process['syscalls'][-1000:]
-                
-                # Get safe reference to process for later use
-                process_ref = dict(process)  # Copy for use outside lock
+                process['last_update'] = current_time
+            
+            # Create snapshot for later processing (outside lock)
+            with self.processes_lock:
+                if pid in self.processes:
+                    process_snapshot = dict(self.processes[pid])
+                    process_snapshot['syscalls'] = list(process_snapshot['syscalls'])
+                else:
+                    return
             
             # Enhanced anomaly detection
             anomaly_result = None
             if self.enhanced_anomaly_detector:
                 try:
                     anomaly_result = self.enhanced_anomaly_detector.detect_anomaly_ensemble(
-                        process_ref['syscalls'], process_info, pid
+                        process_snapshot['syscalls'], process_info, pid
                     )
                     with self.processes_lock:
                         if pid in self.processes:
@@ -494,7 +501,7 @@ class EnhancedSecurityAgent:
                         self.stats['anomalies_detected'] += 1
                         self._log_security_event('anomaly_detected', {
                             'pid': pid,
-                            'process_name': process_ref['name'],
+                            'process_name': process_snapshot['name'],
                             'anomaly_score': anomaly_result.anomaly_score,
                             'explanation': anomaly_result.explanation
                         })
@@ -507,19 +514,36 @@ class EnhancedSecurityAgent:
                     with self.processes_lock:
                         if pid in self.processes:
                             process = self.processes[pid]
+                            
+                            # Apply time decay first
+                            current_time = time.time()
+                            if 'last_risk_update' in process:
+                                time_since_last = current_time - process['last_risk_update']
+                                # Decay: lose 1% per second
+                                decay_factor = 0.99 ** time_since_last
+                                process['risk_score'] = process['risk_score'] * decay_factor
+                            
+                            # Calculate new risk score
                             risk_score = self.enhanced_risk_scorer.update_risk_score(
                                 pid, process['syscalls'], process_info, 
                                 process.get('anomaly_score', 0.0), container_id
                             )
-                            process['risk_score'] = risk_score
+                            
+                            # Smooth with previous score (exponential moving average)
+                            if 'risk_score' in process and process['risk_score'] > 0:
+                                process['risk_score'] = 0.7 * risk_score + 0.3 * process['risk_score']
+                            else:
+                                process['risk_score'] = risk_score
+                            
+                            process['last_risk_update'] = current_time
                             
                             # Check for high-risk processes
-                            if risk_score >= self.config.get('risk_threshold', 50.0):
+                            if process['risk_score'] >= self.config.get('risk_threshold', 50.0):
                                 self.stats['high_risk_processes'] += 1
                                 self._log_security_event('high_risk_process', {
                                     'pid': pid,
                                     'process_name': process['name'],
-                                    'risk_score': risk_score,
+                                    'risk_score': process['risk_score'],
                                     'anomaly_score': process.get('anomaly_score', 0.0)
                                 })
                 except Exception as e:
