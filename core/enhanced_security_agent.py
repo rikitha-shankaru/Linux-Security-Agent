@@ -1130,12 +1130,15 @@ class EnhancedSecurityAgent:
                 print("No processes monitored yet.")
                 return
             
-            # Sort by risk score
-            sorted_procs = sorted(
-                self.processes.items(),
-                key=lambda x: x[1].get('risk_score', 0) or 0,
-                reverse=True
-            )
+            # Sort by risk score - THREAD SAFE: create snapshot
+            processes_snapshot = dict(self.processes)
+        
+        # Sort outside the lock
+        sorted_procs = sorted(
+            processes_snapshot.items(),
+            key=lambda x: x[1].get('risk_score', 0) or 0,
+            reverse=True
+        )
             
             print(f"\nTotal Processes: {len(sorted_procs)}\n")
             print(f"{'PID':<8} {'Process Name':<20} {'Risk':<8} {'Syscalls':<12} {'Anomaly':<10}")
@@ -1159,10 +1162,14 @@ class EnhancedSecurityAgent:
         print("="*80)
         
         with self.processes_lock:
-            anomalies = []
-            for pid, proc in self.processes.items():
-                anomaly_score = proc.get('anomaly_score', 0.0)
-                if anomaly_score >= 0.5:
+            # Create snapshot under lock
+            processes_snapshot = {pid: dict(proc) for pid, proc in self.processes.items()}
+        
+        # Process outside lock
+        anomalies = []
+        for pid, proc in processes_snapshot.items():
+            anomaly_score = proc.get('anomaly_score', 0.0)
+            if anomaly_score >= 0.5:
                     anomalies.append({
                         'pid': pid,
                         'name': proc.get('name', '<unknown>'),

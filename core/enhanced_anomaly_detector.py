@@ -130,6 +130,11 @@ class EnhancedAnomalyDetector:
         for syscall in syscalls:
             syscall_counts[syscall] += 1
         
+        # Early return if syscalls list is empty to prevent division by zero
+        if len(syscalls) == 0:
+            # Return zero-filled feature vector
+            return np.zeros(50)
+        
         # Common syscalls frequency
         common_syscalls = ['read', 'write', 'open', 'close', 'mmap', 'munmap', 'fork', 'execve']
         for syscall in common_syscalls:
