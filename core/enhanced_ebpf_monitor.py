@@ -302,35 +302,21 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         self.event_callback = event_callback
         
         # Attach perf event handler for REAL syscall events
-        print(f"DEBUG start_monitoring: self.bpf_program is {self.bpf_program}")
-        if self.bpf_program:
-            print(f"DEBUG: INSIDE bpf_program check")
+        print(f"DEBUG: self.bpf_program = {self.bpf_program}")
+        print(f"DEBUG: bool(self.bpf_program) = {bool(self.bpf_program)}")
+        
+        if self.bpf_program is not None and self.bpf_program:
+            print("DEBUG: INSIDE bpf_program check - it exists")
             try:
-                print(f"DEBUG: Attempting to open perf buffer...")
-                
-                # Try the direct method
-                try:
-                    print("DEBUG: Trying method 1: direct access")
-                    self.bpf_program["syscall_events"].open_perf_buffer(self._process_perf_event)
-                    print("✅ Perf event buffer attached (method 1)")
-                except Exception as e1:
-                    print(f"Method 1 failed: {e1}")
-                    # Try alternate method
-                    try:
-                        print("DEBUG: Trying method 2: get_table")
-                        perf_table = self.bpf_program.get_table('syscall_events')
-                        perf_table.open_perf_buffer(self._process_perf_event)
-                        print("✅ Perf event buffer attached (method 2)")
-                    except Exception as e2:
-                        print(f"Method 2 also failed: {e2}")
-                        raise e2
-                        
+                print("DEBUG: About to open perf buffer...")
+                self.bpf_program["syscall_events"].open_perf_buffer(self._process_perf_event)
+                print("✅ Perf event buffer ATTACHED!")
             except Exception as e:
-                print(f"⚠️ ALL METHODS FAILED: {e}")
+                print(f"⚠️ Failed to open perf buffer: {e}")
                 import traceback
                 traceback.print_exc()
         else:
-            print("DEBUG: NO bpf_program!")
+            print("DEBUG: NO bpf_program found!")
         
         # Start event processing thread - ALWAYS start it
         print("DEBUG: Starting event thread...")
