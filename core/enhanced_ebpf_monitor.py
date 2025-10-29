@@ -302,13 +302,11 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         self.event_callback = event_callback
         
         # Attach perf event handler for REAL syscall events
-        print(f"DEBUG: self.bpf_program = {self.bpf_program}")
-        print(f"DEBUG: bool(self.bpf_program) = {bool(self.bpf_program)}")
+        print(f"DEBUG: self.bpf_program is not None? {self.bpf_program is not None}")
         
-        if self.bpf_program is not None and self.bpf_program:
-            print("DEBUG: INSIDE bpf_program check - it exists")
+        if self.bpf_program is not None:
+            print("DEBUG: bpf_program exists, opening perf buffer...")
             try:
-                print("DEBUG: About to open perf buffer...")
                 self.bpf_program["syscall_events"].open_perf_buffer(self._process_perf_event)
                 print("✅ Perf event buffer ATTACHED!")
             except Exception as e:
