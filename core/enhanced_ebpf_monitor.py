@@ -110,6 +110,7 @@ class StatefulEBPFMonitor:
         """Load enhanced eBPF program with stateful tracking"""
         # Real eBPF code that captures actual syscalls
         ebpf_code = """
+#pragma clang diagnostic ignored "-Wmacro-redefined"
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
 

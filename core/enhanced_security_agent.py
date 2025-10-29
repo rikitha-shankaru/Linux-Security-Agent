@@ -291,6 +291,10 @@ class EnhancedSecurityAgent:
         # Thread lock for process tracking
         self.processes_lock = threading.Lock()
         
+        # Risk score persistence (optional - load from file if exists)
+        self.risk_score_file = self.config.get('risk_score_file', '/tmp/security_agent_risk_scores.json')
+        self._load_risk_scores()
+        
         # Initialize components
         self._initialize_components()
     
@@ -500,7 +504,43 @@ class EnhancedSecurityAgent:
         if self.container_security_monitor:
             self.container_security_monitor.stop_monitoring()
         
+        # Save risk scores before shutdown
+        self._save_risk_scores()
+        
         self.console.print("✅ Enhanced security monitoring stopped", style="green")
+    
+    def _load_risk_scores(self):
+        """Load risk scores from previous run if available"""
+        try:
+            if os.path.exists(self.risk_score_file):
+                with open(self.risk_score_file, 'r') as f:
+                    saved_data = json.load(f)
+                    # Restore risk scores for processes that still exist
+                    with self.processes_lock:
+                        for pid_str, data in saved_data.items():
+                            pid = int(pid_str)
+                            if pid in self.processes:
+                                self.processes[pid]['risk_score'] = data.get('risk_score', 0)
+        except Exception:
+            pass  # Ignore errors - start fresh if file doesn't exist
+    
+    def _save_risk_scores(self):
+        """Save current risk scores to file for next run"""
+        try:
+            saved_data = {}
+            with self.processes_lock:
+                for pid, proc in self.processes.items():
+                    if proc.get('risk_score', 0) > 0:
+                        saved_data[str(pid)] = {
+                            'risk_score': proc.get('risk_score', 0),
+                            'name': proc.get('name', 'unknown'),
+                            'last_seen': time.time()
+                        }
+            if saved_data:
+                with open(self.risk_score_file, 'w') as f:
+                    json.dump(saved_data, f, indent=2)
+        except Exception:
+            pass  # Ignore errors - not critical
     
     def _handle_syscall_event(self, pid: int, syscall: str, event_info: Dict = None):
         """Handle syscall event from eBPF monitor"""
