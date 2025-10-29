@@ -198,7 +198,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     behavioral_baseline={}
                 )
         except Exception as e:
-            print(f"Error getting process state: {e}")
+            # Silently ignore - process might be dead
+            pass
         
         return None
     
