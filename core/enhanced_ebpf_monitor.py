@@ -327,13 +327,13 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                         time.sleep(1)
                         continue
                     
-                    print(f"✅ Found {len(items)} syscall events!")
+                    # print(f"✅ Found {len(items)} syscall events!")  # Too verbose
                     for pid, count in items:
                         pid_val = pid.value
                         count_val = count.value
                         
                         if count_val > 0:
-                            print(f"Processing syscalls for PID {pid_val}: {count_val} syscalls")
+                            # print(f"Processing syscalls for PID {pid_val}: {count_val} syscalls")  # Too verbose
                             # Simulate events based on counts
                             for _ in range(int(min(count_val, 100))):  # Cap at 100 per iteration
                                 if self.event_callback:
@@ -343,8 +343,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                                         'timestamp': time.time()
                                     })
                             
-                            # Reset count
-                            bpf_prog["syscall_counts"][pid] = 0
+                            # Reset count - don't reset, just let it accumulate
+                            # bpf_prog["syscall_counts"][pid] = 0
                     
                     time.sleep(1)  # Check every second
                 except KeyError as e:
