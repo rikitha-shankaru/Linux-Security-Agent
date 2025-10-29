@@ -307,13 +307,14 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         if self.bpf_program is not None:
             print("DEBUG: bpf_program exists, opening perf buffer...")
             try:
-                # Increase page_cnt and provide a lost callback to avoid spammy 'Possibly lost X samples'
+                # Increase page_cnt and provide a lost callback to suppress 'Possibly lost X samples' spam
                 self.lost_events = 0
+                self._cleanup_done = False  # Flag to prevent double cleanup
+                
                 def _lost_cb(lost_cnt):
+                    # Silently track lost events - don't spam console
+                    # (Only log at shutdown if needed)
                     self.lost_events += lost_cnt
-                    # Log occasionally to avoid spam
-                    if self.lost_events % 1000 < lost_cnt:
-                        print(f"⚠️ Lost perf events so far: {self.lost_events}")
 
                 self.bpf_program["syscall_events"].open_perf_buffer(
                     self._process_perf_event,
@@ -343,12 +344,17 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         self.running = False
         if hasattr(self, 'event_thread'):
             self.event_thread.join(timeout=5)
-        # Best-effort cleanup to release perf buffers/kprobes cleanly
-        try:
-            if self.bpf_program is not None:
-                self.bpf_program.cleanup()
-        except Exception:
-            pass
+        # Best-effort cleanup to release perf buffers/kprobes cleanly (only once)
+        if not getattr(self, '_cleanup_done', False):
+            try:
+                if self.bpf_program is not None:
+                    self.bpf_program.cleanup()
+                self._cleanup_done = True
+                # Log lost events summary only at shutdown
+                if hasattr(self, 'lost_events') and self.lost_events > 0:
+                    print(f"ℹ️  Total perf events lost during monitoring: {self.lost_events}")
+            except Exception:
+                pass
         print("Enhanced eBPF monitoring stopped")
     
     def _process_events(self):
@@ -383,13 +389,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             print(f"Error in event processing thread: {e}")
             import traceback
             traceback.print_exc()
-        finally:
-            # Ensure BPF resources are cleaned up when the loop exits
-            try:
-                if self.bpf_program is not None:
-                    self.bpf_program.cleanup()
-            except Exception:
-                pass
+        # Note: Cleanup is handled by stop_monitoring() to avoid double-free
     
     def _process_perf_event(self, cpu, data, size):
         """Process REAL perf events from eBPF"""
