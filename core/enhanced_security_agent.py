@@ -652,7 +652,6 @@ class EnhancedSecurityAgent:
         process_info = None
         try:
             proc = psutil.Process(pid)
-            # Use interval=None for non-blocking, but it needs previous call
             # Cache CPU calculation - call it once per second per process
             cache_key = f"cpu_cache_{pid}"
             cache_time_key = f"cpu_time_{pid}"
@@ -663,31 +662,31 @@ class EnhancedSecurityAgent:
                 self._cpu_cache_lock = threading.Lock()  # Lock for cache access
             
             current_time = time.time()
-            last_cache_time = 0
             
             # Thread-safe cache access
             with getattr(self, '_cpu_cache_lock', threading.Lock()):
                 last_cache_time = self._cpu_cache_time.get(cache_time_key, 0)
-            
-            # Update CPU every 1 second per process (to avoid overhead)
-            # cpu_percent(interval=None) requires a previous call to calculate delta
-            # So we make two calls: first to initialize, second to get value
-            # NOTE: We DON'T sleep here because it blocks event processing
-            # Instead, use cached value and update asynchronously
-            with getattr(self, '_cpu_cache_lock', threading.Lock()):
+                
+                # Update CPU every 1 second per process (to avoid overhead)
+                # cpu_percent(interval=None) is non-blocking but requires previous call
+                # We use cached value and only update occasionally
                 if current_time - last_cache_time >= 1.0:
-                    # First call initializes the counter (returns 0.0 on first call)
-                    # We'll update this asynchronously in a separate thread if needed
-                    # For now, use cached value to avoid blocking
-                    cpu_val = self._cpu_cache.get(cache_key, 0.0)
-                    # Initialize counter for next time (non-blocking)
                     try:
-                        proc.cpu_percent(interval=None)  # Initialize, returns 0.0 first time
-                        # Store current time but keep old value (will update next call)
-                        self._cpu_cache_time[cache_time_key] = current_time
+                        # Non-blocking call - returns 0.0 if not previously initialized
+                        # Actual value accumulates over time, so we use cached value
+                        cpu_val = proc.cpu_percent(interval=None)
+                        if cpu_val == 0.0:
+                            # First call or no CPU usage - use cached if available
+                            cpu_val = self._cpu_cache.get(cache_key, 0.0)
+                        else:
+                            # Store for next time
+                            self._cpu_cache[cache_key] = cpu_val
+                            self._cpu_cache_time[cache_time_key] = current_time
                     except:
-                        pass  # Process might have died
+                        # Use cached value if process check fails
+                        cpu_val = self._cpu_cache.get(cache_key, 0.0)
                 else:
+                    # Use cached value (updated within last second)
                     cpu_val = self._cpu_cache.get(cache_key, 0.0)
             
             process_info = {
