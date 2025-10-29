@@ -505,30 +505,31 @@ class EnhancedSecurityAgent:
         while self.running:
             try:
                 self._cleanup_old_processes()
-                # Check running flag frequently
-                for _ in range(60):  # 60 x 1 = 60 seconds
+                # Check running flag VERY frequently (every 0.1s for fast exit)
+                for _ in range(600):  # 600 x 0.1 = 60 seconds total
                     if not self.running:
                         return
-                    time.sleep(1)
+                    time.sleep(0.1)  # Check every 100ms instead of 1s
             except Exception:
                 # Exit on any exception if we're shutting down
                 if not self.running:
                     return
-                time.sleep(1)
+                # Check again before sleeping
+                if not self.running:
+                    return
+                time.sleep(0.1)  # Check more frequently
     
     def stop_monitoring(self):
-        """Stop enhanced security monitoring"""
+        """Stop enhanced security monitoring - NON-BLOCKING"""
         if not self.running:
             return  # Already stopped
         
         print("\n🛑 Stopping Enhanced Linux Security Agent...", flush=True)
         
+        # Set running=False FIRST before any other operations
         self.running = False
         
-        # Stop cleanup thread (daemon thread, no need to join)
-        # Just mark as stopped - daemon thread will exit automatically
-        
-        # Stop enhanced eBPF monitoring immediately
+        # Stop enhanced eBPF monitoring immediately (non-blocking)
         if self.enhanced_ebpf_monitor:
             try:
                 self.enhanced_ebpf_monitor.running = False  # Force stop first
@@ -536,10 +537,11 @@ class EnhancedSecurityAgent:
             except:
                 pass
         
-        # Stop container security monitoring
+        # Stop container security monitoring (non-blocking - threads are daemon or have timeout)
         if self.container_security_monitor:
             try:
-                self.container_security_monitor.stop_monitoring()
+                self.container_security_monitor.running = False
+                # Don't wait for threads - they're daemon or have timeout
             except:
                 pass
         
@@ -1242,19 +1244,30 @@ def main():
                     if exit_requested.is_set() or not agent.running:
                         break
                     
-                    try:
-                        live.update(agent._create_dashboard())
-                    except (KeyboardInterrupt, SystemExit):
-                        agent.running = False
-                        break
-                    except:
-                        pass
-                    
-                    # Very short sleep - check exit VERY frequently (10ms total wait)
-                    # Break immediately on exit request
+                    # Check exit BEFORE expensive dashboard creation
                     if exit_requested.is_set() or not agent.running:
                         break
-                    time.sleep(0.01)  # 10ms - minimal sleep for quick Ctrl+C response
+                    
+                    try:
+                        dashboard = agent._create_dashboard()
+                        # Check exit AGAIN before updating
+                        if exit_requested.is_set() or not agent.running:
+                            break
+                        live.update(dashboard)
+                    except (KeyboardInterrupt, SystemExit):
+                        exit_requested.set()
+                        agent.running = False
+                        break
+                    except Exception:
+                        # Suppress dashboard errors during shutdown
+                        if exit_requested.is_set() or not agent.running:
+                            break
+                        pass
+                    
+                    # Very short sleep - check exit VERY frequently
+                    if exit_requested.is_set() or not agent.running:
+                        break
+                    time.sleep(0.05)  # 50ms - allows signal handler to work
             except (KeyboardInterrupt, SystemExit):
                 agent.running = False
             finally:

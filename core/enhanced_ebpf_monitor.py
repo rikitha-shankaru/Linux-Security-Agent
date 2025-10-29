@@ -380,14 +380,18 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             # Poll perf buffer for REAL syscall events
             poll_count = 0
             while self.running:
+                # Check running flag BEFORE expensive operations
+                if not self.running:
+                    break
+                    
                 try:
                     poll_count += 1
                     if poll_count % 10 == 0:
                         print(f"DEBUG: Polling perf buffer (count={poll_count}), events_so_far={len(self.events)}")
                     
-                    # Use very short timeout to check self.running frequently
+                    # Use VERY short timeout to check self.running frequently
                     # This allows immediate exit when running=False
-                    bpf_prog.perf_buffer_poll(timeout=50)  # 50ms timeout - very responsive to exit
+                    bpf_prog.perf_buffer_poll(timeout=25)  # 25ms timeout - check exit very frequently
                     
                     # Check running flag immediately after each poll
                     if not self.running:
@@ -396,6 +400,9 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     self.running = False
                     break
                 except Exception as e:
+                    # Check running flag FIRST before processing error
+                    if not self.running:
+                        break
                     error_str = str(e)
                     if "Interrupted" in error_str or "EINTR" in error_str:
                         # Normal interrupt - check if we should exit
