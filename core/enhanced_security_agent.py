@@ -1184,19 +1184,26 @@ def main():
     
     def signal_handler(signum, frame):
         nonlocal shutdown_initiated
-        if shutdown_initiated:
-            # Force immediate exit on second Ctrl+C
-            print("\n🛑 Force exit!")
-            os._exit(1)
+        # Write directly to stderr for immediate visibility (stdout might be buffered)
+        import sys
+        sys.stderr.write("\n🛑 Ctrl+C detected! Stopping agent...\n")
+        sys.stderr.flush()
         
-        shutdown_initiated = True
-        print("\n🛑 Ctrl+C detected! Stopping agent...")
+        # Set exit flags IMMEDIATELY
         exit_requested.set()
         agent.running = False
         
         # Force immediate stop of all threads
         if agent.enhanced_ebpf_monitor:
             agent.enhanced_ebpf_monitor.running = False
+        
+        if shutdown_initiated:
+            # Force immediate exit on second Ctrl+C (within 2 seconds)
+            sys.stderr.write("🛑 Force exit!\n")
+            sys.stderr.flush()
+            os._exit(1)
+        
+        shutdown_initiated = True
     
     # Install signal handlers
     signal.signal(signal.SIGINT, signal_handler)
