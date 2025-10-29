@@ -302,21 +302,35 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         self.event_callback = event_callback
         
         # Attach perf event handler for REAL syscall events
+        print(f"DEBUG start_monitoring: self.bpf_program is {self.bpf_program}")
         if self.bpf_program:
+            print(f"DEBUG: INSIDE bpf_program check")
             try:
-                print(f"DEBUG: About to open perf buffer...")
-                print(f"DEBUG: Has syscall_events map? {hasattr(self.bpf_program.get_table('syscall_events'), 'open_perf_buffer')}")
+                print(f"DEBUG: Attempting to open perf buffer...")
                 
-                # Get the perf output table
-                perf_table = self.bpf_program.get_table('syscall_events')
-                print(f"DEBUG: Got perf_table: {perf_table}")
-                print(f"DEBUG: Calling open_perf_buffer...")
-                perf_table.open_perf_buffer(self._process_perf_event)
-                print("✅ Perf event buffer attached for real syscall capture")
+                # Try the direct method
+                try:
+                    print("DEBUG: Trying method 1: direct access")
+                    self.bpf_program["syscall_events"].open_perf_buffer(self._process_perf_event)
+                    print("✅ Perf event buffer attached (method 1)")
+                except Exception as e1:
+                    print(f"Method 1 failed: {e1}")
+                    # Try alternate method
+                    try:
+                        print("DEBUG: Trying method 2: get_table")
+                        perf_table = self.bpf_program.get_table('syscall_events')
+                        perf_table.open_perf_buffer(self._process_perf_event)
+                        print("✅ Perf event buffer attached (method 2)")
+                    except Exception as e2:
+                        print(f"Method 2 also failed: {e2}")
+                        raise e2
+                        
             except Exception as e:
-                print(f"⚠️ Failed to attach perf buffer: {e}")
+                print(f"⚠️ ALL METHODS FAILED: {e}")
                 import traceback
                 traceback.print_exc()
+        else:
+            print("DEBUG: NO bpf_program!")
         
         # Start event processing thread - ALWAYS start it
         print("DEBUG: Starting event thread...")
