@@ -166,7 +166,11 @@ class EnhancedAnomalyDetector:
             # For now, estimate based on syscall patterns
             # In a real implementation, we'd have timestamps from eBPF events
             features.append(len(syscalls) / 100)  # Estimate: 100 syscalls per second avg
-            features.append(1.0 / len(syscalls))  # Estimated average interval
+            # Prevent division by zero
+            if len(syscalls) > 0:
+                features.append(1.0 / len(syscalls))  # Estimated average interval
+            else:
+                features.append(0.0)
             features.append(len(syscalls) * 0.1)  # Estimated max interval
         
         # 6. Network-related features
