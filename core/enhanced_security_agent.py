@@ -381,52 +381,78 @@ class EnhancedSecurityAgent:
         
         # Collect ACTUAL syscall data from running processes
         training_data = []
-        collection_time = 30  # Collect for 30 seconds
+        collection_time = 60  # Collect for 60 seconds (increased from 30)
         start_time = time.time()
         
         self.console.print(f"📊 Collecting real syscall data for {collection_time} seconds...", style="yellow")
+        self.console.print("💡 Tip: Run commands (ls, ps, cat, etc.) in another terminal to generate syscalls!", style="dim")
+        
+        # Track which processes we've already sampled to avoid duplicates
+        sampled_pids = set()
         
         # Collect real data
+        iteration = 0
         while (time.time() - start_time) < collection_time:
+            iteration += 1
             # Collect from processes we're monitoring
             with self.processes_lock:
                 for pid, proc in self.processes.items():
-                    if proc.get('syscalls') and len(proc['syscalls']) > 10:
-                        # Use REAL syscall data
-                        syscalls = list(proc['syscalls'])
+                    # Lower threshold: collect even if process has 5+ syscalls (was 10+)
+                    syscalls_list = proc.get('syscalls', [])
+                    if len(syscalls_list) >= 5:
+                        # Use REAL syscall data - take a snapshot every few seconds per process
+                        # This prevents collecting same process data multiple times
+                        pid_key = f"{pid}_{iteration // 10}"  # Sample same PID every 10 iterations
                         
-                        # Get REAL process info from psutil
-                        try:
-                            p = psutil.Process(int(pid))
-                            process_info = {
-                                'cpu_percent': p.cpu_percent(interval=0.1) or 0,
-                                'memory_percent': p.memory_percent(),
-                                'num_threads': p.num_threads()
-                            }
+                        if pid_key not in sampled_pids:
+                            syscalls = list(syscalls_list[-50:])  # Take last 50 syscalls to get recent behavior
                             
-                            training_data.append((syscalls, process_info))
-                            
-                            # Limit to first 1000 samples
-                            if len(training_data) >= 1000:
-                                break
-                        except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
-                            continue
+                            # Get REAL process info from psutil
+                            try:
+                                p = psutil.Process(int(pid))
+                                process_info = {
+                                    'cpu_percent': p.cpu_percent(interval=0.1) or 0,
+                                    'memory_percent': p.memory_percent(),
+                                    'num_threads': p.num_threads(),
+                                    'pid': int(pid)  # Store PID for debugging
+                                }
+                                
+                                training_data.append((syscalls, process_info))
+                                sampled_pids.add(pid_key)
+                                
+                                # Limit to first 500 samples (enough for training)
+                                if len(training_data) >= 500:
+                                    break
+                            except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+                                continue
                 
                 # Check if we have enough data
-                if len(training_data) >= 1000:
+                if len(training_data) >= 500:
+                    self.console.print(f"✅ Collected enough data ({len(training_data)} samples)!", style="green")
                     break
+            
+            # Show progress every 10 seconds
+            elapsed = time.time() - start_time
+            if int(elapsed) % 10 == 0 and elapsed > 0:
+                self.console.print(f"📊 Collected {len(training_data)} samples so far... ({int(elapsed)}/{collection_time}s)", style="dim")
             
             time.sleep(0.5)  # Collect every 0.5 seconds
         
         # If still not enough data, supplement with baseline patterns
-        if len(training_data) < 100:
+        if len(training_data) < 50:  # Lower threshold from 100 to 50
             self.console.print("⚠️ Not enough real data, using baseline patterns", style="yellow")
+            self.console.print("💡 For better results, generate system activity during training!", style="dim")
             if self.config.get('debug', False):
-                self.console.print(f"🐛 DEBUG: Only collected {len(training_data)} samples, need 100+", style="dim")
+                self.console.print(f"🐛 DEBUG: Only collected {len(training_data)} samples, need 50+", style="dim")
             baseline_data = self._get_baseline_patterns()
             training_data.extend(baseline_data)
             if self.config.get('debug', False):
                 self.console.print(f"🐛 DEBUG: Added {len(baseline_data)} baseline samples", style="dim")
+        elif len(training_data) < 100:
+            self.console.print(f"✅ Collected {len(training_data)} real training samples (supplemented with baseline)", style="green")
+            # Add some baseline data but keep real data primary
+            baseline_data = self._get_baseline_patterns()[:100]  # Add 100 baseline samples
+            training_data.extend(baseline_data)
         else:
             self.console.print(f"✅ Collected {len(training_data)} real training samples", style="green")
         
