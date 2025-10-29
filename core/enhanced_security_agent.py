@@ -265,6 +265,7 @@ class EnhancedSecurityAgent:
         self.config = config or {}
         self.console = Console()
         self.running = False
+        self.debug_mode = config.get('debug', False)
         
         # Enhanced components
         self.enhanced_ebpf_monitor = None
@@ -416,12 +417,19 @@ class EnhancedSecurityAgent:
         # If still not enough data, supplement with baseline patterns
         if len(training_data) < 100:
             self.console.print("⚠️ Not enough real data, using baseline patterns", style="yellow")
-            training_data = self._get_baseline_patterns()
+            if self.config.get('debug', False):
+                self.console.print(f"🐛 DEBUG: Only collected {len(training_data)} samples, need 100+", style="dim")
+            baseline_data = self._get_baseline_patterns()
+            training_data.extend(baseline_data)
+            if self.config.get('debug', False):
+                self.console.print(f"🐛 DEBUG: Added {len(baseline_data)} baseline samples", style="dim")
         else:
             self.console.print(f"✅ Collected {len(training_data)} real training samples", style="green")
         
         # Train models on REAL data
         if self.enhanced_anomaly_detector and training_data:
+            if self.config.get('debug', False):
+                self.console.print(f"🐛 DEBUG: Training on {len(training_data)} total samples", style="dim")
             self.enhanced_anomaly_detector.train_models(training_data)
             self.console.print("✅ Anomaly detection models trained on REAL data", style="green")
         else:
@@ -756,10 +764,9 @@ class EnhancedSecurityAgent:
             # Update statistics (no lock needed for syscall_counts, it's thread-safe defaultdict)
             self.syscall_counts[syscall] += 1
             
-            # Update total processes count occasionally (not every syscall)
-            if random.random() < 0.001:  # Update 0.1% of the time
-                with self.processes_lock:
-                    self.stats['total_processes'] = len(self.processes)
+            # Update total processes count (every syscall to keep it accurate)
+            with self.processes_lock:
+                self.stats['total_processes'] = len(self.processes)
             
         except Exception as e:
             self.console.print(f"❌ Error processing syscall event: {e}", style="red")
@@ -877,6 +884,8 @@ class EnhancedSecurityAgent:
                 # (we update it during syscall processing)
                 cpu_percent = proc.get('cpu_percent', None)
                 if cpu_percent is not None:
+                    # Cap CPU at 100% (psutil can show >100% on multi-core, normalize)
+                    cpu_percent = min(100.0, max(0.0, cpu_percent))
                     cpu_display = f"{cpu_percent:.1f}%"
                 else:
                     # Try to get it from psutil (may be 0.0 if just started)
@@ -884,6 +893,7 @@ class EnhancedSecurityAgent:
                         p = psutil.Process(int(pid))
                         # Get CPU - may be 0.0% if process is idle or just started
                         cpu = p.cpu_percent(interval=None) or 0.0
+                        cpu = min(100.0, max(0.0, cpu))  # Cap at 100%
                         cpu_display = f"{cpu:.1f}%"
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         cpu_display = "N/A"
@@ -922,6 +932,8 @@ class EnhancedSecurityAgent:
    → Detected suspicious syscalls (ptrace, execve, etc.)
 
 🚨 Anomalies Detected: {self.stats['anomalies_detected']}
+   → Processes with anomaly score ≥ 0.5 (ML ensemble detected)
+   → Anomaly scores stored per-process
    → ML ensemble detected unusual behavior patterns
    → Using Isolation Forest, One-Class SVM, DBSCAN
 
@@ -1066,6 +1078,9 @@ def main():
     parser.add_argument('--list-processes', action='store_true', help='List all monitored processes and exit')
     parser.add_argument('--list-anomalies', action='store_true', help='List all detected anomalies and exit')
     parser.add_argument('--stats', action='store_true', help='Show statistics and exit')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode with detailed logging')
+    parser.add_argument('--daemon', action='store_true', help='Run as background daemon (logs to file)')
+    parser.add_argument('--log-file', type=str, default='/tmp/security_agent.log', help='Log file for daemon mode')
     
     args = parser.parse_args()
     
@@ -1077,8 +1092,38 @@ def main():
     
     config.update({
         'risk_threshold': args.threshold,
-        'output_format': args.output
+        'output_format': args.output,
+        'debug': args.debug or config.get('debug', False)
     })
+    
+    # Handle daemon mode (background operation)
+    if args.daemon:
+        import sys
+        import daemon
+        from daemon import DaemonContext
+        
+        # Redirect stdout/stderr to log file
+        log_file = open(args.log_file, 'a')
+        
+        print(f"🔄 Starting agent as daemon (PID file: /tmp/security_agent.pid, Log: {args.log_file})")
+        
+        # Simple daemonization - fork and redirect I/O
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # Parent process - exit
+                print(f"✅ Daemon started with PID {pid}")
+                sys.exit(0)
+            else:
+                # Child process - redirect I/O and continue
+                os.setsid()
+                os.chdir('/')
+                sys.stdout = log_file
+                sys.stderr = log_file
+                print(f"\n{'='*60}\nSecurity Agent Daemon Started\n{'='*60}\n")
+        except Exception as e:
+            print(f"Failed to daemonize: {e}")
+            sys.exit(1)
     
     # Create enhanced security agent
     agent = EnhancedSecurityAgent(config)
@@ -1143,8 +1188,11 @@ def main():
                 live.start()
                 
                 while agent.running and not exit_requested.is_set():
-                    if args.timeout > 0 and (time.time() - start_time) >= args.timeout:
+                    elapsed = time.time() - start_time
+                    if args.timeout > 0 and elapsed >= args.timeout:
+                        print(f"\n⏰ Timeout reached ({args.timeout}s) - stopping agent...", flush=True)
                         agent.running = False
+                        exit_requested.set()
                         break
                     
                     if exit_requested.is_set() or not agent.running:
@@ -1178,7 +1226,11 @@ def main():
         else:
             # Run without dashboard
             while agent.running and not exit_requested.is_set():
-                if args.timeout > 0 and (time.time() - start_time) >= args.timeout:
+                elapsed = time.time() - start_time
+                if args.timeout > 0 and elapsed >= args.timeout:
+                    print(f"\n⏰ Timeout reached ({args.timeout}s) - stopping agent...", flush=True)
+                    agent.running = False
+                    exit_requested.set()
                     break
                 
                 # Short sleep to allow signal handling
