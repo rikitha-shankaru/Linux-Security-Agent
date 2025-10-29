@@ -725,10 +725,21 @@ class EnhancedSecurityAgent:
                     # Update anomaly score back in process (with lock)
                     with self.processes_lock:
                         if pid in self.processes:
+                            old_score = self.processes[pid].get('anomaly_score', 0.0)
                             self.processes[pid]['anomaly_score'] = anomaly_result.anomaly_score
-                
+                            
+                            # Count anomalies (only increment when crossing threshold to avoid double-counting)
+                            if anomaly_result.is_anomaly and old_score < 0.5:
+                                self.stats['anomalies_detected'] += 1
+                            
+                            # Debug mode: show anomaly detection details
+                            if self.config.get('debug', False) and anomaly_result.is_anomaly:
+                                print(f"🐛 DEBUG Anomaly: PID={pid} ({process_snapshot.get('name', 'unknown')}) "
+                                      f"score={anomaly_result.anomaly_score:.2f}, "
+                                      f"confidence={anomaly_result.confidence:.2f}, "
+                                      f"explanation={anomaly_result.explanation[:50] if anomaly_result.explanation else 'N/A'}")
+                    
                     if anomaly_result.is_anomaly:
-                        self.stats['anomalies_detected'] += 1
                         self._log_security_event('anomaly_detected', {
                             'pid': pid,
                             'process_name': process_snapshot['name'],
@@ -1096,34 +1107,12 @@ def main():
         'debug': args.debug or config.get('debug', False)
     })
     
-    # Handle daemon mode (background operation)
+    # Handle daemon mode (background operation) - FUTURE IMPLEMENTATION
     if args.daemon:
-        import sys
-        import daemon
-        from daemon import DaemonContext
-        
-        # Redirect stdout/stderr to log file
-        log_file = open(args.log_file, 'a')
-        
-        print(f"🔄 Starting agent as daemon (PID file: /tmp/security_agent.pid, Log: {args.log_file})")
-        
-        # Simple daemonization - fork and redirect I/O
-        try:
-            pid = os.fork()
-            if pid > 0:
-                # Parent process - exit
-                print(f"✅ Daemon started with PID {pid}")
-                sys.exit(0)
-            else:
-                # Child process - redirect I/O and continue
-                os.setsid()
-                os.chdir('/')
-                sys.stdout = log_file
-                sys.stderr = log_file
-                print(f"\n{'='*60}\nSecurity Agent Daemon Started\n{'='*60}\n")
-        except Exception as e:
-            print(f"Failed to daemonize: {e}")
-            sys.exit(1)
+        print("⚠️  Daemon mode coming soon!")
+        print("For now, use: nohup sudo python3 core/enhanced_security_agent.py --dashboard --timeout 3600 > /tmp/agent.log 2>&1 &")
+        print("Then check logs: tail -f /tmp/agent.log")
+        sys.exit(0)
     
     # Create enhanced security agent
     agent = EnhancedSecurityAgent(config)
