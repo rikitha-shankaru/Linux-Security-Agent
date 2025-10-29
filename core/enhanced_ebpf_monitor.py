@@ -292,22 +292,33 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     def _process_events(self):
         """Process eBPF events in background thread"""
         if not self.bpf_program:
+            print("❌ No bpf_program in _process_events")
             return
+        
+        print("🔍 Starting event polling loop...")
+        iteration = 0
         try:
             while self.running:
                 try:
+                    iteration += 1
                     # Poll eBPF maps to get syscall counts
                     items = list(self.bpf_program["syscall_counts"].items())
+                    
+                    if iteration % 30 == 1:  # Print every 30 seconds
+                        print(f"DEBUG: Checked syscall map - {len(items)} entries")
+                    
                     if len(items) == 0:
                         # No syscalls yet, just wait
                         time.sleep(1)
                         continue
                     
+                    print(f"✅ Found {len(items)} syscall events!")
                     for pid, count in items:
                         pid_val = pid.value
                         count_val = count.value
                         
                         if count_val > 0:
+                            print(f"Processing syscalls for PID {pid_val}: {count_val} syscalls")
                             # Simulate events based on counts
                             for _ in range(int(min(count_val, 100))):  # Cap at 100 per iteration
                                 if self.event_callback:
@@ -322,13 +333,17 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     
                     time.sleep(1)  # Check every second
                 except KeyError as e:
-                    # Map doesn't exist yet
+                    print(f"KeyError in event loop: {e}")
                     time.sleep(1)
                 except Exception as e:
                     print(f"Error reading events: {e}")
+                    import traceback
+                    traceback.print_exc()
                     time.sleep(0.1)
         except Exception as e:
             print(f"Error in event processing thread: {e}")
+            import traceback
+            traceback.print_exc()
     
     def _process_event_callback(self, cpu, data, size):
         """Callback for processing eBPF events from perf buffer"""
