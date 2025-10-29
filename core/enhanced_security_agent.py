@@ -48,11 +48,16 @@ except ImportError as e:
     # Suppress warning - eBPF monitor is critical, but we have fallback
 
 try:
+    # First check if dependencies are available
+    import numpy
+    import pandas
+    import sklearn
+    # Dependencies exist, try importing the module
     from enhanced_anomaly_detector import EnhancedAnomalyDetector, AnomalyResult, BehavioralBaseline
     ENHANCED_ANOMALY_AVAILABLE = True
 except ImportError as e:
     ENHANCED_ANOMALY_AVAILABLE = False
-    # Optional component - suppress warning for cleaner output
+    # Optional component - will work without it
 
 try:
     from container_security_monitor import ContainerSecurityMonitor, ContainerInfo, CrossContainerAttempt
