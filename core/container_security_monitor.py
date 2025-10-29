@@ -275,49 +275,66 @@ class ContainerSecurityMonitor:
             )
     
     def _update_process_mappings(self):
-        """Update process-to-container mappings - OPTIMIZED VERSION"""
+        """Update process-to-container mappings - THREAD SAFE VERSION"""
         try:
-            # Clear existing mappings
-            self.container_boundaries.clear()
-            self.process_containers.clear()
+            # Thread-safe: use locks to protect shared data structures
+            with self.containers_lock:
+                # Create new mappings in local variables first
+                new_container_boundaries = {}
+                new_process_containers = {}
+                
+                # Pre-populate container boundaries from container info
+                for container_id, container_info in self.containers.items():
+                    if container_id not in new_container_boundaries:
+                        new_container_boundaries[container_id] = set()
+                
+                # Only check processes for active containers
+                if not self.containers:
+                    # Clear mappings atomically
+                    self.container_boundaries.clear()
+                    self.process_containers.clear()
+                    return
+                
+                # More efficient: get all PIDs first
+                pids = []
+                try:
+                    pids = list(psutil.pids()[:1000])  # Limit to first 1000 for performance
+                except Exception:
+                    return
+                
+                # Check each PID (outside lock to avoid long hold times)
+                containers_snapshot = dict(self.containers)  # Snapshot for processing
             
-            # Pre-populate container boundaries from container info
-            for container_id, container_info in self.containers.items():
-                if container_id not in self.container_boundaries:
-                    self.container_boundaries[container_id] = set()
-            
-            # Only check processes for active containers
-            if not self.containers:
-                return
-            
-            # More efficient: get all PIDs first
-            pids = []
-            try:
-                pids = list(psutil.pids()[:1000])  # Limit to first 1000 for performance
-            except Exception:
-                return
-            
-            # Check each PID
+            # Process outside the lock (expensive operations)
             for pid in pids:
                 try:
                     container_id = self._get_process_container(pid)
                     
                     if container_id:
-                        self.process_containers[pid] = container_id
+                        new_process_containers[pid] = container_id
                         
-                        if container_id in self.container_boundaries:
-                            self.container_boundaries[container_id].add(pid)
+                        if container_id in new_container_boundaries:
+                            new_container_boundaries[container_id].add(pid)
                         # Also initialize if it's a short ID from cgroup
                         elif len(container_id) > 12:
-                            # Try to find matching full ID
-                            for full_id in self.containers.keys():
+                            # Try to find matching full ID from snapshot
+                            for full_id in containers_snapshot.keys():
                                 if full_id.startswith(container_id):
-                                    self.container_boundaries[full_id].add(pid)
-                                    self.process_containers[pid] = full_id
+                                    if full_id not in new_container_boundaries:
+                                        new_container_boundaries[full_id] = set()
+                                    new_container_boundaries[full_id].add(pid)
+                                    new_process_containers[pid] = full_id
                                     break
                 
                 except (psutil.NoSuchProcess, psutil.AccessDenied, Exception):
                     continue
+            
+            # Atomic update: replace old mappings with new ones (inside lock)
+            with self.containers_lock:
+                self.container_boundaries.clear()
+                self.container_boundaries.update(new_container_boundaries)
+                self.process_containers.clear()
+                self.process_containers.update(new_process_containers)
             
         except Exception as e:
             print(f"Error updating process mappings: {e}")

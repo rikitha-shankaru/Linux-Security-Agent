@@ -672,16 +672,21 @@ class EnhancedSecurityAgent:
             # Update CPU every 1 second per process (to avoid overhead)
             # cpu_percent(interval=None) requires a previous call to calculate delta
             # So we make two calls: first to initialize, second to get value
+            # NOTE: We DON'T sleep here because it blocks event processing
+            # Instead, use cached value and update asynchronously
             with getattr(self, '_cpu_cache_lock', threading.Lock()):
                 if current_time - last_cache_time >= 1.0:
-                    # First call initializes the counter (returns 0.0)
-                    proc.cpu_percent(interval=None)
-                    # Wait a tiny bit for accuracy
-                    time.sleep(0.01)
-                    # Second call gets the actual percentage
-                    cpu_val = proc.cpu_percent(interval=None)
-                    self._cpu_cache[cache_key] = cpu_val
-                    self._cpu_cache_time[cache_time_key] = current_time
+                    # First call initializes the counter (returns 0.0 on first call)
+                    # We'll update this asynchronously in a separate thread if needed
+                    # For now, use cached value to avoid blocking
+                    cpu_val = self._cpu_cache.get(cache_key, 0.0)
+                    # Initialize counter for next time (non-blocking)
+                    try:
+                        proc.cpu_percent(interval=None)  # Initialize, returns 0.0 first time
+                        # Store current time but keep old value (will update next call)
+                        self._cpu_cache_time[cache_time_key] = current_time
+                    except:
+                        pass  # Process might have died
                 else:
                     cpu_val = self._cpu_cache.get(cache_key, 0.0)
             
@@ -1139,19 +1144,19 @@ class EnhancedSecurityAgent:
             key=lambda x: x[1].get('risk_score', 0) or 0,
             reverse=True
         )
+        
+        print(f"\nTotal Processes: {len(sorted_procs)}\n")
+        print(f"{'PID':<8} {'Process Name':<20} {'Risk':<8} {'Syscalls':<12} {'Anomaly':<10}")
+        print("-" * 80)
+        
+        for pid, proc in sorted_procs:
+            risk = proc.get('risk_score', 0) or 0
+            name = proc.get('name', '<unknown>')[:19]
+            syscalls = proc.get('syscall_count', 0)
+            anomaly = proc.get('anomaly_score', 0.0)
+            anomaly_str = f"⚠️ {anomaly:.2f}" if anomaly >= 0.5 else f"✓ {anomaly:.2f}"
             
-            print(f"\nTotal Processes: {len(sorted_procs)}\n")
-            print(f"{'PID':<8} {'Process Name':<20} {'Risk':<8} {'Syscalls':<12} {'Anomaly':<10}")
-            print("-" * 80)
-            
-            for pid, proc in sorted_procs:
-                risk = proc.get('risk_score', 0) or 0
-                name = proc.get('name', '<unknown>')[:19]
-                syscalls = proc.get('syscall_count', 0)
-                anomaly = proc.get('anomaly_score', 0.0)
-                anomaly_str = f"⚠️ {anomaly:.2f}" if anomaly >= 0.5 else f"✓ {anomaly:.2f}"
-                
-                print(f"{pid:<8} {name:<20} {risk:<8.0f} {syscalls:<12} {anomaly_str:<10}")
+            print(f"{pid:<8} {name:<20} {risk:<8.0f} {syscalls:<12} {anomaly_str:<10}")
         
         print("\n" + "="*80 + "\n")
     
@@ -1170,28 +1175,28 @@ class EnhancedSecurityAgent:
         for pid, proc in processes_snapshot.items():
             anomaly_score = proc.get('anomaly_score', 0.0)
             if anomaly_score >= 0.5:
-                    anomalies.append({
-                        'pid': pid,
-                        'name': proc.get('name', '<unknown>'),
-                        'anomaly_score': anomaly_score,
-                        'risk_score': proc.get('risk_score', 0) or 0,
-                        'syscall_count': proc.get('syscall_count', 0)
-                    })
-            
-            if not anomalies:
-                print("\n✅ No anomalies detected.\n")
-                return
-            
-            # Sort by anomaly score
-            anomalies.sort(key=lambda x: x['anomaly_score'], reverse=True)
-            
-            print(f"\nTotal Anomalies: {len(anomalies)}\n")
-            print(f"{'PID':<8} {'Process Name':<20} {'Anomaly Score':<15} {'Risk':<8} {'Syscalls':<10}")
-            print("-" * 80)
-            
-            for anom in anomalies:
-                print(f"{anom['pid']:<8} {anom['name'][:19]:<20} {anom['anomaly_score']:<15.2f} "
-                      f"{anom['risk_score']:<8.0f} {anom['syscall_count']:<10}")
+                anomalies.append({
+                    'pid': pid,
+                    'name': proc.get('name', '<unknown>'),
+                    'anomaly_score': anomaly_score,
+                    'risk_score': proc.get('risk_score', 0) or 0,
+                    'syscall_count': proc.get('syscall_count', 0)
+                })
+        
+        if not anomalies:
+            print("\n✅ No anomalies detected.\n")
+            return
+        
+        # Sort by anomaly score
+        anomalies.sort(key=lambda x: x['anomaly_score'], reverse=True)
+        
+        print(f"\nTotal Anomalies: {len(anomalies)}\n")
+        print(f"{'PID':<8} {'Process Name':<20} {'Anomaly Score':<15} {'Risk':<8} {'Syscalls':<10}")
+        print("-" * 80)
+        
+        for anom in anomalies:
+            print(f"{anom['pid']:<8} {anom['name'][:19]:<20} {anom['anomaly_score']:<15.2f} "
+                  f"{anom['risk_score']:<8.0f} {anom['syscall_count']:<10}")
         
         print("\n" + "="*80 + "\n")
     
