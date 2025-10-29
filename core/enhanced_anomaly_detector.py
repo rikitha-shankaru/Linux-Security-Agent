@@ -150,7 +150,11 @@ class EnhancedAnomalyDetector:
         # 4. High-risk syscall ratio
         high_risk_syscalls = ['ptrace', 'mount', 'umount', 'setuid', 'setgid', 'chroot', 'reboot']
         high_risk_count = sum(syscall_counts.get(syscall, 0) for syscall in high_risk_syscalls)
-        features.append(high_risk_count / len(syscalls))
+        # Prevent division by zero
+        if len(syscalls) > 0:
+            features.append(high_risk_count / len(syscalls))
+        else:
+            features.append(0.0)
         
         # 5. Temporal features (NOTE: Will be real when timestamps are captured)
         if self.temporal_features and len(syscalls) > 1:
@@ -169,13 +173,21 @@ class EnhancedAnomalyDetector:
         if self.network_features:
             network_syscalls = ['socket', 'bind', 'listen', 'accept', 'connect', 'send', 'recv']
             network_count = sum(syscall_counts.get(syscall, 0) for syscall in network_syscalls)
-            features.append(network_count / len(syscalls))
+            # Prevent division by zero
+            if len(syscalls) > 0:
+                features.append(network_count / len(syscalls))
+            else:
+                features.append(0.0)
         
         # 7. File system features
         if self.file_features:
             file_syscalls = ['open', 'close', 'read', 'write', 'stat', 'fstat', 'lstat']
             file_count = sum(syscall_counts.get(syscall, 0) for syscall in file_syscalls)
-            features.append(file_count / len(syscalls))
+            # Prevent division by zero
+            if len(syscalls) > 0:
+                features.append(file_count / len(syscalls))
+            else:
+                features.append(0.0)
         
         # 8. Process information features
         if process_info and self.resource_features:

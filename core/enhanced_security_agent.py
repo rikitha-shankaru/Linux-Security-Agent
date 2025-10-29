@@ -298,6 +298,7 @@ class EnhancedSecurityAgent:
         
         # Risk score persistence (optional - load from file if exists)
         self.risk_score_file = self.config.get('risk_score_file', '/tmp/security_agent_risk_scores.json')
+        self._saved_risk_scores = {}  # Initialize for deferred restoration
         self._load_risk_scores()
         
         # Initialize components
@@ -508,7 +509,7 @@ class EnhancedSecurityAgent:
         return training_data
     
     def _cleanup_old_processes(self):
-        """Remove stale processes to prevent memory leaks"""
+        """Remove stale processes to prevent memory leaks - also clean CPU cache"""
         current_time = time.time()
         stale_pids = []
         
@@ -521,7 +522,17 @@ class EnhancedSecurityAgent:
             
             # Remove stale processes
             for pid in stale_pids:
-                del self.processes[pid]
+                if pid in self.processes:
+                    del self.processes[pid]
+        
+        # Clean up CPU cache for stale processes
+        if stale_pids and hasattr(self, '_cpu_cache'):
+            with getattr(self, '_cpu_cache_lock', threading.Lock()):
+                for pid in stale_pids:
+                    cache_key = f"cpu_cache_{pid}"
+                    cache_time_key = f"cpu_time_{pid}"
+                    self._cpu_cache.pop(cache_key, None)
+                    self._cpu_cache_time.pop(cache_time_key, None)
         
         if stale_pids:
             self.console.print(f"🧹 Cleaned up {len(stale_pids)} stale processes", style="dim")
@@ -580,22 +591,31 @@ class EnhancedSecurityAgent:
         print("✅ Enhanced security monitoring stopped", flush=True)
     
     def _load_risk_scores(self):
-        """Load risk scores from previous run if available"""
+        """Load risk scores from previous run if available - with validation"""
         try:
             if os.path.exists(self.risk_score_file):
+                # Check file size to avoid loading corrupted huge files
+                if os.path.getsize(self.risk_score_file) > 10 * 1024 * 1024:  # 10MB limit
+                    return  # File too large, likely corrupted
+                
                 with open(self.risk_score_file, 'r') as f:
                     saved_data = json.load(f)
-                    # Restore risk scores for processes that still exist
-                    with self.processes_lock:
-                        for pid_str, data in saved_data.items():
-                            pid = int(pid_str)
-                            if pid in self.processes:
-                                self.processes[pid]['risk_score'] = data.get('risk_score', 0)
+                    
+                # Validate JSON structure
+                if not isinstance(saved_data, dict):
+                    return  # Invalid structure
+                
+                # Store for later restoration (processes dict may be empty at init)
+                # We'll restore after processes are populated during monitoring
+                self._saved_risk_scores = saved_data
+        except (json.JSONDecodeError, OSError, ValueError):
+            # File corrupted or invalid - will start fresh
+            self._saved_risk_scores = {}
         except Exception:
-            pass  # Ignore errors - start fresh if file doesn't exist
+            pass  # Ignore other errors - start fresh if file doesn't exist
     
     def _save_risk_scores(self):
-        """Save current risk scores to file for next run"""
+        """Save current risk scores to file for next run - ATOMIC WRITE"""
         try:
             saved_data = {}
             with self.processes_lock:
@@ -607,8 +627,22 @@ class EnhancedSecurityAgent:
                             'last_seen': time.time()
                         }
             if saved_data:
-                with open(self.risk_score_file, 'w') as f:
-                    json.dump(saved_data, f, indent=2)
+                # Atomic write: write to temp file first, then rename
+                temp_file = self.risk_score_file + '.tmp'
+                try:
+                    with open(temp_file, 'w') as f:
+                        json.dump(saved_data, f, indent=2)
+                        f.flush()
+                        os.fsync(f.fileno())  # Force write to disk
+                    # Atomic rename (rename is atomic on POSIX systems)
+                    os.rename(temp_file, self.risk_score_file)
+                except Exception:
+                    # Clean up temp file if rename fails
+                    try:
+                        if os.path.exists(temp_file):
+                            os.remove(temp_file)
+                    except:
+                        pass
         except Exception:
             pass  # Ignore errors - not critical
     
@@ -626,24 +660,30 @@ class EnhancedSecurityAgent:
             if not hasattr(self, '_cpu_cache'):
                 self._cpu_cache = {}
                 self._cpu_cache_time = {}
+                self._cpu_cache_lock = threading.Lock()  # Lock for cache access
             
             current_time = time.time()
-            last_cache_time = self._cpu_cache_time.get(cache_key, 0)
+            last_cache_time = 0
+            
+            # Thread-safe cache access
+            with getattr(self, '_cpu_cache_lock', threading.Lock()):
+                last_cache_time = self._cpu_cache_time.get(cache_time_key, 0)
             
             # Update CPU every 1 second per process (to avoid overhead)
             # cpu_percent(interval=None) requires a previous call to calculate delta
             # So we make two calls: first to initialize, second to get value
-            if current_time - last_cache_time >= 1.0:
-                # First call initializes the counter (returns 0.0)
-                proc.cpu_percent(interval=None)
-                # Wait a tiny bit for accuracy
-                time.sleep(0.01)
-                # Second call gets the actual percentage
-                cpu_val = proc.cpu_percent(interval=None)
-                self._cpu_cache[cache_key] = cpu_val
-                self._cpu_cache_time[cache_time_key] = current_time
-            else:
-                cpu_val = self._cpu_cache.get(cache_key, 0.0)
+            with getattr(self, '_cpu_cache_lock', threading.Lock()):
+                if current_time - last_cache_time >= 1.0:
+                    # First call initializes the counter (returns 0.0)
+                    proc.cpu_percent(interval=None)
+                    # Wait a tiny bit for accuracy
+                    time.sleep(0.01)
+                    # Second call gets the actual percentage
+                    cpu_val = proc.cpu_percent(interval=None)
+                    self._cpu_cache[cache_key] = cpu_val
+                    self._cpu_cache_time[cache_time_key] = current_time
+                else:
+                    cpu_val = self._cpu_cache.get(cache_key, 0.0)
             
             process_info = {
                 'cpu_percent': cpu_val,
@@ -661,13 +701,18 @@ class EnhancedSecurityAgent:
     def process_syscall_event(self, pid: int, syscall: str, process_info: Dict = None):
         """Process a system call event with enhanced analysis"""
         try:
-            # Get container information
+            # Get container information - THREAD SAFE
             container_id = None
             if self.container_security_monitor:
                 try:
-                    container_id = self.container_security_monitor.process_containers.get(pid)
-                except AttributeError:
-                    # Container monitor not fully initialized
+                    # Use thread-safe method if available, otherwise access with lock
+                    if hasattr(self.container_security_monitor, 'containers_lock'):
+                        with self.container_security_monitor.containers_lock:
+                            container_id = self.container_security_monitor.process_containers.get(pid)
+                    elif hasattr(self.container_security_monitor, 'process_containers'):
+                        container_id = self.container_security_monitor.process_containers.get(pid)
+                except (AttributeError, RuntimeError):
+                    # Container monitor not fully initialized or lock unavailable
                     pass
             
             # Validate syscall against container policy
@@ -698,9 +743,16 @@ class EnhancedSecurityAgent:
             with self.processes_lock:
                 if pid not in self.processes:
                     try:
+                        # Restore saved risk score if available
+                        saved_score = 0.0
+                        if hasattr(self, '_saved_risk_scores') and self._saved_risk_scores:
+                            saved_data = self._saved_risk_scores.get(str(pid))
+                            if saved_data and isinstance(saved_data, dict):
+                                saved_score = saved_data.get('risk_score', 0.0)
+                        
                         self.processes[pid] = {
                             'name': self._get_process_name(pid),
-                            'risk_score': 0.0,
+                            'risk_score': saved_score,  # Restore from previous run
                             'anomaly_score': 0.0,
                             'syscall_count': 0,
                             'last_update': current_time,
@@ -878,7 +930,11 @@ class EnhancedSecurityAgent:
     def get_high_risk_processes(self, threshold: float = 50.0) -> List[Tuple[int, str, float, float]]:
         """Get processes with risk scores above threshold"""
         high_risk = []
-        for pid, process in self.processes.items():
+        # Thread-safe access to processes
+        with self.processes_lock:
+            processes_snapshot = dict(self.processes)
+        
+        for pid, process in processes_snapshot.items():
             risk_score = process.get('risk_score', 0) or 0
             if risk_score >= threshold:
                 anomaly_score = process.get('anomaly_score', 0.0)
@@ -939,9 +995,16 @@ class EnhancedSecurityAgent:
         table.add_column("Syscalls", justify="right", style="green", width=9, no_wrap=True, overflow="ignore")
         table.add_column("CPU%", justify="right", style="cyan", width=7, no_wrap=True, overflow="ignore")
         
-        # Add processes sorted by risk score
+        # Add processes sorted by risk score - THREAD SAFE: create snapshot under lock
+        with self.processes_lock:
+            # Create snapshot to avoid holding lock during expensive operations
+            processes_snapshot = {
+                pid: dict(proc) for pid, proc in self.processes.items()
+            }
+        
+        # Sort outside the lock (safe because we have a snapshot)
         sorted_processes = sorted(
-            self.processes.items(),
+            processes_snapshot.items(),
             key=lambda x: x[1].get('risk_score', 0) or 0,
             reverse=True
         )[:10]  # Show top 10
