@@ -23,7 +23,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     event.pid = id >> 32;
     event.syscall_num = args->id;
     
-    events.perf_submit(ctx, &event, sizeof(event));
+    events.perf_submit(args, &event, sizeof(event));
     return 0;
 }
 """

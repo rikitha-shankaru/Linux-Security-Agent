@@ -8,9 +8,16 @@ import os
 import sys
 import time
 import json
-import docker
 import psutil
 import threading
+
+# Docker is optional - only needed for container monitoring
+try:
+    import docker
+    DOCKER_AVAILABLE = True
+except ImportError:
+    DOCKER_AVAILABLE = False
+    docker = None  # Placeholder for type checking
 from collections import defaultdict, deque
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
@@ -78,14 +85,18 @@ class ContainerSecurityMonitor:
         self.policies_lock = threading.Lock()
         self.attempts_lock = threading.Lock()
         
-        # Docker client
-        try:
-            self.docker_client = docker.from_env()
-            self.docker_available = True
-        except Exception as e:
-            print(f"Warning: Docker not available: {e}")
-            self.docker_client = None
-            self.docker_available = False
+        # Docker client (optional - only needed for container monitoring)
+        self.docker_client = None
+        self.docker_available = False
+        
+        if DOCKER_AVAILABLE:
+            try:
+                self.docker_client = docker.from_env()
+                self.docker_available = True
+            except Exception as e:
+                print(f"Note: Docker not running - container monitoring disabled: {e}")
+        else:
+            print("Note: docker package not installed - container monitoring disabled")
         
         # Container tracking
         self.containers = {}  # container_id -> ContainerInfo

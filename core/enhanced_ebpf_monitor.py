@@ -142,7 +142,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     event.timestamp = bpf_ktime_get_ns();
     bpf_get_current_comm(&event.comm, sizeof(event.comm));
     
-    events.perf_submit(ctx, &event, sizeof(event));
+    events.perf_submit(args, &event, sizeof(event));
     
     return 0;
 }
