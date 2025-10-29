@@ -270,6 +270,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     def start_monitoring(self, event_callback=None):
         """Start the enhanced eBPF monitoring"""
         print(f"DEBUG: bpf_program is {self.bpf_program}")
+        print(f"DEBUG: bpf_program is None? {self.bpf_program is None}")
+        print(f"DEBUG: bool(bpf_program) is {bool(self.bpf_program)}")
         if not self.bpf_program:
             print("Error: eBPF program not loaded")
             return False
