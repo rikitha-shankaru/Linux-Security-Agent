@@ -902,6 +902,103 @@ class EnhancedSecurityAgent:
         
         return Panel(content, title="🛡️ Enhanced Linux Security Agent - Real-time Monitoring", 
                     border_style="green", padding=(0, 1))
+    
+    def _list_processes(self):
+        """List all monitored processes"""
+        print("\n" + "="*80)
+        print("📋 MONITORED PROCESSES")
+        print("="*80)
+        
+        with self.processes_lock:
+            if not self.processes:
+                print("No processes monitored yet.")
+                return
+            
+            # Sort by risk score
+            sorted_procs = sorted(
+                self.processes.items(),
+                key=lambda x: x[1].get('risk_score', 0) or 0,
+                reverse=True
+            )
+            
+            print(f"\nTotal Processes: {len(sorted_procs)}\n")
+            print(f"{'PID':<8} {'Process Name':<20} {'Risk':<8} {'Syscalls':<12} {'Anomaly':<10}")
+            print("-" * 80)
+            
+            for pid, proc in sorted_procs:
+                risk = proc.get('risk_score', 0) or 0
+                name = proc.get('name', '<unknown>')[:19]
+                syscalls = proc.get('syscall_count', 0)
+                anomaly = proc.get('anomaly_score', 0.0)
+                anomaly_str = f"⚠️ {anomaly:.2f}" if anomaly >= 0.5 else f"✓ {anomaly:.2f}"
+                
+                print(f"{pid:<8} {name:<20} {risk:<8.0f} {syscalls:<12} {anomaly_str:<10}")
+        
+        print("\n" + "="*80 + "\n")
+    
+    def _list_anomalies(self):
+        """List all detected anomalies"""
+        print("\n" + "="*80)
+        print("🚨 DETECTED ANOMALIES")
+        print("="*80)
+        
+        with self.processes_lock:
+            anomalies = []
+            for pid, proc in self.processes.items():
+                anomaly_score = proc.get('anomaly_score', 0.0)
+                if anomaly_score >= 0.5:
+                    anomalies.append({
+                        'pid': pid,
+                        'name': proc.get('name', '<unknown>'),
+                        'anomaly_score': anomaly_score,
+                        'risk_score': proc.get('risk_score', 0) or 0,
+                        'syscall_count': proc.get('syscall_count', 0)
+                    })
+            
+            if not anomalies:
+                print("\n✅ No anomalies detected.\n")
+                return
+            
+            # Sort by anomaly score
+            anomalies.sort(key=lambda x: x['anomaly_score'], reverse=True)
+            
+            print(f"\nTotal Anomalies: {len(anomalies)}\n")
+            print(f"{'PID':<8} {'Process Name':<20} {'Anomaly Score':<15} {'Risk':<8} {'Syscalls':<10}")
+            print("-" * 80)
+            
+            for anom in anomalies:
+                print(f"{anom['pid']:<8} {anom['name'][:19]:<20} {anom['anomaly_score']:<15.2f} "
+                      f"{anom['risk_score']:<8.0f} {anom['syscall_count']:<10}")
+        
+        print("\n" + "="*80 + "\n")
+    
+    def _show_stats(self):
+        """Show comprehensive statistics"""
+        print("\n" + "="*80)
+        print("📊 MONITORING STATISTICS")
+        print("="*80)
+        
+        stats = self.get_monitoring_stats()
+        
+        print(f"\n🔍 Processes Monitored: {stats.get('total_processes', 0)}")
+        print(f"⚠️  High Risk Processes: {stats.get('high_risk_processes', 0)}")
+        print(f"🚨 Anomalies Detected: {stats.get('anomalies_detected', 0)}")
+        print(f"🔒 Policy Violations: {stats.get('policy_violations', 0)}")
+        print(f"📡 Total Syscalls Captured: {stats.get('total_syscalls', 0)}")
+        print(f"🔢 Unique Syscall Types: {stats.get('unique_syscalls', 0)}")
+        
+        if self.enhanced_ebpf_monitor:
+            ebpf_stats = stats.get('enhanced_ebpf_stats', {})
+            if 'events_captured' in ebpf_stats:
+                print(f"📥 eBPF Events Captured: {ebpf_stats['events_captured']}")
+        
+        if self.enhanced_anomaly_detector:
+            anom_stats = stats.get('anomaly_detection_stats', {})
+            print(f"\n🧠 ML Model Statistics:")
+            print(f"   Total Detections: {anom_stats.get('total_detections', 0)}")
+            print(f"   True Positives: {anom_stats.get('true_positives', 0)}")
+        
+        print("\n" + "="*80 + "\n")
 
 def main():
     """Main function for enhanced security agent"""
@@ -912,6 +1009,9 @@ def main():
     parser.add_argument('--output', choices=['console', 'json'], default='console', help='Output format')
     parser.add_argument('--config', type=str, help='Configuration file path')
     parser.add_argument('--train-models', action='store_true', help='Train anomaly detection models')
+    parser.add_argument('--list-processes', action='store_true', help='List all monitored processes and exit')
+    parser.add_argument('--list-anomalies', action='store_true', help='List all detected anomalies and exit')
+    parser.add_argument('--stats', action='store_true', help='Show statistics and exit')
     
     args = parser.parse_args()
     
@@ -934,6 +1034,30 @@ def main():
         agent._train_anomaly_models()
         return
     
+    # Handle query commands (list processes, anomalies, stats)
+    if args.list_processes or args.list_anomalies or args.stats:
+        # Need to start monitoring briefly to collect data
+        agent.start_monitoring()
+        time.sleep(5)  # Collect data for 5 seconds
+        
+        if args.list_processes:
+            agent._list_processes()
+        elif args.list_anomalies:
+            agent._list_anomalies()
+        elif args.stats:
+            agent._show_stats()
+        
+        agent.stop_monitoring()
+        return
+    
+    # Set up signal handlers for clean exit
+    def signal_handler(signum, frame):
+        agent.console.print("\n🛑 Interrupt received, stopping agent...", style="yellow")
+        agent.running = False
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     # Start monitoring
     agent.start_monitoring()
     
@@ -942,20 +1066,26 @@ def main():
         
         if args.dashboard:
             # Show real-time dashboard
-            with Live(agent._create_dashboard(), refresh_per_second=2) as live:
+            with Live(agent._create_dashboard(), refresh_per_second=2, screen=False) as live:
                 while agent.running:
                     if args.timeout > 0 and (time.time() - start_time) >= args.timeout:
                         break
                     
-                    live.update(agent._create_dashboard())
-                    time.sleep(0.5)
+                    try:
+                        live.update(agent._create_dashboard())
+                        time.sleep(0.5)
+                    except KeyboardInterrupt:
+                        break
         else:
             # Run without dashboard
             while agent.running:
                 if args.timeout > 0 and (time.time() - start_time) >= args.timeout:
                     break
                 
-                time.sleep(1)
+                try:
+                    time.sleep(1)
+                except KeyboardInterrupt:
+                    break
     
     except KeyboardInterrupt:
         agent.console.print("\n🛑 Stopping enhanced security agent...", style="yellow")
