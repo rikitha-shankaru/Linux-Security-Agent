@@ -778,13 +778,13 @@ class EnhancedSecurityAgent:
         """Create detailed real-time monitoring dashboard"""
         
         # Main processes table
-        table = Table(title="🖥️ Live Process Monitoring", box=box.ROUNDED, show_header=True)
-        table.add_column("PID", style="cyan", no_wrap=True, header_style="bold")
-        table.add_column("Process Name", style="magenta", max_width=30)
-        table.add_column("Risk", justify="right", style="red", header_style="bold")
-        table.add_column("Anomaly", justify="right", style="yellow")
-        table.add_column("Syscalls", justify="right", style="green")
-        table.add_column("CPU%", justify="right", style="cyan")
+        table = Table(title="🖥️ Live Process Monitoring", box=box.ROUNDED, show_header=True, header_style="bold")
+        table.add_column("PID", style="cyan", no_wrap=True, width=8, justify="right")
+        table.add_column("Process Name", style="magenta", max_width=20, min_width=15)
+        table.add_column("Risk", justify="right", style="yellow", width=8)
+        table.add_column("Anomaly", justify="center", style="yellow", width=8)
+        table.add_column("Syscalls", justify="right", style="green", width=10)
+        table.add_column("CPU%", justify="right", style="cyan", width=8)
         
         # Add processes sorted by risk score
         sorted_processes = sorted(
@@ -807,26 +807,37 @@ class EnhancedSecurityAgent:
                 else:
                     risk_display = f"🟢 {risk_score:.0f}"
                 
-                # Anomaly indicator
+                # Anomaly indicator (simplified)
                 if anomaly_score >= 0.5:
-                    anomaly_display = f"⚠️ {anomaly_score:.2f}"
+                    anomaly_display = "⚠️"
                 else:
-                    anomaly_display = f"✓ {anomaly_score:.2f}"
+                    anomaly_display = "✓"
                 
-                # Get CPU if available
+                # Get CPU if available (need interval for accurate reading)
                 try:
                     p = psutil.Process(int(pid))
-                    cpu = p.cpu_percent()
-                    cpu_display = f"{cpu:.1f}%"
+                    # Get CPU using non-blocking method
+                    cpu = p.cpu_percent(interval=None) or 0.0
+                    if cpu > 0:
+                        cpu_display = f"{cpu:.1f}%"
+                    else:
+                        # Fallback: calculate from process times
+                        cpu_times = p.cpu_times()
+                        cpu_display = "0.0%"
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    cpu_display = "0.0%"
                 except:
                     cpu_display = "N/A"
+                
+                # Format syscall count properly
+                syscall_display = f"{syscall_count:,}" if syscall_count > 0 else "0"
                 
                 table.add_row(
                     str(pid),
                     proc.get('name', '<unknown>')[:20],
                     risk_display,
                     anomaly_display,
-                    str(syscall_count),
+                    syscall_display,
                     cpu_display
                 )
         else:
