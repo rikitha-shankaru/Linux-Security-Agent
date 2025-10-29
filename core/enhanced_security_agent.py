@@ -634,47 +634,102 @@ class EnhancedSecurityAgent:
         return data
     
     def _create_dashboard(self):
-        """Create real-time monitoring dashboard"""
-        # Create table for process monitoring
-        table = Table(title="Enhanced Linux Security Agent - Process Monitoring", box=box.ROUNDED)
-        table.add_column("PID", style="cyan", no_wrap=True)
-        table.add_column("Process Name", style="magenta")
-        table.add_column("Risk Score", justify="right", style="red")
+        """Create detailed real-time monitoring dashboard"""
+        
+        # Main processes table
+        table = Table(title="🖥️ Live Process Monitoring", box=box.ROUNDED, show_header=True)
+        table.add_column("PID", style="cyan", no_wrap=True, header_style="bold")
+        table.add_column("Process Name", style="magenta", max_width=30)
+        table.add_column("Risk", justify="right", style="red", header_style="bold")
         table.add_column("Anomaly", justify="right", style="yellow")
-        table.add_column("Syscalls", justify="right")
-        table.add_column("Last Update", style="blue")
+        table.add_column("Syscalls", justify="right", style="green")
+        table.add_column("CPU%", justify="right", style="cyan")
         
         # Add processes sorted by risk score
         sorted_processes = sorted(
             self.processes.items(),
             key=lambda x: x[1].get('risk_score', 0) or 0,
             reverse=True
-        )[:20]  # Show top 20
+        )[:10]  # Show top 10
         
-        for pid, proc in sorted_processes:
-            risk_score = proc.get('risk_score', 0) or 0
-            anomaly_score = proc.get('anomaly_score', 0.0)
-            
-            table.add_row(
-                str(pid),
-                proc.get('name', '<unknown>'),
-                f"{risk_score:.1f}",
-                f"{anomaly_score:.1f}" if anomaly_score else "0.0",
-                str(proc.get('syscall_count', 0)),
-                datetime.fromtimestamp(proc.get('last_update', 0)).strftime("%H:%M:%S")
-            )
+        if sorted_processes:
+            for pid, proc in sorted_processes:
+                risk_score = proc.get('risk_score', 0) or 0
+                anomaly_score = proc.get('anomaly_score', 0.0)
+                syscall_count = proc.get('syscall_count', 0)
+                
+                # Risk indicator
+                if risk_score >= 50:
+                    risk_display = f"🔴 {risk_score:.0f}"
+                elif risk_score >= 30:
+                    risk_display = f"🟡 {risk_score:.0f}"
+                else:
+                    risk_display = f"🟢 {risk_score:.0f}"
+                
+                # Anomaly indicator
+                if anomaly_score >= 0.5:
+                    anomaly_display = f"⚠️ {anomaly_score:.2f}"
+                else:
+                    anomaly_display = f"✓ {anomaly_score:.2f}"
+                
+                # Get CPU if available
+                try:
+                    p = psutil.Process(int(pid))
+                    cpu = p.cpu_percent()
+                    cpu_display = f"{cpu:.1f}%"
+                except:
+                    cpu_display = "N/A"
+                
+                table.add_row(
+                    str(pid),
+                    proc.get('name', '<unknown>')[:20],
+                    risk_display,
+                    anomaly_display,
+                    str(syscall_count),
+                    cpu_display
+                )
+        else:
+            table.add_row("Waiting for syscall events...", "", "", "", "", "", style="dim")
         
-        # Create stats panel
-        stats_text = Text()
-        stats_text.append(f"Processes Monitored: {self.stats['total_processes']}\n", style="cyan")
-        stats_text.append(f"High Risk Processes: {self.stats['high_risk_processes']}\n", style="red")
-        stats_text.append(f"Anomalies Detected: {self.stats['anomalies_detected']}\n", style="yellow")
-        stats_text.append(f"Policy Violations: {self.stats['policy_violations']}\n", style="magenta")
+        # Stats panel with explanations
+        stats_panel_content = f"""
+📊 **Statistics**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 Processes Monitored: {self.stats['total_processes']}
+   → Total unique processes captured by eBPF
+
+⚠️  High Risk Processes: {self.stats['high_risk_processes']}  
+   → Processes flagged with risk score ≥ 50
+   → Detected suspicious syscalls (ptrace, execve, etc.)
+
+🚨 Anomalies Detected: {self.stats['anomalies_detected']}
+   → ML ensemble detected unusual behavior patterns
+   → Using Isolation Forest, One-Class SVM, DBSCAN
+
+🔒 Policy Violations: {self.stats['policy_violations']}
+   → Container security policy violations (currently 0)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 **What's Happening:**
+• eBPF is capturing system calls from running processes
+• ML models are analyzing behavior patterns in real-time
+• Risk scores combine syscall analysis + behavioral baselining
+• Anomaly detection uses ensemble of 3 ML algorithms
+• Dashboard updates every second
+
+💡 **Risk Score Meaning:**
+   🟢 0-30:  Normal system activity
+   🟡 30-50: Potentially suspicious
+   🔴 50+:   High risk - investigate immediately
+        """
         
-        # Combine into panel
-        content = f"{table}\n\n{stats_text}"
+        # Combine everything
+        content = f"\n{table}\n\n{stats_panel_content}"
         
-        return Panel(content, title="Enhanced Linux Security Agent", border_style="green")
+        return Panel(content, title="🛡️ Enhanced Linux Security Agent - Real-time Monitoring", 
+                    border_style="green", padding=(0, 1))
 
 def main():
     """Main function for enhanced security agent"""
