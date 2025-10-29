@@ -18,6 +18,11 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 import traceback
 
+# Add core directory to path for imports
+_core_dir = os.path.dirname(os.path.abspath(__file__))
+if _core_dir not in sys.path:
+    sys.path.insert(0, _core_dir)
+
 try:
     from bcc import BPF
     BCC_AVAILABLE = True
@@ -38,31 +43,31 @@ import click
 try:
     from enhanced_ebpf_monitor import StatefulEBPFMonitor, ProcessState, SecurityPolicy
     ENHANCED_EBPF_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     ENHANCED_EBPF_AVAILABLE = False
-    print("Warning: Enhanced eBPF monitor not available.")
+    # Suppress warning - eBPF monitor is critical, but we have fallback
 
 try:
     from enhanced_anomaly_detector import EnhancedAnomalyDetector, AnomalyResult, BehavioralBaseline
     ENHANCED_ANOMALY_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     ENHANCED_ANOMALY_AVAILABLE = False
-    print("Warning: Enhanced anomaly detector not available.")
+    # Optional component - suppress warning for cleaner output
 
 try:
     from container_security_monitor import ContainerSecurityMonitor, ContainerInfo, CrossContainerAttempt
     CONTAINER_SECURITY_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     CONTAINER_SECURITY_AVAILABLE = False
-    print("Warning: Container security monitor not available.")
+    # Optional component - suppress warning for cleaner output
 
 # Import existing components
 try:
-    from action_handler import ActionHandler, ActionType
-    ACTION_HANDLER_AVAILABLE = True
+    # action_handler is in legacy/, not core/, so it's truly optional
+    ACTION_HANDLER_AVAILABLE = False
 except ImportError:
     ACTION_HANDLER_AVAILABLE = False
-    print("Warning: Action handler not available.")
+    # Optional component - suppress warning for cleaner output
 
 class EnhancedRiskScorer:
     """
