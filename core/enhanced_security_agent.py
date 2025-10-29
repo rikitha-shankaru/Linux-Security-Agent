@@ -777,14 +777,21 @@ class EnhancedSecurityAgent:
     def _create_dashboard(self):
         """Create detailed real-time monitoring dashboard"""
         
-        # Main processes table
-        table = Table(title="🖥️ Live Process Monitoring", box=box.ROUNDED, show_header=True, header_style="bold")
-        table.add_column("PID", style="cyan", no_wrap=True, width=8, justify="right")
-        table.add_column("Process Name", style="magenta", max_width=20, min_width=15)
-        table.add_column("Risk", justify="right", style="yellow", width=8)
-        table.add_column("Anomaly", justify="center", style="yellow", width=8)
-        table.add_column("Syscalls", justify="right", style="green", width=10)
-        table.add_column("CPU%", justify="right", style="cyan", width=8)
+        # Main processes table - fixed widths to prevent wrapping
+        table = Table(
+            title="🖥️ Live Process Monitoring", 
+            box=box.ROUNDED, 
+            show_header=True, 
+            header_style="bold",
+            padding=(0, 1)
+        )
+        # Column widths: 8+18+10+8+10+8 = 62 chars + 7 borders = ~69 total width needed
+        table.add_column("PID", style="cyan", no_wrap=True, width=7, justify="right", overflow="ignore")
+        table.add_column("Process Name", style="magenta", width=16, no_wrap=True, overflow="ellipsis")
+        table.add_column("Risk", justify="right", style="yellow", width=9, no_wrap=True, overflow="ignore")
+        table.add_column("Anomaly", justify="center", style="yellow", width=7, no_wrap=True, overflow="ignore")
+        table.add_column("Syscalls", justify="right", style="green", width=9, no_wrap=True, overflow="ignore")
+        table.add_column("CPU%", justify="right", style="cyan", width=7, no_wrap=True, overflow="ignore")
         
         # Add processes sorted by risk score
         sorted_processes = sorted(
@@ -832,9 +839,14 @@ class EnhancedSecurityAgent:
                 # Format syscall count properly
                 syscall_display = f"{syscall_count:,}" if syscall_count > 0 else "0"
                 
+                # Truncate process name if too long
+                proc_name = proc.get('name', '<unknown>')
+                if len(proc_name) > 17:
+                    proc_name = proc_name[:14] + "..."
+                
                 table.add_row(
                     str(pid),
-                    proc.get('name', '<unknown>')[:20],
+                    proc_name,
                     risk_display,
                     anomaly_display,
                     syscall_display,
