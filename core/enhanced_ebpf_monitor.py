@@ -304,8 +304,14 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         # Attach perf event handler for REAL syscall events
         if self.bpf_program:
             try:
-                print(f"DEBUG: Opening perf buffer...")
-                self.bpf_program["syscall_events"].open_perf_buffer(self._process_perf_event)
+                print(f"DEBUG: About to open perf buffer...")
+                print(f"DEBUG: Has syscall_events map? {hasattr(self.bpf_program.get_table('syscall_events'), 'open_perf_buffer')}")
+                
+                # Get the perf output table
+                perf_table = self.bpf_program.get_table('syscall_events')
+                print(f"DEBUG: Got perf_table: {perf_table}")
+                print(f"DEBUG: Calling open_perf_buffer...")
+                perf_table.open_perf_buffer(self._process_perf_event)
                 print("✅ Perf event buffer attached for real syscall capture")
             except Exception as e:
                 print(f"⚠️ Failed to attach perf buffer: {e}")
