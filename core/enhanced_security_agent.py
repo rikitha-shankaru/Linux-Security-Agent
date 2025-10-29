@@ -488,6 +488,9 @@ class EnhancedSecurityAgent:
     
     def stop_monitoring(self):
         """Stop enhanced security monitoring"""
+        if not self.running:
+            return  # Already stopped
+        
         self.console.print("🛑 Stopping Enhanced Linux Security Agent...", style="yellow")
         
         self.running = False
@@ -1050,11 +1053,18 @@ def main():
         agent.stop_monitoring()
         return
     
-    # Set up signal handlers for clean exit
-    def signal_handler(signum, frame):
-        agent.console.print("\n🛑 Interrupt received, stopping agent...", style="yellow")
-        agent.running = False
+    # Set up signal handlers for clean exit - MUST be before start_monitoring
+    exit_requested = threading.Event()
     
+    def signal_handler(signum, frame):
+        print("\n🛑 Ctrl+C detected! Stopping agent... (this may take 2-3 seconds)")
+        exit_requested.set()
+        agent.running = False
+        # Force stop threads immediately
+        if hasattr(agent, 'cleanup_thread'):
+            agent.cleanup_thread.join(timeout=1)
+    
+    # Install signal handlers
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
@@ -1065,30 +1075,45 @@ def main():
         start_time = time.time()
         
         if args.dashboard:
-            # Show real-time dashboard
-            with Live(agent._create_dashboard(), refresh_per_second=2, screen=False) as live:
-                while agent.running:
+            # Show real-time dashboard - use Live with screen=False for better signal handling
+            from rich.live import Live
+            live = Live(agent._create_dashboard(), refresh_per_second=2, screen=False)
+            
+            try:
+                live.start()
+                while agent.running and not exit_requested.is_set():
                     if args.timeout > 0 and (time.time() - start_time) >= args.timeout:
                         break
                     
                     try:
                         live.update(agent._create_dashboard())
-                        time.sleep(0.5)
-                    except KeyboardInterrupt:
+                    except:
                         break
+                    
+                    # Short sleep to allow signal handling
+                    for _ in range(10):  # 10 x 0.05 = 0.5 seconds
+                        if exit_requested.is_set():
+                            break
+                        time.sleep(0.05)
+            finally:
+                live.stop()
+                live.refresh()
         else:
             # Run without dashboard
-            while agent.running:
+            while agent.running and not exit_requested.is_set():
                 if args.timeout > 0 and (time.time() - start_time) >= args.timeout:
                     break
                 
-                try:
-                    time.sleep(1)
-                except KeyboardInterrupt:
-                    break
+                # Short sleep to allow signal handling
+                for _ in range(20):  # 20 x 0.05 = 1 second
+                    if exit_requested.is_set():
+                        break
+                    time.sleep(0.05)
     
     except KeyboardInterrupt:
-        agent.console.print("\n🛑 Stopping enhanced security agent...", style="yellow")
+        print("\n🛑 Keyboard interrupt detected!")
+        exit_requested.set()
+        agent.running = False
     
     finally:
         agent.stop_monitoring()

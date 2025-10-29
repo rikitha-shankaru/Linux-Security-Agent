@@ -379,12 +379,17 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     poll_count += 1
                     if poll_count % 10 == 0:
                         print(f"DEBUG: Polling perf buffer (count={poll_count}), events_so_far={len(self.events)}")
-                    bpf_prog.perf_buffer_poll(timeout=1000)  # 1 second timeout
+                    # Use shorter timeout to check self.running more frequently
+                    bpf_prog.perf_buffer_poll(timeout=100)  # 100ms timeout - check running flag more often
                 except KeyboardInterrupt:
+                    self.running = False
                     break
                 except Exception as e:
-                    if "Interrupted system call" not in str(e):
-                        print(f"Error polling perf buffer: {e}")
+                    if "Interrupted system call" not in str(e) and "Interrupted" not in str(e):
+                        # Ignore interrupt errors - we're shutting down
+                        pass
+                    if not self.running:
+                        break
                     time.sleep(0.1)
         except Exception as e:
             print(f"Error in event processing thread: {e}")
