@@ -551,15 +551,39 @@ class EnhancedSecurityAgent:
     
     def _handle_syscall_event(self, pid: int, syscall: str, event_info: Dict = None):
         """Handle syscall event from eBPF monitor"""
-        # Get process info from psutil
+        # Get process info from psutil (non-blocking)
+        process_info = None
         try:
             proc = psutil.Process(pid)
+            # Use interval=None for non-blocking, but it needs previous call
+            # Cache CPU calculation - call it once per second per process
+            cache_key = f"cpu_cache_{pid}"
+            cache_time_key = f"cpu_time_{pid}"
+            
+            if not hasattr(self, '_cpu_cache'):
+                self._cpu_cache = {}
+                self._cpu_cache_time = {}
+            
+            current_time = time.time()
+            last_cache_time = self._cpu_cache_time.get(cache_key, 0)
+            
+            # Update CPU every 1 second per process (to avoid overhead)
+            if current_time - last_cache_time >= 1.0:
+                cpu_val = proc.cpu_percent(interval=None)  # Non-blocking
+                self._cpu_cache[cache_key] = cpu_val
+                self._cpu_cache_time[cache_time_key] = current_time
+            else:
+                cpu_val = self._cpu_cache.get(cache_key, 0.0)
+            
             process_info = {
-                'cpu_percent': proc.cpu_percent(),
+                'cpu_percent': cpu_val,
                 'memory_percent': proc.memory_percent(),
                 'num_threads': proc.num_threads()
             }
         except (psutil.NoSuchProcess, psutil.AccessDenied):
+            process_info = None
+        except Exception:
+            # Ignore errors - not critical
             process_info = None
         
         self.process_syscall_event(pid, syscall, process_info)
@@ -623,6 +647,10 @@ class EnhancedSecurityAgent:
                 process['syscalls'].append(syscall)  # Deque auto-bounds
                 process['syscall_count'] += 1
                 process['last_update'] = current_time
+                
+                # Update CPU usage periodically (every 5 syscalls to avoid overhead)
+                if process['syscall_count'] % 5 == 0 and process_info:
+                    process['cpu_percent'] = process_info.get('cpu_percent', 0.0)
                 
                 # Create snapshot while still in lock
                 process_snapshot = dict(process)
@@ -827,21 +855,22 @@ class EnhancedSecurityAgent:
                 else:
                     anomaly_display = "✓"
                 
-                # Get CPU if available (need interval for accurate reading)
-                try:
-                    p = psutil.Process(int(pid))
-                    # Get CPU using non-blocking method
-                    cpu = p.cpu_percent(interval=None) or 0.0
-                    if cpu > 0:
+                # Get CPU usage - check if we've stored it in process dict
+                # (we update it during syscall processing)
+                cpu_percent = proc.get('cpu_percent', None)
+                if cpu_percent is not None:
+                    cpu_display = f"{cpu_percent:.1f}%"
+                else:
+                    # Try to get it from psutil (may be 0.0 if just started)
+                    try:
+                        p = psutil.Process(int(pid))
+                        # Get CPU - may be 0.0% if process is idle or just started
+                        cpu = p.cpu_percent(interval=None) or 0.0
                         cpu_display = f"{cpu:.1f}%"
-                    else:
-                        # Fallback: calculate from process times
-                        cpu_times = p.cpu_times()
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        cpu_display = "N/A"
+                    except:
                         cpu_display = "0.0%"
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    cpu_display = "0.0%"
-                except:
-                    cpu_display = "N/A"
                 
                 # Format syscall count properly
                 syscall_display = f"{syscall_count:,}" if syscall_count > 0 else "0"
