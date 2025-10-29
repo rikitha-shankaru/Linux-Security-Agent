@@ -347,24 +347,10 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         if not getattr(self, '_cleanup_done', False):
             try:
                 if self.bpf_program is not None:
-                    # Cleanup can sometimes hang, use timeout
-                    import signal
-                    
-                    def timeout_handler(signum, frame):
-                        raise TimeoutError("Cleanup timeout")
-                    
-                    # Set 1 second timeout for cleanup
-                    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-                    signal.alarm(1)
-                    
-                    try:
-                        self.bpf_program.cleanup()
-                        signal.alarm(0)  # Cancel alarm
-                        signal.signal(signal.SIGALRM, old_handler)
-                    except (TimeoutError, Exception):
-                        signal.alarm(0)  # Cancel alarm
-                        signal.signal(signal.SIGALRM, old_handler)
-                        pass  # Ignore cleanup errors
+                    # Cleanup can sometimes hang - skip it on exit to avoid blocking
+                    # Kernel will cleanup automatically when process exits
+                    # Just mark as done, don't actually call cleanup (it can hang)
+                    pass  # Skip cleanup to avoid blocking exit
                 
                 self._cleanup_done = True
                 # Log lost events summary only at shutdown
