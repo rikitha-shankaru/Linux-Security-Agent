@@ -363,8 +363,7 @@ class EnhancedSecurityAgent:
             self._train_anomaly_models()
         
         # Start cleanup thread to prevent memory leaks
-        self.cleanup_thread = threading.Thread(target=self._cleanup_loop)
-        self.cleanup_thread.daemon = True
+        self.cleanup_thread = threading.Thread(target=self._cleanup_loop, daemon=True)
         self.cleanup_thread.start()
         self.console.print("✅ Memory cleanup thread started", style="green")
         
