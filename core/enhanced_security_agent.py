@@ -893,8 +893,9 @@ class EnhancedSecurityAgent:
         from rich.console import Console
         from io import StringIO
         
-        string_console = Console(file=StringIO(), force_terminal=True, width=120, legacy_windows=False)
-        string_console.print(table)
+        # Increase console width to prevent table wrapping (~70 chars for table + borders)
+        string_console = Console(file=StringIO(), force_terminal=True, width=150, legacy_windows=False)
+        string_console.print(table, overflow="ignore")
         table_str = string_console.file.getvalue()
         
         content = f"\n{table_str}\n\n{stats_panel_content}"
