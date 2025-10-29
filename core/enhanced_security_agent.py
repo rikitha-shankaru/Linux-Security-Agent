@@ -568,8 +568,15 @@ class EnhancedSecurityAgent:
             last_cache_time = self._cpu_cache_time.get(cache_key, 0)
             
             # Update CPU every 1 second per process (to avoid overhead)
+            # cpu_percent(interval=None) requires a previous call to calculate delta
+            # So we make two calls: first to initialize, second to get value
             if current_time - last_cache_time >= 1.0:
-                cpu_val = proc.cpu_percent(interval=None)  # Non-blocking
+                # First call initializes the counter (returns 0.0)
+                proc.cpu_percent(interval=None)
+                # Wait a tiny bit for accuracy
+                time.sleep(0.01)
+                # Second call gets the actual percentage
+                cpu_val = proc.cpu_percent(interval=None)
                 self._cpu_cache[cache_key] = cpu_val
                 self._cpu_cache_time[cache_time_key] = current_time
             else:
@@ -648,9 +655,10 @@ class EnhancedSecurityAgent:
                 process['syscall_count'] += 1
                 process['last_update'] = current_time
                 
-                # Update CPU usage periodically (every 5 syscalls to avoid overhead)
-                if process['syscall_count'] % 5 == 0 and process_info:
-                    process['cpu_percent'] = process_info.get('cpu_percent', 0.0)
+                # Update CPU usage periodically (every 10 syscalls to avoid overhead)
+                if process['syscall_count'] % 10 == 0 and process_info:
+                    cpu_val = process_info.get('cpu_percent', 0.0)
+                    process['cpu_percent'] = cpu_val if cpu_val is not None else 0.0
                 
                 # Create snapshot while still in lock
                 process_snapshot = dict(process)
