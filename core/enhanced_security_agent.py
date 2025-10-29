@@ -1223,8 +1223,8 @@ def main():
                     except:
                         pass
                     
-                    # Very short sleep - check exit VERY frequently
-                    for _ in range(10):  # 10 x 0.01 = 0.1 seconds total
+                    # Very short sleep - check exit VERY frequently (50ms total wait)
+                    for _ in range(5):  # 5 x 0.01 = 50ms total - allows quick Ctrl+C response
                         if exit_requested.is_set() or not agent.running:
                             break
                         time.sleep(0.01)
