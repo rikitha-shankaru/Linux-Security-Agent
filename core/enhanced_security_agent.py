@@ -1235,11 +1235,11 @@ def main():
                     except:
                         pass
                     
-                    # Very short sleep - check exit VERY frequently (50ms total wait)
-                    for _ in range(5):  # 5 x 0.01 = 50ms total - allows quick Ctrl+C response
-                        if exit_requested.is_set() or not agent.running:
-                            break
-                        time.sleep(0.01)
+                    # Very short sleep - check exit VERY frequently (10ms total wait)
+                    # Break immediately on exit request
+                    if exit_requested.is_set() or not agent.running:
+                        break
+                    time.sleep(0.01)  # 10ms - minimal sleep for quick Ctrl+C response
             except (KeyboardInterrupt, SystemExit):
                 agent.running = False
             finally:
