@@ -1303,12 +1303,19 @@ def main():
         agent.running = False
     
     finally:
-        agent.stop_monitoring()
+        # Force stop everything - non-blocking
+        try:
+            agent.stop_monitoring()
+        except Exception:
+            pass  # Ignore errors during shutdown
         
-        # Export data if requested
+        # Export data if requested (fast, don't let it block exit)
         if args.output == 'json':
-            data = agent.export_monitoring_data()
-            print(json.dumps(data, indent=2))
+            try:
+                data = agent.export_monitoring_data()
+                print(json.dumps(data, indent=2))
+            except Exception:
+                pass  # Don't block exit on export errors
 
 if __name__ == "__main__":
     main()
