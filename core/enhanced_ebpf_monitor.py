@@ -103,50 +103,29 @@ class StatefulEBPFMonitor:
     
     def _load_enhanced_ebpf_program(self) -> BPF:
         """Load enhanced eBPF program with stateful tracking"""
+        # Simplified eBPF code that actually works
         ebpf_code = """
 #include <uapi/linux/ptrace.h>
-#include <linux/sched.h>
-#include <linux/fs.h>
-#include <linux/cred.h>
 
-// Event structure for syscalls
+// Event structure
 struct syscall_event {
     u32 pid;
-    u32 ppid;
-    u32 tid;
     u32 syscall_num;
     u64 timestamp;
     char comm[16];
-    u32 cpu;
-    u32 flags;
 };
 
-// Maps for stateful tracking
-BPF_HASH(process_states, u32, u64);  // pid -> state
-BPF_RINGBUF(events, 65536);
-BPF_HASH(syscall_counts, u32, u64);  // pid -> syscall count
+// Maps
+BPF_PERF_OUTPUT(events);
+BPF_HASH(syscall_counts, u32, u64);
 
-// System call tracepoint - CORRECT VERSION
+// Track syscalls
 TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
-    u32 tid = id & 0xFFFFFFFF;
+    u32 syscall_num = args->id;
     
-    // Get syscall number from args (correct API for raw_syscalls)
-    u32 syscall_num = args->syscall_nr;
-    
-    // Create event
-    struct syscall_event event = {};
-    event.pid = pid;
-    event.tid = tid;
-    event.syscall_num = syscall_num;
-    event.timestamp = bpf_ktime_get_ns();
-    event.cpu = bpf_get_smp_processor_id();
-    
-    // Get process name
-    bpf_get_current_comm(&event.comm, sizeof(event.comm));
-    
-    // Update syscall count for this process
+    // Update count
     u64 *count = syscall_counts.lookup(&pid);
     if (!count) {
         u64 one = 1;
@@ -156,8 +135,14 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         syscall_counts.update(&pid, count);
     }
     
-    // Submit event to ring buffer
-    events.ringbuf_output(&event, sizeof(event), 0);
+    // Send event
+    struct syscall_event event = {};
+    event.pid = pid;
+    event.syscall_num = syscall_num;
+    event.timestamp = bpf_ktime_get_ns();
+    bpf_get_current_comm(&event.comm, sizeof(event.comm));
+    
+    events.perf_submit(ctx, &event, sizeof(event));
     
     return 0;
 }
@@ -324,14 +309,13 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     def _process_events(self):
         """Process eBPF events in background thread"""
         try:
-            # Create ring buffer
-            self.bpf_program["events"].open_ring_buffer(self._process_event_callback)
+            # Set up perf buffer
+            self.bpf_program["events"].open_perf_buffer(self._process_event_callback)
             
+            # Poll for events
             while self.running:
                 try:
-                    # Poll for events
-                    self.bpf_program.ring_buffer_consume()
-                    time.sleep(0.001)  # Small sleep to avoid busy waiting
+                    self.bpf_program.perf_buffer_poll(timeout=100)
                 except Exception as e:
                     print(f"Error reading events: {e}")
                     time.sleep(0.1)
@@ -339,9 +323,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             print(f"Error in event processing thread: {e}")
     
     def _process_event_callback(self, cpu, data, size):
-        """Callback for processing eBPF events from ring buffer"""
+        """Callback for processing eBPF events from perf buffer"""
         try:
-            # Parse event structure from bytes
             event = self.bpf_program["events"].event(data)
             
             # Extract fields
@@ -373,11 +356,6 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                 
         except Exception as e:
             print(f"Error in event callback: {e}")
-    
-    def _handle_syscall_event(self, event):
-        """Legacy handler - kept for compatibility"""
-        if hasattr(event, 'pid'):
-            self._process_event_callback(0, event, 0)
     
     def _syscall_num_to_name(self, syscall_num: int) -> str:
         """Convert syscall number to name"""
