@@ -127,13 +127,11 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     
     // Update count
     u64 *count = syscall_counts.lookup(&pid);
-    if (!count) {
-        u64 one = 1;
-        syscall_counts.update(&pid, &one);
-    } else {
-        *count += 1;
-        syscall_counts.update(&pid, count);
+    u64 new_count = 1;
+    if (count) {
+        new_count = *count + 1;
     }
+    syscall_counts.update(&pid, &new_count);
     
     // Send event
     struct syscall_event event = {};
@@ -142,7 +140,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     event.timestamp = bpf_ktime_get_ns();
     bpf_get_current_comm(&event.comm, sizeof(event.comm));
     
-    events.perf_submit(args, &event, sizeof(event));
+    events.perf_submit(NULL, &event, sizeof(event));
     
     return 0;
 }
