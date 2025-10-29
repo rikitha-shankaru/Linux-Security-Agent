@@ -274,15 +274,13 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         self.running = True
         self.event_callback = event_callback
         
-        # Start event processing thread
-        if self.bpf_program:
-            print("DEBUG: Starting event thread...")
-            self.event_thread = threading.Thread(target=self._process_events)
-            self.event_thread.daemon = True
-            self.event_thread.start()
-            print("DEBUG: Event thread started!")
-        else:
-            print("DEBUG: No bpf_program, skipping event thread")
+        # Start event processing thread - ALWAYS start it
+        # BCC BPF objects evaluate to False in boolean context, so we skip the check
+        print("DEBUG: Starting event thread...")
+        self.event_thread = threading.Thread(target=self._process_events)
+        self.event_thread.daemon = True
+        self.event_thread.start()
+        print("DEBUG: Event thread started!")
         
         print("Enhanced eBPF monitoring started with stateful tracking")
         return True
