@@ -76,7 +76,12 @@ class StatefulEBPFMonitor:
         
         # Initialize eBPF program
         if BCC_AVAILABLE:
-            self.bpf_program = self._load_enhanced_ebpf_program()
+            try:
+                self.bpf_program = self._load_enhanced_ebpf_program()
+                print(f"DEBUG __init__: bpf_program created: {self.bpf_program is not None}")
+            except Exception as e:
+                print(f"Failed to load eBPF: {e}")
+                self.bpf_program = None
         else:
             self.bpf_program = None
             print("Warning: Running without eBPF - limited functionality")
@@ -294,22 +299,25 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     
     def _process_events(self):
         """Process eBPF events in background thread"""
-        print("🔍 Starting event polling loop...")
-        print(f"DEBUG: self.bpf_program is None: {self.bpf_program is None}")
+        print(f"🔍 Starting event polling loop... bpf_program={self.bpf_program}")
         
-        # Skip if no bpf_program
-        if self.bpf_program is None:
-            print("❌ No bpf_program in _process_events - will continue with limited functionality")
-            # Continue anyway to show the loop is running
+        # Store reference to avoid issues
+        bpf_prog = self.bpf_program
+        print(f"🔍 bpf_prog reference: {bpf_prog}")
         
-        print("🔍 Starting event polling loop...")
+        if bpf_prog is None:
+            print("⚠️ No bpf_program - monitoring without eBPF data")
+            while self.running:
+                time.sleep(1)
+            return
+        
         iteration = 0
         try:
             while self.running:
                 try:
                     iteration += 1
                     # Poll eBPF maps to get syscall counts
-                    items = list(self.bpf_program["syscall_counts"].items())
+                    items = list(bpf_prog["syscall_counts"].items())
                     
                     if iteration % 30 == 1:  # Print every 30 seconds
                         print(f"DEBUG: Checked syscall map - {len(items)} entries")
@@ -336,7 +344,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                                     })
                             
                             # Reset count
-                            self.bpf_program["syscall_counts"][pid] = 0
+                            bpf_prog["syscall_counts"][pid] = 0
                     
                     time.sleep(1)  # Check every second
                 except KeyError as e:
