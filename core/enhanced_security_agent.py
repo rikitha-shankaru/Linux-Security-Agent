@@ -331,7 +331,7 @@ class EnhancedSecurityAgent:
                 self.container_security_monitor = ContainerSecurityMonitor(self.config)
                 # Check if Docker is actually running
                 if self.container_security_monitor.docker_available:
-                    self.console.print("✅ Container security monitor initialized", style="green")
+                self.console.print("✅ Container security monitor initialized", style="green")
                 else:
                     self.console.print("⚠️ Container monitoring disabled (Docker not running)", style="yellow")
             except Exception as e:
@@ -406,19 +406,20 @@ class EnhancedSecurityAgent:
                         pid_key = f"{pid}_{iteration // 10}"  # Sample same PID every 10 iterations
                         
                         if pid_key not in sampled_pids:
-                            syscalls = list(syscalls_list[-50:])  # Take last 50 syscalls to get recent behavior
+                            # Deque doesn't support slicing; convert to list first
+                            syscalls = list(syscalls_list)[-50:]  # Take last 50 syscalls to get recent behavior
                             
                             # Get REAL process info from psutil
                             try:
                                 p = psutil.Process(int(pid))
-                                process_info = {
+                process_info = {
                                     'cpu_percent': p.cpu_percent(interval=0.1) or 0,
                                     'memory_percent': p.memory_percent(),
                                     'num_threads': p.num_threads(),
                                     'pid': int(pid)  # Store PID for debugging
-                                }
-                                
-                                training_data.append((syscalls, process_info))
+                }
+                
+                training_data.append((syscalls, process_info))
                                 sampled_pids.add(pid_key)
                                 
                                 # Limit to first 500 samples (enough for training)
@@ -474,7 +475,7 @@ class EnhancedSecurityAgent:
                     avg_syscalls = total_syscalls / len(training_data)
                     self.console.print(f"🐛 DEBUG: Total syscalls: {total_syscalls}, Avg per sample: {avg_syscalls:.1f}", style="dim")
             
-            self.enhanced_anomaly_detector.train_models(training_data)
+        self.enhanced_anomaly_detector.train_models(training_data)
             self.console.print("✅ Anomaly detection models trained on REAL data", style="green")
         else:
             self.console.print("⚠️ No data to train on", style="yellow")
@@ -570,7 +571,7 @@ class EnhancedSecurityAgent:
         if self.enhanced_ebpf_monitor:
             try:
                 self.enhanced_ebpf_monitor.running = False  # Force stop first
-                self.enhanced_ebpf_monitor.stop_monitoring()
+            self.enhanced_ebpf_monitor.stop_monitoring()
             except:
                 pass
         
@@ -712,7 +713,7 @@ class EnhancedSecurityAgent:
                     # Use thread-safe method if available, otherwise access with lock
                     if hasattr(self.container_security_monitor, 'containers_lock'):
                         with self.container_security_monitor.containers_lock:
-                            container_id = self.container_security_monitor.process_containers.get(pid)
+                container_id = self.container_security_monitor.process_containers.get(pid)
                     elif hasattr(self.container_security_monitor, 'process_containers'):
                         container_id = self.container_security_monitor.process_containers.get(pid)
                 except (AttributeError, RuntimeError):
@@ -722,9 +723,9 @@ class EnhancedSecurityAgent:
             # Validate syscall against container policy
             if self.container_security_monitor:
                 try:
-                    if not self.container_security_monitor.validate_syscall(pid, syscall):
-                        self.stats['policy_violations'] += 1
-                        return
+                if not self.container_security_monitor.validate_syscall(pid, syscall):
+                    self.stats['policy_violations'] += 1
+                    return
                 except (AttributeError, Exception) as e:
                     # Graceful degradation if container check fails
                     pass
@@ -733,7 +734,7 @@ class EnhancedSecurityAgent:
             process_state = None
             if self.enhanced_ebpf_monitor:
                 try:
-                    process_state = self.enhanced_ebpf_monitor.get_process_state(pid)
+                process_state = self.enhanced_ebpf_monitor.get_process_state(pid)
                 except (AttributeError, Exception) as e:
                     # eBPF monitor not available or failed
                     pass
@@ -745,7 +746,7 @@ class EnhancedSecurityAgent:
             should_log_high_risk = False
             
             with self.processes_lock:
-                if pid not in self.processes:
+            if pid not in self.processes:
                     try:
                         # Restore saved risk score if available
                         saved_score = 0.0
@@ -754,24 +755,24 @@ class EnhancedSecurityAgent:
                             if saved_data and isinstance(saved_data, dict):
                                 saved_score = saved_data.get('risk_score', 0.0)
                         
-                        self.processes[pid] = {
-                            'name': self._get_process_name(pid),
+                self.processes[pid] = {
+                    'name': self._get_process_name(pid),
                             'risk_score': saved_score,  # Restore from previous run
-                            'anomaly_score': 0.0,
-                            'syscall_count': 0,
+                    'anomaly_score': 0.0,
+                    'syscall_count': 0,
                             'last_update': current_time,
                             'last_risk_update': current_time,
                             'syscalls': deque(maxlen=1000),  # Bounded deque
-                            'container_id': container_id,
-                            'process_state': process_state
-                        }
+                    'container_id': container_id,
+                    'process_state': process_state
+                }
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         # Process already gone, skip
                         return
-                
-                process = self.processes[pid]
+            
+            process = self.processes[pid]
                 process['syscalls'].append(syscall)  # Deque auto-bounds
-                process['syscall_count'] += 1
+            process['syscall_count'] += 1
                 process['last_update'] = current_time
                 
                 # Update CPU usage periodically (every 10 syscalls to avoid overhead)
@@ -826,19 +827,19 @@ class EnhancedSecurityAgent:
             anomaly_result = None
             if self.enhanced_anomaly_detector:
                 try:
-                    anomaly_result = self.enhanced_anomaly_detector.detect_anomaly_ensemble(
+                anomaly_result = self.enhanced_anomaly_detector.detect_anomaly_ensemble(
                         process_snapshot['syscalls'], process_info, pid
-                    )
+                )
                     
                     # Update anomaly score back in process (with lock)
                     with self.processes_lock:
                         if pid in self.processes:
                             old_score = self.processes[pid].get('anomaly_score', 0.0)
                             self.processes[pid]['anomaly_score'] = anomaly_result.anomaly_score
-                            
+                
                             # Count anomalies (only increment when crossing threshold to avoid double-counting)
                             if anomaly_result.is_anomaly and old_score < 0.5:
-                                self.stats['anomalies_detected'] += 1
+                    self.stats['anomalies_detected'] += 1
                                 
                                 # Debug mode: only show when anomaly is FIRST detected (threshold crossing)
                                 if self.config.get('debug', False):
@@ -871,12 +872,12 @@ class EnhancedSecurityAgent:
                                     pass
                     
                     if anomaly_result.is_anomaly:
-                        self._log_security_event('anomaly_detected', {
-                            'pid': pid,
+                    self._log_security_event('anomaly_detected', {
+                        'pid': pid,
                             'process_name': process_snapshot['name'],
-                            'anomaly_score': anomaly_result.anomaly_score,
-                            'explanation': anomaly_result.explanation
-                        })
+                        'anomaly_score': anomaly_result.anomaly_score,
+                        'explanation': anomaly_result.explanation
+                    })
                 except Exception as e:
                     print(f"Anomaly detection error: {e}")
             
@@ -895,11 +896,11 @@ class EnhancedSecurityAgent:
                     with self.processes_lock:
                         if pid in self.processes:
                             process = self.processes[pid]
-                            self.action_handler.take_action(
+                self.action_handler.take_action(
                                 pid, process['name'], process['risk_score'], 
                                 process.get('anomaly_score', 0.0)
-                            )
-                            self.stats['actions_taken'] += 1
+                )
+                self.stats['actions_taken'] += 1
                 except Exception as e:
                     print(f"Action handler error: {e}")
             
@@ -908,7 +909,7 @@ class EnhancedSecurityAgent:
             
             # Update total processes count (every syscall to keep it accurate)
             with self.processes_lock:
-                self.stats['total_processes'] = len(self.processes)
+            self.stats['total_processes'] = len(self.processes)
             
         except Exception as e:
             self.console.print(f"❌ Error processing syscall event: {e}", style="red")
@@ -1014,9 +1015,9 @@ class EnhancedSecurityAgent:
         )[:10]  # Show top 10
         
         if sorted_processes:
-            for pid, proc in sorted_processes:
-                risk_score = proc.get('risk_score', 0) or 0
-                anomaly_score = proc.get('anomaly_score', 0.0)
+        for pid, proc in sorted_processes:
+            risk_score = proc.get('risk_score', 0) or 0
+            anomaly_score = proc.get('anomaly_score', 0.0)
                 syscall_count = proc.get('syscall_count', 0)
                 
                 # Risk indicator
@@ -1060,9 +1061,9 @@ class EnhancedSecurityAgent:
                 proc_name = proc.get('name', '<unknown>')
                 if len(proc_name) > 17:
                     proc_name = proc_name[:14] + "..."
-                
-                table.add_row(
-                    str(pid),
+            
+            table.add_row(
+                str(pid),
                     proc_name,
                     risk_display,
                     anomaly_display,
@@ -1386,7 +1387,7 @@ def main():
                 # Check exit BEFORE expensive operations
                 if exit_requested.is_set() or not agent.running:
                     break
-                    
+                
                 elapsed = time.time() - start_time
                 if args.timeout > 0 and elapsed >= args.timeout:
                     print(f"\n⏰ Timeout reached ({args.timeout}s) - stopping agent...", flush=True)
@@ -1405,15 +1406,15 @@ def main():
     finally:
         # Force stop everything - non-blocking
         try:
-            agent.stop_monitoring()
+        agent.stop_monitoring()
         except Exception:
             pass  # Ignore errors during shutdown
         
         # Export data if requested (fast, don't let it block exit)
         if args.output == 'json':
             try:
-                data = agent.export_monitoring_data()
-                print(json.dumps(data, indent=2))
+            data = agent.export_monitoring_data()
+            print(json.dumps(data, indent=2))
             except Exception:
                 pass  # Don't block exit on export errors
 
