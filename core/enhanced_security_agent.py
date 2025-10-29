@@ -429,7 +429,20 @@ class EnhancedSecurityAgent:
         # Train models on REAL data
         if self.enhanced_anomaly_detector and training_data:
             if self.config.get('debug', False):
-                self.console.print(f"🐛 DEBUG: Training on {len(training_data)} total samples", style="dim")
+                # Count unique processes in training data
+                unique_pids = set()
+                total_syscalls = 0
+                for seq, info in training_data:
+                    if seq:
+                        total_syscalls += len(seq)
+                    if isinstance(info, dict) and 'pid' in info:
+                        unique_pids.add(info['pid'])
+                
+                self.console.print(f"🐛 DEBUG: Training on {len(training_data)} samples from {len(unique_pids)} processes", style="dim")
+                if total_syscalls > 0:
+                    avg_syscalls = total_syscalls / len(training_data)
+                    self.console.print(f"🐛 DEBUG: Total syscalls: {total_syscalls}, Avg per sample: {avg_syscalls:.1f}", style="dim")
+            
             self.enhanced_anomaly_detector.train_models(training_data)
             self.console.print("✅ Anomaly detection models trained on REAL data", style="green")
         else:
@@ -731,13 +744,17 @@ class EnhancedSecurityAgent:
                             # Count anomalies (only increment when crossing threshold to avoid double-counting)
                             if anomaly_result.is_anomaly and old_score < 0.5:
                                 self.stats['anomalies_detected'] += 1
-                            
-                            # Debug mode: show anomaly detection details
-                            if self.config.get('debug', False) and anomaly_result.is_anomaly:
-                                print(f"🐛 DEBUG Anomaly: PID={pid} ({process_snapshot.get('name', 'unknown')}) "
-                                      f"score={anomaly_result.anomaly_score:.2f}, "
-                                      f"confidence={anomaly_result.confidence:.2f}, "
-                                      f"explanation={anomaly_result.explanation[:50] if anomaly_result.explanation else 'N/A'}")
+                                
+                                # Debug mode: only show when anomaly is FIRST detected (threshold crossing)
+                                if self.config.get('debug', False):
+                                    print(f"🐛 DEBUG Anomaly DETECTED: PID={pid} ({process_snapshot.get('name', 'unknown')}) "
+                                          f"score={anomaly_result.anomaly_score:.2f}, "
+                                          f"confidence={anomaly_result.confidence:.2f}, "
+                                          f"explanation={anomaly_result.explanation[:80] if anomaly_result.explanation else 'N/A'}")
+                            elif self.config.get('debug', False) and anomaly_result.is_anomaly:
+                                # Only log again if anomaly score changed significantly (every 5 points)
+                                if abs(old_score - anomaly_result.anomaly_score) >= 5.0:
+                                    print(f"🐛 DEBUG Anomaly UPDATE: PID={pid} score={anomaly_result.anomaly_score:.2f} (was {old_score:.2f})")
                     
                     if anomaly_result.is_anomaly:
                         self._log_security_event('anomaly_detected', {
@@ -943,10 +960,10 @@ class EnhancedSecurityAgent:
    → Detected suspicious syscalls (ptrace, execve, etc.)
 
 🚨 Anomalies Detected: {self.stats['anomalies_detected']}
-   → Processes with anomaly score ≥ 0.5 (ML ensemble detected)
-   → Anomaly scores stored per-process
-   → ML ensemble detected unusual behavior patterns
-   → Using Isolation Forest, One-Class SVM, DBSCAN
+   → Processes that crossed anomaly threshold (score ≥ 0.5)
+   → Current anomaly scores stored per-process in table above
+   → ML ensemble (Isolation Forest + One-Class SVM + DBSCAN) analyzes patterns
+   → Note: Same process can trigger multiple times if behavior changes
 
 🔒 Policy Violations: {self.stats['policy_violations']}
    → Container security policy violations (currently 0)
