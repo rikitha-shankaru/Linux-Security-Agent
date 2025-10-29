@@ -110,7 +110,10 @@ class StatefulEBPFMonitor:
         """Load enhanced eBPF program with stateful tracking"""
         # Real eBPF code that captures actual syscalls
         ebpf_code = """
+// Suppress harmless macro redefinition warnings
+#pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmacro-redefined"
+#pragma clang diagnostic ignored "-Wunused-macros"
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
 
@@ -154,6 +157,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     
     return 0;
 }
+#pragma clang diagnostic pop
 """
         
         try:
