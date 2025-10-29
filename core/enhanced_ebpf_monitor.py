@@ -140,8 +140,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     // Get process name
     bpf_get_current_comm(event.comm, sizeof(event.comm));
     
-    // Send event to userspace
-    bpf_perf_event_output(ctx, &syscall_events, BPF_F_CURRENT_CPU, &event, sizeof(event));
+    // Send event to userspace using the correct BCC method
+    bpf_perf_event_output((void *)args, &syscall_events, BPF_F_CURRENT_CPU, &event, sizeof(event));
     
     // Also update count for statistics
     u64 *count = syscall_counts.lookup(&pid);
