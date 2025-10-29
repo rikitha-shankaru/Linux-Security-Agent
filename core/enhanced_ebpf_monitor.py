@@ -291,27 +291,39 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     
     def _process_events(self):
         """Process eBPF events in background thread"""
+        if not self.bpf_program:
+            return
         try:
             while self.running:
-                # Poll eBPF maps to get syscall counts
                 try:
-                    for pid, count in self.bpf_program["syscall_counts"].items():
+                    # Poll eBPF maps to get syscall counts
+                    items = list(self.bpf_program["syscall_counts"].items())
+                    if len(items) == 0:
+                        # No syscalls yet, just wait
+                        time.sleep(1)
+                        continue
+                    
+                    for pid, count in items:
                         pid_val = pid.value
                         count_val = count.value
                         
-                        # Simulate events based on counts
-                        for _ in range(int(min(count_val, 100))):  # Cap at 100 per iteration
-                            if self.event_callback:
-                                self.event_callback(pid_val, 'syscall', {
-                                    'pid': pid_val,
-                                    'syscall_num': 0,
-                                    'timestamp': time.time()
-                                })
-                        
-                        # Reset count
-                        self.bpf_program["syscall_counts"][pid] = 0
+                        if count_val > 0:
+                            # Simulate events based on counts
+                            for _ in range(int(min(count_val, 100))):  # Cap at 100 per iteration
+                                if self.event_callback:
+                                    self.event_callback(pid_val, 'syscall', {
+                                        'pid': pid_val,
+                                        'syscall_num': 0,
+                                        'timestamp': time.time()
+                                    })
+                            
+                            # Reset count
+                            self.bpf_program["syscall_counts"][pid] = 0
                     
                     time.sleep(1)  # Check every second
+                except KeyError as e:
+                    # Map doesn't exist yet
+                    time.sleep(1)
                 except Exception as e:
                     print(f"Error reading events: {e}")
                     time.sleep(0.1)
