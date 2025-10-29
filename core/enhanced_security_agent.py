@@ -292,6 +292,10 @@ class EnhancedSecurityAgent:
         # Thread lock for process tracking
         self.processes_lock = threading.Lock()
         
+        # Rate limiting for debug output (PID -> last print time)
+        self._debug_rate_limit = {}  # {pid: last_print_time}
+        self._debug_rate_limit_lock = threading.Lock()
+        
         # Risk score persistence (optional - load from file if exists)
         self.risk_score_file = self.config.get('risk_score_file', '/tmp/security_agent_risk_scores.json')
         self._load_risk_scores()
@@ -747,25 +751,33 @@ class EnhancedSecurityAgent:
                                 
                                 # Debug mode: only show when anomaly is FIRST detected (threshold crossing)
                                 if self.config.get('debug', False):
+                                    try:
+                                        with self._debug_rate_limit_lock:
+                                            current_time = time.time()
+                                            last_print = self._debug_rate_limit.get(pid, 0)
+                                            # Only print once per PID every 10 seconds
+                                            if current_time - last_print >= 10.0:
+                                                print(f"🐛 DEBUG Anomaly DETECTED: PID={pid} ({process_snapshot.get('name', 'unknown')}) "
+                                                      f"score={anomaly_result.anomaly_score:.2f}, "
+                                                      f"confidence={anomaly_result.confidence:.2f}, "
+                                                      f"explanation={anomaly_result.explanation[:80] if anomaly_result.explanation else 'N/A'}")
+                                                self._debug_rate_limit[pid] = current_time
+                                    except AttributeError:
+                                        # Fallback if lock doesn't exist (shouldn't happen, but handle gracefully)
+                                        pass
+                            elif self.config.get('debug', False) and anomaly_result.is_anomaly:
+                                # Rate limit: only log significant changes once per 10 seconds
+                                try:
                                     with self._debug_rate_limit_lock:
                                         current_time = time.time()
                                         last_print = self._debug_rate_limit.get(pid, 0)
-                                        # Only print once per PID every 10 seconds
-                                        if current_time - last_print >= 10.0:
-                                            print(f"🐛 DEBUG Anomaly DETECTED: PID={pid} ({process_snapshot.get('name', 'unknown')}) "
-                                                  f"score={anomaly_result.anomaly_score:.2f}, "
-                                                  f"confidence={anomaly_result.confidence:.2f}, "
-                                                  f"explanation={anomaly_result.explanation[:80] if anomaly_result.explanation else 'N/A'}")
+                                        # Only log if score changed by 10+ points AND 10 seconds have passed
+                                        if abs(old_score - anomaly_result.anomaly_score) >= 10.0 and (current_time - last_print) >= 10.0:
+                                            print(f"🐛 DEBUG Anomaly UPDATE: PID={pid} score={anomaly_result.anomaly_score:.2f} (was {old_score:.2f})")
                                             self._debug_rate_limit[pid] = current_time
-                            elif self.config.get('debug', False) and anomaly_result.is_anomaly:
-                                # Rate limit: only log significant changes once per 10 seconds
-                                with self._debug_rate_limit_lock:
-                                    current_time = time.time()
-                                    last_print = self._debug_rate_limit.get(pid, 0)
-                                    # Only log if score changed by 10+ points AND 10 seconds have passed
-                                    if abs(old_score - anomaly_result.anomaly_score) >= 10.0 and (current_time - last_print) >= 10.0:
-                                        print(f"🐛 DEBUG Anomaly UPDATE: PID={pid} score={anomaly_result.anomaly_score:.2f} (was {old_score:.2f})")
-                                        self._debug_rate_limit[pid] = current_time
+                                except AttributeError:
+                                    # Fallback if lock doesn't exist (shouldn't happen, but handle gracefully)
+                                    pass
                     
                     if anomaly_result.is_anomaly:
                         self._log_security_event('anomaly_detected', {
