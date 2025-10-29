@@ -366,6 +366,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             syscall_num = event.syscall_num
             syscall_name = self._syscall_num_to_name(syscall_num)
             
+            print(f"DEBUG PERF: Got event - PID={pid}, syscall={syscall_name}")
+            
             # Store event
             self.events.append({
                 'pid': pid,
