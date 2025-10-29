@@ -715,17 +715,24 @@ class EnhancedSecurityAgent:
                     )
                     
                     # Smooth with previous score (exponential moving average)
-                    if 'risk_score' in process and process['risk_score'] > 0:
-                        process['risk_score'] = 0.7 * risk_score + 0.3 * process['risk_score']
+                    old_risk_score = process.get('risk_score', 0.0)
+                    if old_risk_score > 0:
+                        new_risk_score = 0.7 * risk_score + 0.3 * old_risk_score
                     else:
-                        process['risk_score'] = risk_score
+                        new_risk_score = risk_score
                     
+                    process['risk_score'] = new_risk_score
                     process['last_risk_update'] = current_time
                     
-                    # Check for high-risk processes
-                    if process['risk_score'] >= self.config.get('risk_threshold', 50.0):
+                    # Check for high-risk processes - only increment when CROSSING threshold
+                    risk_threshold = self.config.get('risk_threshold', 50.0)
+                    if new_risk_score >= risk_threshold and old_risk_score < risk_threshold:
+                        # Process just crossed the high-risk threshold
                         self.stats['high_risk_processes'] += 1
                         should_log_high_risk = True
+                    elif new_risk_score >= risk_threshold:
+                        # Process is already high-risk, but log if needed
+                        should_log_high_risk = False  # Don't spam logs
             
             # Now do heavy work OUTSIDE the lock (anomaly detection is expensive)
             if not process_snapshot:
@@ -979,8 +986,9 @@ class EnhancedSecurityAgent:
    → Total unique processes captured by eBPF
 
 ⚠️  High Risk Processes: {self.stats['high_risk_processes']}  
-   → Processes flagged with risk score ≥ 50
-   → Detected suspicious syscalls (ptrace, execve, etc.)
+   → Processes that crossed risk threshold (score ≥ 50)
+   → Count shows how many processes became high-risk, not current count
+   → Current high-risk processes shown in table above (🔴 indicator)
 
 🚨 Anomalies Detected: {self.stats['anomalies_detected']}
    → Processes that crossed anomaly threshold (score ≥ 0.5)
