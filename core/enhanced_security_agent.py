@@ -747,14 +747,25 @@ class EnhancedSecurityAgent:
                                 
                                 # Debug mode: only show when anomaly is FIRST detected (threshold crossing)
                                 if self.config.get('debug', False):
-                                    print(f"🐛 DEBUG Anomaly DETECTED: PID={pid} ({process_snapshot.get('name', 'unknown')}) "
-                                          f"score={anomaly_result.anomaly_score:.2f}, "
-                                          f"confidence={anomaly_result.confidence:.2f}, "
-                                          f"explanation={anomaly_result.explanation[:80] if anomaly_result.explanation else 'N/A'}")
+                                    with self._debug_rate_limit_lock:
+                                        current_time = time.time()
+                                        last_print = self._debug_rate_limit.get(pid, 0)
+                                        # Only print once per PID every 10 seconds
+                                        if current_time - last_print >= 10.0:
+                                            print(f"🐛 DEBUG Anomaly DETECTED: PID={pid} ({process_snapshot.get('name', 'unknown')}) "
+                                                  f"score={anomaly_result.anomaly_score:.2f}, "
+                                                  f"confidence={anomaly_result.confidence:.2f}, "
+                                                  f"explanation={anomaly_result.explanation[:80] if anomaly_result.explanation else 'N/A'}")
+                                            self._debug_rate_limit[pid] = current_time
                             elif self.config.get('debug', False) and anomaly_result.is_anomaly:
-                                # Only log again if anomaly score changed significantly (every 5 points)
-                                if abs(old_score - anomaly_result.anomaly_score) >= 5.0:
-                                    print(f"🐛 DEBUG Anomaly UPDATE: PID={pid} score={anomaly_result.anomaly_score:.2f} (was {old_score:.2f})")
+                                # Rate limit: only log significant changes once per 10 seconds
+                                with self._debug_rate_limit_lock:
+                                    current_time = time.time()
+                                    last_print = self._debug_rate_limit.get(pid, 0)
+                                    # Only log if score changed by 10+ points AND 10 seconds have passed
+                                    if abs(old_score - anomaly_result.anomaly_score) >= 10.0 and (current_time - last_print) >= 10.0:
+                                        print(f"🐛 DEBUG Anomaly UPDATE: PID={pid} score={anomaly_result.anomaly_score:.2f} (was {old_score:.2f})")
+                                        self._debug_rate_limit[pid] = current_time
                     
                     if anomaly_result.is_anomaly:
                         self._log_security_event('anomaly_detected', {
@@ -1232,6 +1243,10 @@ def main():
         else:
             # Run without dashboard
             while agent.running and not exit_requested.is_set():
+                # Check exit BEFORE expensive operations
+                if exit_requested.is_set() or not agent.running:
+                    break
+                    
                 elapsed = time.time() - start_time
                 if args.timeout > 0 and elapsed >= args.timeout:
                     print(f"\n⏰ Timeout reached ({args.timeout}s) - stopping agent...", flush=True)
@@ -1239,11 +1254,8 @@ def main():
                     exit_requested.set()
                     break
                 
-                # Short sleep to allow signal handling
-                for _ in range(20):  # 20 x 0.05 = 1 second
-                    if exit_requested.is_set():
-                        break
-                    time.sleep(0.05)
+                # Short sleep to allow signal handling - check exit frequently
+                time.sleep(0.1)  # 100ms - allows signal handler to work
     
     except KeyboardInterrupt:
         print("\n🛑 Keyboard interrupt detected!")
