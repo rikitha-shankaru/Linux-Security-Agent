@@ -816,8 +816,13 @@ class EnhancedSecurityAgent:
    🔴 50+:   High risk - investigate immediately
         """
         
-        # Combine everything
-        content = f"\n{table}\n\n{stats_panel_content}"
+        # Combine everything - Rich will handle table rendering
+        from io import StringIO
+        output = StringIO()
+        self.console.print(table, file=output)
+        table_str = output.getvalue()
+        
+        content = f"\n{table_str}\n\n{stats_panel_content}"
         
         return Panel(content, title="🛡️ Enhanced Linux Security Agent - Real-time Monitoring", 
                     border_style="green", padding=(0, 1))
