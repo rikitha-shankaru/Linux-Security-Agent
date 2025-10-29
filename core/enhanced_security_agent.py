@@ -817,10 +817,12 @@ class EnhancedSecurityAgent:
         """
         
         # Combine everything - Rich will handle table rendering
+        from rich.console import Console
         from io import StringIO
-        output = StringIO()
-        self.console.print(table, file=output)
-        table_str = output.getvalue()
+        
+        string_console = Console(file=StringIO(), force_terminal=True, width=120, legacy_windows=False)
+        string_console.print(table)
+        table_str = string_console.file.getvalue()
         
         content = f"\n{table_str}\n\n{stats_panel_content}"
         
