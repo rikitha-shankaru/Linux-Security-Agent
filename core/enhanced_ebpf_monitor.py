@@ -304,10 +304,13 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         # Attach perf event handler for REAL syscall events
         if self.bpf_program:
             try:
+                print(f"DEBUG: Opening perf buffer...")
                 self.bpf_program["syscall_events"].open_perf_buffer(self._process_perf_event)
                 print("✅ Perf event buffer attached for real syscall capture")
             except Exception as e:
                 print(f"⚠️ Failed to attach perf buffer: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Start event processing thread - ALWAYS start it
         print("DEBUG: Starting event thread...")
@@ -341,8 +344,12 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         
         try:
             # Poll perf buffer for REAL syscall events
+            poll_count = 0
             while self.running:
                 try:
+                    poll_count += 1
+                    if poll_count % 10 == 0:
+                        print(f"DEBUG: Polling perf buffer (count={poll_count}), events_so_far={len(self.events)}")
                     bpf_prog.perf_buffer_poll(timeout=1000)  # 1 second timeout
                 except KeyboardInterrupt:
                     break
