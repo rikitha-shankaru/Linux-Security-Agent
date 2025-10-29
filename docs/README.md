@@ -27,6 +27,15 @@ This folder contains comprehensive documentation, guides, and setup instructions
 - **`SUMMARY.md`** - Project summary and overview
 - **`COMPLETION_SUMMARY.md`** - Completion summary and achievements
 
+### **Analysis & Bug Fixes (2025 Updates)**
+- **`../CODE_ANALYSIS.md`** - Initial code analysis (what was real vs fake)
+- **`../BUG_FIXES_GUIDE.md`** - Detailed bug fix instructions
+- **`../FIXES_PROGRESS.md`** - Progress on bug fixes
+- **`../FINAL_IMPLEMENTATION_ANALYSIS.md`** - Deep dive into how it works now
+- **`../IMPLEMENTATION_SUMMARY.md`** - Quick reference summary
+- **`../FIXES_COMPLETE.md`** - Bug fix completion summary
+- **`../ANALYSIS_AND_FIXES_SUMMARY.md`** - Combined analysis and fixes summary
+
 ## 🎯 Quick Navigation
 
 ### **For New Users**
@@ -124,6 +133,12 @@ sudo python3 legacy/security_agent.py --dashboard
 - `../tests/README.md` - Testing and validation
 - `../examples/README.md` - Usage examples
 - `../config/README.md` - Configuration and setup
+
+### **Recent Updates (2025)**
+- `../CODE_ANALYSIS.md` - Identified what was simulated vs real
+- `../FIXES_PROGRESS.md` - Tracked 5 critical bug fixes
+- `../FINAL_IMPLEMENTATION_ANALYSIS.md` - Explained how it actually works now
+- `../IMPLEMENTATION_SUMMARY.md` - Quick reference for current state
 
 ### **External Resources**
 - eBPF Documentation: https://ebpf.io/

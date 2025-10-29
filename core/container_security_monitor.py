@@ -275,76 +275,136 @@ class ContainerSecurityMonitor:
             )
     
     def _update_process_mappings(self):
-        """Update process-to-container mappings"""
+        """Update process-to-container mappings - OPTIMIZED VERSION"""
         try:
             # Clear existing mappings
             self.container_boundaries.clear()
             self.process_containers.clear()
             
-            # Get all processes
-            for proc in psutil.process_iter(['pid', 'ppid', 'name']):
+            # Pre-populate container boundaries from container info
+            for container_id, container_info in self.containers.items():
+                if container_id not in self.container_boundaries:
+                    self.container_boundaries[container_id] = set()
+            
+            # Only check processes for active containers
+            if not self.containers:
+                return
+            
+            # More efficient: get all PIDs first
+            pids = []
+            try:
+                pids = list(psutil.pids()[:1000])  # Limit to first 1000 for performance
+            except Exception:
+                return
+            
+            # Check each PID
+            for pid in pids:
                 try:
-                    pid = proc.info['pid']
                     container_id = self._get_process_container(pid)
                     
                     if container_id:
                         self.process_containers[pid] = container_id
                         
-                        if container_id not in self.container_boundaries:
-                            self.container_boundaries[container_id] = set()
-                        self.container_boundaries[container_id].add(pid)
+                        if container_id in self.container_boundaries:
+                            self.container_boundaries[container_id].add(pid)
+                        # Also initialize if it's a short ID from cgroup
+                        elif len(container_id) > 12:
+                            # Try to find matching full ID
+                            for full_id in self.containers.keys():
+                                if full_id.startswith(container_id):
+                                    self.container_boundaries[full_id].add(pid)
+                                    self.process_containers[pid] = full_id
+                                    break
                 
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                except (psutil.NoSuchProcess, psutil.AccessDenied, Exception):
                     continue
             
         except Exception as e:
             print(f"Error updating process mappings: {e}")
     
     def _get_process_container(self, pid: int) -> Optional[str]:
-        """Get container ID for a process"""
+        """Get container ID for a process - IMPROVED VERSION"""
         try:
-            # Method 1: Check /proc/pid/cgroup
+            # Method 1: Use Docker API (most reliable if available)
+            if self.docker_client and self.containers:
+                try:
+                    # Get process info
+                    proc = psutil.Process(pid)
+                    
+                    # Check if this process's ancestor is a container's main process
+                    current_pid = pid
+                    depth = 0
+                    max_depth = 50
+                    
+                    while depth < max_depth:
+                        try:
+                            for container_id, container_info in self.containers.items():
+                                if container_info.pid == current_pid:
+                                    # Found match - this is container's main process or descendant
+                                    return container_id[:12]  # Return short ID
+                            
+                            # Check parent
+                            parent = proc.parent()
+                            if parent and parent.pid > 1:  # Not init
+                                current_pid = parent.pid
+                                proc = parent
+                                depth += 1
+                            else:
+                                break
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            break
+                except Exception:
+                    pass
+            
+            # Method 2: Parse cgroup (improved regex)
             cgroup_path = f"/proc/{pid}/cgroup"
             if os.path.exists(cgroup_path):
                 with open(cgroup_path, 'r') as f:
                     for line in f:
-                        if 'docker' in line or 'containerd' in line:
-                            # Extract container ID from cgroup
-                            match = re.search(r'([a-f0-9]{64})', line)
-                            if match:
-                                return match.group(1)
+                        # Docker pattern: .../docker/<12-char-container-id>
+                        docker_match = re.search(r'/docker[:\/]?([a-f0-9]{12,64})', line)
+                        if docker_match:
+                            container_id = docker_match.group(1)
+                            return container_id[:12]  # Return short ID
+                        
+                        # Kubernetes pattern: .../kubepods/.../pod<pod-id>
+                        k8s_match = re.search(r'/kubepods/.*/pod([a-f0-9-]+)', line)
+                        if k8s_match:
+                            return f"k8s-{k8s_match.group(1)[:8]}"
             
-            # Method 2: Check process namespace
-            ns_path = f"/proc/{pid}/ns/pid"
-            if os.path.exists(ns_path):
-                ns_inode = os.stat(ns_path).st_ino
-                # Compare with container namespaces
-                for container_id, container_info in self.containers.items():
-                    if container_info.pid > 0:
-                        try:
-                            container_ns_path = f"/proc/{container_info.pid}/ns/pid"
-                            if os.path.exists(container_ns_path):
-                                container_ns_inode = os.stat(container_ns_path).st_ino
-                                if ns_inode == container_ns_inode:
-                                    return container_id
-                        except:
-                            continue
-            
-            # Method 3: Check process tree
-            try:
-                proc = psutil.Process(pid)
-                parent = proc.parent()
-                if parent:
-                    parent_container = self._get_process_container(parent.pid)
-                    if parent_container:
-                        return parent_container
-            except:
-                pass
+            # Method 3: Check if already in our tracked containers
+            for container_id, container_info in self.containers.items():
+                if container_id in self.container_boundaries:
+                    pids = self.container_boundaries[container_id]
+                    if pid in pids:
+                        return container_id[:12]
             
         except Exception as e:
-            print(f"Error getting process container: {e}")
+            # Silent fail - process might not be in container
+            pass
         
         return None
+    
+    def _is_descendant_of(self, pid: int, ancestor_pid: int) -> bool:
+        """Check if pid is descendant of ancestor_pid (helper method for API method)"""
+        if ancestor_pid == 0:
+            return False
+        
+        current_pid = pid
+        depth = 0
+        max_depth = 100
+        
+        while current_pid != ancestor_pid and depth < max_depth:
+            try:
+                proc = psutil.Process(current_pid)
+                current_pid = proc.ppid()
+                if current_pid == ancestor_pid:
+                    return True
+                depth += 1
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                return False
+        
+        return False
     
     def _create_container_policy(self, container_id: str):
         """Create security policy for a container"""

@@ -108,20 +108,42 @@ class StatefulEBPFMonitor:
     
     def _load_enhanced_ebpf_program(self) -> BPF:
         """Load enhanced eBPF program with stateful tracking"""
-        # Simplified eBPF code that actually works
+        # Real eBPF code that captures actual syscalls
         ebpf_code = """
 #include <uapi/linux/ptrace.h>
+#include <linux/sched.h>
+
+// Event structure to send to userspace
+struct syscall_event {
+    u32 pid;
+    u32 syscall_num;
+    char comm[TASK_COMM_LEN];
+    u64 timestamp;
+};
 
 // Maps
-BPF_HASH(syscall_counts, u32, u64);
+BPF_PERF_OUTPUT(syscall_events);      // For sending events to userspace
+BPF_HASH(syscall_counts, u32, u64);  // For statistics
 
-// Track syscalls using tracepoint (which doesn't support perf_submit)
-// So we'll use a simpler approach - just count syscalls without perf output
+// Track syscalls and capture syscall numbers
 TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
+    int syscall_nr = (int)args->id;  // Capture syscall number!
     
-    // Update count
+    // Create event with REAL syscall data
+    struct syscall_event event = {};
+    event.pid = pid;
+    event.syscall_num = syscall_nr;
+    event.timestamp = bpf_ktime_get_ns();
+    
+    // Get process name
+    bpf_get_current_comm(event.comm, sizeof(event.comm));
+    
+    // Send event to userspace
+    syscall_events.perf_submit(ctx, &event, sizeof(event));
+    
+    // Also update count for statistics
     u64 *count = syscall_counts.lookup(&pid);
     u64 new_count = 1;
     if (count) {
@@ -275,13 +297,19 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     
     def start_monitoring(self, event_callback=None):
         """Start the enhanced eBPF monitoring"""
-        # Just start without checking - BCC objects can be tricky
         print(f"DEBUG start_monitoring: bpf_program exists: {self.bpf_program is not None}")
         self.running = True
         self.event_callback = event_callback
         
+        # Attach perf event handler for REAL syscall events
+        if self.bpf_program:
+            try:
+                self.bpf_program["syscall_events"].open_perf_buffer(self._process_perf_event)
+                print("✅ Perf event buffer attached for real syscall capture")
+            except Exception as e:
+                print(f"⚠️ Failed to attach perf buffer: {e}")
+        
         # Start event processing thread - ALWAYS start it
-        # BCC BPF objects evaluate to False in boolean context, so we skip the check
         print("DEBUG: Starting event thread...")
         self.event_thread = threading.Thread(target=self._process_events)
         self.event_thread.daemon = True
@@ -299,12 +327,11 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         print("Enhanced eBPF monitoring stopped")
     
     def _process_events(self):
-        """Process eBPF events in background thread"""
-        print(f"🔍 Starting event polling loop... bpf_program={self.bpf_program}")
+        """Process eBPF events in background thread - READS REAL EVENTS"""
+        print(f"🔍 Starting real syscall event loop... bpf_program={self.bpf_program}")
         
         # Store reference to avoid issues
         bpf_prog = self.bpf_program
-        print(f"🔍 bpf_prog reference: {bpf_prog}")
         
         if bpf_prog is None:
             print("⚠️ No bpf_program - monitoring without eBPF data")
@@ -312,66 +339,31 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                 time.sleep(1)
             return
         
-        iteration = 0
         try:
+            # Poll perf buffer for REAL syscall events
             while self.running:
                 try:
-                    iteration += 1
-                    # Poll eBPF maps to get syscall counts
-                    items = list(bpf_prog["syscall_counts"].items())
-                    
-                    if iteration % 30 == 1:  # Print every 30 seconds
-                        print(f"DEBUG: Checked syscall map - {len(items)} entries")
-                    
-                    if len(items) == 0:
-                        # No syscalls yet, just wait
-                        time.sleep(1)
-                        continue
-                    
-                    # print(f"✅ Found {len(items)} syscall events!")  # Too verbose
-                    for pid, count in items:
-                        pid_val = pid.value
-                        count_val = count.value
-                        
-                        if count_val > 0:
-                            # print(f"Processing syscalls for PID {pid_val}: {count_val} syscalls")  # Too verbose
-                            # Simulate events based on counts
-                            for _ in range(int(min(count_val, 100))):  # Cap at 100 per iteration
-                                if self.event_callback:
-                                    self.event_callback(pid_val, 'syscall', {
-                                        'pid': pid_val,
-                                        'syscall_num': 0,
-                                        'timestamp': time.time()
-                                    })
-                            
-                            # Reset count - don't reset, just let it accumulate
-                            # bpf_prog["syscall_counts"][pid] = 0
-                    
-                    time.sleep(1)  # Check every second
-                except KeyError as e:
-                    print(f"KeyError in event loop: {e}")
-                    time.sleep(1)
+                    bpf_prog.perf_buffer_poll(timeout=1000)  # 1 second timeout
+                except KeyboardInterrupt:
+                    break
                 except Exception as e:
-                    print(f"Error reading events: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    if "Interrupted system call" not in str(e):
+                        print(f"Error polling perf buffer: {e}")
                     time.sleep(0.1)
         except Exception as e:
             print(f"Error in event processing thread: {e}")
             import traceback
             traceback.print_exc()
     
-    def _process_event_callback(self, cpu, data, size):
-        """Callback for processing eBPF events from perf buffer"""
+    def _process_perf_event(self, cpu, data, size):
+        """Process REAL perf events from eBPF"""
         try:
-            event = self.bpf_program["events"].event(data)
+            # Parse event from eBPF
+            event = self.bpf_program["syscall_events"].event(data)
             
             # Extract fields
             pid = event.pid
             syscall_num = event.syscall_num
-            timestamp = event.timestamp
-            
-            # Convert syscall number to name
             syscall_name = self._syscall_num_to_name(syscall_num)
             
             # Store event
@@ -379,39 +371,114 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                 'pid': pid,
                 'syscall_num': syscall_num,
                 'syscall_name': syscall_name,
-                'timestamp': timestamp
+                'timestamp': event.timestamp
             })
             
             # Update stats
             self.syscall_stats[syscall_name] += 1
             
-            # Call callback if provided
+            # Call callback with REAL syscall name
             if self.event_callback:
                 self.event_callback(pid, syscall_name, {
                     'pid': pid,
                     'syscall_num': syscall_num,
-                    'timestamp': timestamp
+                    'syscall_name': syscall_name,  # ✅ REAL syscall name!
+                    'timestamp': event.timestamp / 1e9  # Convert to seconds
                 })
                 
         except Exception as e:
-            print(f"Error in event callback: {e}")
+            print(f"Error processing perf event: {e}")
     
     def _syscall_num_to_name(self, syscall_num: int) -> str:
-        """Convert syscall number to name"""
-        # Common syscall numbers
+        """Convert syscall number to name - complete x86_64 syscall table"""
+        # Complete Linux syscall table for x86_64
         syscall_map = {
             0: 'read', 1: 'write', 2: 'open', 3: 'close', 4: 'stat',
-            5: 'fstat', 8: 'lseek', 9: 'mmap', 10: 'mprotect',
-            11: 'munmap', 12: 'brk', 13: 'rt_sigaction', 14: 'rt_sigprocmask',
-            22: 'pipe', 23: 'select', 24: 'sched_yield', 32: 'dup', 33: 'dup2',
+            5: 'fstat', 6: 'lstat', 7: 'poll', 8: 'lseek', 9: 'mmap',
+            10: 'mprotect', 11: 'munmap', 12: 'brk', 13: 'rt_sigaction',
+            14: 'rt_sigprocmask', 15: 'rt_sigreturn', 16: 'ioctl', 17: 'pread64',
+            18: 'pwrite64', 19: 'readv', 20: 'writev', 21: 'access',
+            22: 'pipe', 23: 'select', 24: 'sched_yield', 25: 'mremap',
+            26: 'msync', 27: 'mincore', 28: 'madvise', 29: 'shmget',
+            30: 'shmat', 31: 'shmctl', 32: 'dup', 33: 'dup2', 34: 'pause',
+            35: 'nanosleep', 36: 'getitimer', 37: 'alarm', 38: 'setitimer',
             39: 'getpid', 40: 'sendfile', 41: 'socket', 42: 'connect',
             43: 'accept', 44: 'sendto', 45: 'recvfrom', 46: 'sendmsg',
             47: 'recvmsg', 48: 'shutdown', 49: 'bind', 50: 'listen',
-            56: 'clone', 57: 'fork', 58: 'vfork', 59: 'execve',
-            60: 'exit', 61: 'wait4', 62: 'kill', 63: 'uname',
-            90: 'mmap', 101: 'ptrace', 102: 'getuid', 104: 'getgid',
-            106: 'setuid', 107: 'setgid', 161: 'chroot', 165: 'mount',
-            166: 'umount', 199: 'getcwd', 200: 'chdir', 217: 'getdents'
+            51: 'getsockname', 52: 'getpeername', 53: 'socketpair', 54: 'setsockopt',
+            55: 'getsockopt', 56: 'clone', 57: 'fork', 58: 'vfork', 59: 'execve',
+            60: 'exit', 61: 'wait4', 62: 'kill', 63: 'uname', 64: 'semget',
+            65: 'semop', 66: 'semctl', 67: 'shmdt', 68: 'msgget', 69: 'msgsnd',
+            70: 'msgrcv', 71: 'msgctl', 72: 'fcntl', 73: 'flock', 74: 'fsync',
+            75: 'fdatasync', 76: 'truncate', 77: 'ftruncate', 78: 'getdents',
+            79: 'getcwd', 80: 'chdir', 81: 'fchdir', 82: 'rename', 83: 'mkdir',
+            84: 'rmdir', 85: 'creat', 86: 'link', 87: 'unlink', 88: 'symlink',
+            89: 'readlink', 90: 'chmod', 91: 'fchmod', 92: 'chown', 93: 'fchown',
+            94: 'lchown', 95: 'umask', 96: 'gettimeofday', 97: 'getrlimit',
+            98: 'getrusage', 99: 'sysinfo', 100: 'times', 101: 'ptrace',
+            102: 'getuid', 103: 'syslog', 104: 'getgid', 105: 'setuid',
+            106: 'setgid', 107: 'geteuid', 108: 'getegid', 109: 'setpgid',
+            110: 'getppid', 111: 'getpgrp', 112: 'setsid', 113: 'setreuid',
+            114: 'setregid', 115: 'getgroups', 116: 'setgroups', 117: 'setresuid',
+            118: 'getresuid', 119: 'setresgid', 120: 'getresgid', 121: 'getpgid',
+            122: 'setfsuid', 123: 'setfsgid', 124: 'getsid', 125: 'capget',
+            126: 'capset', 127: 'rt_sigpending', 128: 'rt_sigtimedwait',
+            129: 'rt_sigqueueinfo', 130: 'rt_sigsuspend', 131: 'sigaltstack',
+            132: 'utime', 133: 'mknod', 134: 'uselib', 135: 'personality',
+            136: 'ustat', 137: 'statfs', 138: 'fstatfs', 139: 'sysfs',
+            140: 'getpriority', 141: 'setpriority', 142: 'sched_setparam',
+            143: 'sched_getparam', 144: 'sched_setscheduler', 145: 'sched_getscheduler',
+            146: 'sched_get_priority_max', 147: 'sched_get_priority_min',
+            148: 'sched_rr_get_interval', 149: 'mlock', 150: 'munlock',
+            151: 'mlockall', 152: 'munlockall', 153: 'vhangup', 154: 'modify_ldt',
+            155: 'pivot_root', 156: 'prctl', 157: 'arch_prctl', 158: 'adjtimex',
+            159: 'setrlimit', 160: 'chroot', 161: 'sync', 162: 'acct', 163: 'settimeofday',
+            164: 'mount', 165: 'umount2', 166: 'swapon', 167: 'swapoff',
+            168: 'reboot', 169: 'sethostname', 170: 'setdomainname', 171: 'iopl',
+            172: 'ioperm', 173: 'create_module', 174: 'init_module', 175: 'delete_module',
+            176: 'get_kernel_syms', 177: 'query_module', 178: 'quotactl', 179: 'nfsservctl',
+            180: 'getpmsg', 181: 'putpmsg', 182: 'afs_syscall', 183: 'tuxcall',
+            184: 'security', 185: 'gettid', 186: 'readahead', 187: 'setxattr',
+            188: 'lsetxattr', 189: 'fsetxattr', 190: 'getxattr', 191: 'lgetxattr',
+            192: 'fgetxattr', 193: 'listxattr', 194: 'llistxattr', 195: 'flistxattr',
+            196: 'removexattr', 197: 'lremovexattr', 198: 'fremovexattr', 199: 'tkill',
+            200: 'time', 201: 'futex', 202: 'sched_setaffinity', 203: 'sched_getaffinity',
+            204: 'set_thread_area', 205: 'io_setup', 206: 'io_destroy', 207: 'io_getevents',
+            208: 'io_submit', 209: 'io_cancel', 210: 'get_thread_area',
+            211: 'lookup_dcookie', 212: 'epoll_create', 213: 'epoll_ctl_old',
+            214: 'epoll_wait_old', 215: 'remap_file_pages', 216: 'getdents64',
+            217: 'set_tid_address', 218: 'restart_syscall', 219: 'semtimedop',
+            220: 'fadvise64', 221: 'timer_create', 222: 'timer_settime', 223: 'timer_gettime',
+            224: 'timer_getoverrun', 225: 'timer_delete', 226: 'clock_settime',
+            227: 'clock_gettime', 228: 'clock_getres', 229: 'clock_nanosleep',
+            230: 'exit_group', 231: 'epoll_wait', 232: 'epoll_ctl', 233: 'tgkill',
+            234: 'utimes', 235: 'vserver', 236: 'mbind', 237: 'set_mempolicy',
+            238: 'get_mempolicy', 239: 'mq_open', 240: 'mq_unlink', 241: 'mq_timedsend',
+            242: 'mq_timedreceive', 243: 'mq_notify', 244: 'mq_getsetattr',
+            245: 'kexec_load', 246: 'waitid', 247: 'add_key', 248: 'request_key',
+            249: 'keyctl', 250: 'ioprio_set', 251: 'ioprio_get', 252: 'inotify_init',
+            253: 'inotify_add_watch', 254: 'inotify_rm_watch', 255: 'migrate_pages',
+            256: 'openat', 257: 'mkdirat', 258: 'mknodat', 259: 'fchownat',
+            260: 'futimesat', 261: 'newfstatat', 262: 'unlinkat', 263: 'renameat',
+            264: 'linkat', 265: 'symlinkat', 266: 'readlinkat', 267: 'fchmodat',
+            268: 'faccessat', 269: 'pselect6', 270: 'ppoll', 271: 'unshare',
+            272: 'set_robust_list', 273: 'get_robust_list', 274: 'splice',
+            275: 'tee', 276: 'sync_file_range', 277: 'vmsplice', 278: 'move_pages',
+            279: 'utimensat', 280: 'epoll_pwait', 281: 'signalfd', 282: 'timerfd',
+            283: 'eventfd', 284: 'fallocate', 285: 'timerfd_settime', 286: 'timerfd_gettime',
+            287: 'accept4', 288: 'signalfd4', 289: 'eventfd2', 290: 'epoll_create1',
+            291: 'dup3', 292: 'pipe2', 293: 'inotify_init1', 294: 'preadv',
+            295: 'pwritev', 296: 'rt_tgsigqueueinfo', 297: 'perf_event_open',
+            298: 'recvmmsg', 299: 'fanotify_init', 300: 'fanotify_mark',
+            301: 'prlimit64', 302: 'name_to_handle_at', 303: 'open_by_handle_at',
+            304: 'clock_adjtime', 305: 'syncfs', 306: 'sendmmsg', 307: 'setns',
+            308: 'getcpu', 309: 'process_vm_readv', 310: 'process_vm_writev',
+            311: 'kcmp', 312: 'finit_module', 313: 'sched_setattr', 314: 'sched_getattr',
+            315: 'renameat2', 316: 'seccomp', 317: 'getrandom', 318: 'memfd_create',
+            319: 'kexec_file_load', 320: 'bpf', 321: 'execveat', 322: 'userfaultfd',
+            323: 'membarrier', 324: 'mlock2', 325: 'copy_file_range', 326: 'preadv2',
+            327: 'pwritev2', 328: 'pkey_mprotect', 329: 'pkey_alloc', 330: 'pkey_free',
+            331: 'statx', 332: 'io_pgetevents', 333: 'rseq'
         }
         
         return syscall_map.get(syscall_num, f'syscall_{syscall_num}')

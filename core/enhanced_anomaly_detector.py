@@ -152,24 +152,18 @@ class EnhancedAnomalyDetector:
         high_risk_count = sum(syscall_counts.get(syscall, 0) for syscall in high_risk_syscalls)
         features.append(high_risk_count / len(syscalls))
         
-        # 5. Temporal features
+        # 5. Temporal features (NOTE: Will be real when timestamps are captured)
         if self.temporal_features and len(syscalls) > 1:
             # Syscall rate (syscalls per second)
             features.append(len(syscalls))  # Total syscalls in window
             
             # Burst detection
-            syscall_intervals = []
-            for i in range(1, len(syscalls)):
-                # Simulate timing (in real implementation, use actual timestamps)
-                interval = random.uniform(0.001, 0.1)
-                syscall_intervals.append(interval)
-            
-            if syscall_intervals:
-                features.append(np.mean(syscall_intervals))
-                features.append(np.std(syscall_intervals))
-                features.append(np.max(syscall_intervals))
-            else:
-                features.extend([0.0, 0.0, 0.0])
+            # TODO: Use actual timestamps from syscall events
+            # For now, estimate based on syscall patterns
+            # In a real implementation, we'd have timestamps from eBPF events
+            features.append(len(syscalls) / 100)  # Estimate: 100 syscalls per second avg
+            features.append(1.0 / len(syscalls))  # Estimated average interval
+            features.append(len(syscalls) * 0.1)  # Estimated max interval
         
         # 6. Network-related features
         if self.network_features:

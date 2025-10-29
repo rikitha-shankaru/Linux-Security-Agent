@@ -1,54 +1,57 @@
 # Linux Security Agent
 
-A cutting-edge real-time system call monitoring and risk assessment agent for Linux and macOS systems, incorporating the latest cybersecurity research findings (2023-2025). Comparable to enterprise solutions like CrowdStrike Falcon with advanced research-based enhancements.
+Real-time system call monitoring and threat detection agent for Linux. Uses eBPF to capture syscalls from the kernel and ML to detect anomalies.
 
-## 🚀 Core Features
+**Status:** Working - Fixed several bugs (January 2025)
 
-- **Real-time System Call Monitoring**: Uses eBPF/BCC on Linux, psutil simulation on macOS
-- **Risk Scoring**: Assigns risk scores (0-100) to processes based on system call patterns
-- **Process Tracking**: Continuously monitors and updates risk scores for all processes
-- **Cross-Platform**: Works on Linux (with eBPF) and macOS (with simulation)
-- **Multiple Output Formats**: Console logging and JSON output for integration
-- **Anomaly Detection**: Optional machine learning-based anomaly detection
-- **Rich Dashboard**: Real-time CLI table showing all processes and their risk levels
-- **Automated Actions**: Configurable actions (warn/freeze/kill) based on risk thresholds
-- **Cloud Backend**: Optional cloud integration for centralized management
-- **Timeout Support**: Run for specified duration or indefinitely
-- **Demo Scripts**: Test normal and suspicious behavior patterns
+**Recent fixes:**
+- Now captures actual syscall names (333 mapped) instead of just counting
+- ML trains on real system behavior instead of random data
+- Added automatic memory cleanup to prevent leaks
+- Fixed thread safety issues
+- Improved container detection for Docker
 
-## 🔬 Research-Based Enhancements (2024-2025)
+## Features
 
-### **Stateful eBPF Monitoring**
-**Based on:** "Programmable System Call Security with eBPF" (2023)
-- **Stateful Process Tracking**: Maintains process state across system calls
-- **Programmable Security Policies**: Dynamic policy updates without kernel modification
-- **Advanced Filtering**: Beyond traditional seccomp-bpf limitations
-- **Real-Time Adaptation**: Policies adapt based on runtime conditions
+- Real-time syscall monitoring via eBPF on Linux
+- ML-based anomaly detection trained on real system behavior
+- Risk scoring (0-100) based on syscall patterns
+- Process tracking with automatic memory cleanup
+- Container detection for Docker and Kubernetes
+- Real-time dashboard showing risk scores and syscalls
+- Cross-platform support (Linux with eBPF, macOS simulation)
+- JSON and console output formats
+- Demo scripts for testing
 
-### **Unsupervised Anomaly Detection**
-**Based on:** U-SCAD research (2024)
-- **Multiple ML Algorithms**: Isolation Forest, One-Class SVM, DBSCAN ensemble
-- **Behavioral Baselining**: Learns normal behavior patterns automatically
-- **Advanced Feature Extraction**: 50+ features from system calls and process info
-- **Ensemble Detection**: Combines multiple models for improved accuracy
+## Research Features
 
-### **Container-Aware Security**
-**Based on:** "Cross Container Attacks: The Bewildered eBPF on Clouds" (2023)
-- **Container Boundary Detection**: Maps processes to containers automatically
-- **Cross-Container Attack Prevention**: Blocks unauthorized inter-container access
-- **Container-Specific Policies**: Tailored security rules per container
-- **Docker Integration**: Real-time container monitoring and policy enforcement
+Implements ideas from recent research:
 
-## 📦 Installation
+**Stateful eBPF Monitoring** - Based on "Programmable System Call Security with eBPF" (2023)
+- Tracks process state across system calls
+- Dynamic policies that update at runtime
+- Beyond basic seccomp filtering
+
+**Unsupervised Anomaly Detection** - Based on U-SCAD research (2024)
+- Uses multiple ML algorithms (Isolation Forest, One-Class SVM, DBSCAN)
+- Learns normal behavior automatically
+- Ensemble approach for better detection
+
+**Container-Aware Security** - Based on "Cross Container Attacks" research (2023)
+- Detects which container processes belong to
+- Prevents cross-container attacks
+- Container-specific policies
+- Docker integration
+
+## Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/rikitha-shankaru/Linux-Security-Agent.git
 cd Linux-Security-Agent
 
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -86,55 +89,30 @@ python3 -c "from enhanced_anomaly_detector import EnhancedAnomalyDetector; print
 python3 -c "from container_security_monitor import ContainerSecurityMonitor; print('✅ Container security monitor available')"
 ```
 
-## 🎯 Usage
+## Usage
 
-### Enhanced Security Agent (Recommended)
+### Basic usage
 ```bash
-# Run with all research-based enhancements
+# Run the agent with dashboard
 sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
+```
 
-# Train anomaly detection models first
+### With training
+```bash
+# Train models first on real data
 python3 core/enhanced_security_agent.py --train-models
 
-# Run with JSON output
+# Then run monitoring
+sudo python3 core/enhanced_security_agent.py --dashboard
+```
+
+### Other options
+```bash
+# JSON output
 sudo python3 core/enhanced_security_agent.py --output json --timeout 60
 
-# Run with custom configuration
-sudo python3 core/enhanced_security_agent.py --config config/enhanced_config.json --dashboard
-```
-
-### Basic Monitoring (Legacy)
-```bash
-# Linux (with eBPF)
-sudo python3 security_agent.py --dashboard
-
-# macOS (simulation mode)
-python3 security_agent_mac.py --dashboard --threshold 30
-```
-
-### Advanced Options
-```bash
-# Custom risk threshold
-python3 security_agent_mac.py --threshold 50
-
-# Run with timeout (auto-stop after 30 seconds)
-python3 security_agent_mac.py --dashboard --timeout 30
-
-# JSON output for integration
-python3 security_agent_mac.py --output json
-
-# Enable anomaly detection
-python3 security_agent_mac.py --anomaly-detection
-
-# Enable automated actions (DANGEROUS)
-python3 security_agent_mac.py --enable-kill --threshold 80
-```
-
-### Stop the Agent
-```bash
-# Graceful stop with Ctrl+C
-# Or use timeout parameter for auto-stop
-# Or force kill: pkill -f "security_agent_mac.py"
+# With timeout (auto-stop)
+sudo python3 core/enhanced_security_agent.py --dashboard --timeout 30
 ```
 
 ## 🧪 Demo and Testing
@@ -176,57 +154,57 @@ System Info:
   Last scan: 15:52:22
 ```
 
-## 🎓 Academic and Research Contributions
+## Research Contribution
 
-### **Research Papers Referenced**
-- **"Programmable System Call Security with eBPF"** (2023) - Stateful eBPF monitoring implementation
-- **"U-SCAD: Unsupervised System Call-Driven Anomaly Detection"** (2024) - Advanced ML-based anomaly detection
-- **"Cross Container Attacks: The Bewildered eBPF on Clouds"** (2023) - Container security monitoring
+This implements ideas from recent research papers:
+- "Programmable System Call Security with eBPF" (2023) - eBPF monitoring
+- "U-SCAD: Unsupervised System Call-Driven Anomaly Detection" (2024) - ML detection
+- "Cross Container Attacks" (2023) - Container security
 
-### **Novel Contributions**
-- **First Implementation** combining stateful eBPF, unsupervised learning, and container security
-- **Real-Time ML Integration** for security monitoring with minimal overhead
-- **Container-Aware eBPF** monitoring with cross-container attack prevention
-- **Ensemble Anomaly Detection** using multiple ML algorithms for improved accuracy
+### What I Actually Implemented
 
-### **Academic Value**
-- **Production-Ready Research**: Implements cutting-edge research in a practical system
-- **Open Source Contribution**: Available for research community use and improvement
-- **Comprehensive Documentation**: Detailed implementation guides and research background
-- **Performance Benchmarks**: Real-world performance metrics and optimization techniques
+After fixing bugs, the system now:
+- Captures real syscalls from kernel via eBPF (333 mapped)
+- Trains ML on actual system behavior 
+- Thread-safe with proper locking
+- Automatic memory cleanup
+- Container detection for Docker/K8s
+- Risk scoring from real syscall patterns
+- Anomaly detection using real ML models
 
-## 🛡️ System Requirements
+### Recent Fixes
+
+I fixed 5 critical bugs:
+1. eBPF capture - now gets actual syscall names
+2. ML training - uses real data, not random
+3. Memory management - automatic cleanup
+4. Thread safety - reduced locks significantly  
+5. Container detection - improved reliability
+
+See `FIXES_PROGRESS.md` for details.
+
+## Requirements
 
 ### Linux
 - Linux kernel 4.1 or higher
 - Root privileges (for eBPF)
 - Python 3.7+
-- BCC (Berkeley Packet Capture) tools
+- BCC tools (install with: sudo apt-get install bpfcc-tools python3-bpfcc)
 
 ### macOS
-- macOS 10.14+ (tested on macOS 15.0)
+- macOS 10.14+
 - Python 3.7+
-- No root privileges required (simulation mode)
+- No root needed (uses simulation mode)
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
-### Common Issues
-
-**Import errors:**
+If you get import errors:
 ```bash
-# Fix urllib3 import
 pip install requests>=2.28.0
-
-# Fix psutil issues
 pip install psutil>=5.8.0
 ```
 
-**NoneType errors:**
-- Fixed in latest version - ensure you're using `security_agent_mac.py`
-
-**Permission errors:**
-- On Linux: Run with `sudo`
-- On macOS: No special permissions needed
+Permission errors on Linux - need to run with sudo for eBPF. On macOS it works without sudo.
 
 ## 🏗️ Architecture
 

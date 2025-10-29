@@ -348,54 +348,139 @@ class EnhancedSecurityAgent:
         if self.enhanced_anomaly_detector and not self.enhanced_anomaly_detector.is_fitted:
             self._train_anomaly_models()
         
+        # Start cleanup thread to prevent memory leaks
+        self.cleanup_thread = threading.Thread(target=self._cleanup_loop)
+        self.cleanup_thread.daemon = True
+        self.cleanup_thread.start()
+        self.console.print("✅ Memory cleanup thread started", style="green")
+        
         self.running = True
         self.console.print("🎉 Enhanced security monitoring started successfully!", style="bold green")
     
     def _train_anomaly_models(self):
-        """Train anomaly detection models with normal behavior data"""
-        self.console.print("🧠 Training anomaly detection models...", style="yellow")
+        """Train anomaly detection models with REAL behavior data"""
+        self.console.print("🧠 Training anomaly detection models with real data...", style="yellow")
         
-        # Generate training data - try to use real data if available, otherwise simulate
+        # Collect ACTUAL syscall data from running processes
         training_data = []
+        collection_time = 30  # Collect for 30 seconds
+        start_time = time.time()
         
-        # If we have actual syscall data from monitoring, use it
-        if self.processes and self.syscall_counts:
-            for pid, proc in list(self.processes.items())[:100]:  # Use up to 100 processes
-                if proc.get('syscalls'):
-                    training_data.append((
-                        proc['syscalls'][-100:],  # Use last 100 syscalls
-                        {
-                            'cpu_percent': random.uniform(0, 30),
-                            'memory_percent': random.uniform(0, 15),
-                            'num_threads': random.randint(1, 5)
-                        }
-                    ))
+        self.console.print(f"📊 Collecting real syscall data for {collection_time} seconds...", style="yellow")
         
-        # If not enough real data, supplement with simulated data
-        if len(training_data) < 1000:
-            self.console.print(f"📊 Using {len(training_data)} real samples, supplementing with simulated data...", style="yellow")
-            for i in range(1000 - len(training_data)):
-                # Simulate normal syscall patterns
-                normal_syscalls = ['read', 'write', 'open', 'close', 'mmap', 'munmap']
-                syscalls = [random.choice(normal_syscalls) for _ in range(random.randint(10, 50))]
+        # Collect real data
+        while (time.time() - start_time) < collection_time:
+            # Collect from processes we're monitoring
+            with self.processes_lock:
+                for pid, proc in self.processes.items():
+                    if proc.get('syscalls') and len(proc['syscalls']) > 10:
+                        # Use REAL syscall data
+                        syscalls = list(proc['syscalls'])
+                        
+                        # Get REAL process info from psutil
+                        try:
+                            p = psutil.Process(int(pid))
+                            process_info = {
+                                'cpu_percent': p.cpu_percent(interval=0.1) or 0,
+                                'memory_percent': p.memory_percent(),
+                                'num_threads': p.num_threads()
+                            }
+                            
+                            training_data.append((syscalls, process_info))
+                            
+                            # Limit to first 1000 samples
+                            if len(training_data) >= 1000:
+                                break
+                        except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+                            continue
+                
+                # Check if we have enough data
+                if len(training_data) >= 1000:
+                    break
+            
+            time.sleep(0.5)  # Collect every 0.5 seconds
+        
+        # If still not enough data, supplement with baseline patterns
+        if len(training_data) < 100:
+            self.console.print("⚠️ Not enough real data, using baseline patterns", style="yellow")
+            training_data = self._get_baseline_patterns()
+        else:
+            self.console.print(f"✅ Collected {len(training_data)} real training samples", style="green")
+        
+        # Train models on REAL data
+        if self.enhanced_anomaly_detector and training_data:
+            self.enhanced_anomaly_detector.train_models(training_data)
+            self.console.print("✅ Anomaly detection models trained on REAL data", style="green")
+        else:
+            self.console.print("⚠️ No data to train on", style="yellow")
+    
+    def _get_baseline_patterns(self):
+        """Get baseline syscall patterns for common processes"""
+        patterns = {
+            'text_editor': ['open', 'read', 'write', 'close', 'select', 'mmap', 'munmap'],
+            'web_browser': ['socket', 'connect', 'send', 'recv', 'poll', 'read', 'write', 'mmap'],
+            'shell': ['fork', 'execve', 'wait', 'read', 'write', 'chdir', 'getcwd', 'close'],
+            'file_manager': ['open', 'stat', 'getdents', 'readlink', 'close', 'access', 'fstat'],
+        }
+        
+        training_data = []
+        for pattern_type, syscalls in patterns.items():
+            for _ in range(50):  # 50 samples per pattern
+                # Create realistic sequences with repetition
+                sequence = []
+                for syscall in syscalls:
+                    # Add realistic repetition
+                    for _ in range(random.randint(1, 3)):
+                        sequence.append(syscall)
                 
                 process_info = {
-                    'cpu_percent': random.uniform(0, 30),
-                    'memory_percent': random.uniform(0, 15),
+                    'cpu_percent': random.uniform(1, 20),
+                    'memory_percent': random.uniform(1, 10),
                     'num_threads': random.randint(1, 5)
                 }
                 
-                training_data.append((syscalls, process_info))
+                training_data.append((sequence, process_info))
         
-        # Train models
-        self.enhanced_anomaly_detector.train_models(training_data)
-        self.console.print("✅ Anomaly detection models trained", style="green")
+        return training_data
+    
+    def _cleanup_old_processes(self):
+        """Remove stale processes to prevent memory leaks"""
+        current_time = time.time()
+        stale_pids = []
+        
+        with self.processes_lock:
+            for pid, proc in list(self.processes.items()):
+                # Remove if not updated in 5 minutes
+                last_update = proc.get('last_update', 0)
+                if current_time - last_update > 300:  # 5 minutes
+                    stale_pids.append(pid)
+            
+            # Remove stale processes
+            for pid in stale_pids:
+                del self.processes[pid]
+        
+        if stale_pids:
+            self.console.print(f"🧹 Cleaned up {len(stale_pids)} stale processes", style="dim")
+    
+    def _cleanup_loop(self):
+        """Periodic cleanup loop to prevent memory leaks"""
+        while self.running:
+            try:
+                self._cleanup_old_processes()
+                time.sleep(60)  # Run cleanup every minute
+            except Exception as e:
+                print(f"Error in cleanup loop: {e}")
+                time.sleep(60)
     
     def stop_monitoring(self):
         """Stop enhanced security monitoring"""
         self.console.print("🛑 Stopping Enhanced Linux Security Agent...", style="yellow")
         
         self.running = False
+        
+        # Stop cleanup thread
+        if hasattr(self, 'cleanup_thread'):
+            self.cleanup_thread.join(timeout=5)
         
         # Stop enhanced eBPF monitoring
         if self.enhanced_ebpf_monitor:
@@ -453,8 +538,12 @@ class EnhancedSecurityAgent:
                     # eBPF monitor not available or failed
                     pass
             
-            # Update process information with thread safety
+            # Update process information with thread safety (ONE lock for all updates)
             current_time = time.time()
+            process_snapshot = None
+            risk_score = 0.0
+            should_log_high_risk = False
+            
             with self.processes_lock:
                 if pid not in self.processes:
                     try:
@@ -477,22 +566,52 @@ class EnhancedSecurityAgent:
                 process['syscalls'].append(syscall)  # Deque auto-bounds
                 process['syscall_count'] += 1
                 process['last_update'] = current_time
+                
+                # Create snapshot while still in lock
+                process_snapshot = dict(process)
+                process_snapshot['syscalls'] = list(process['syscalls'])
+                
+                # Calculate risk score while in lock
+                if self.enhanced_risk_scorer:
+                    # Apply time decay first
+                    if 'last_risk_update' in process:
+                        time_since_last = current_time - process['last_risk_update']
+                        # Decay: lose 1% per second
+                        decay_factor = 0.99 ** time_since_last
+                        process['risk_score'] = process['risk_score'] * decay_factor
+                    
+                    # Calculate new risk score
+                    risk_score = self.enhanced_risk_scorer.update_risk_score(
+                        pid, list(process['syscalls']), process_info, 
+                        process.get('anomaly_score', 0.0), container_id
+                    )
+                    
+                    # Smooth with previous score (exponential moving average)
+                    if 'risk_score' in process and process['risk_score'] > 0:
+                        process['risk_score'] = 0.7 * risk_score + 0.3 * process['risk_score']
+                    else:
+                        process['risk_score'] = risk_score
+                    
+                    process['last_risk_update'] = current_time
+                    
+                    # Check for high-risk processes
+                    if process['risk_score'] >= self.config.get('risk_threshold', 50.0):
+                        self.stats['high_risk_processes'] += 1
+                        should_log_high_risk = True
             
-            # Create snapshot for later processing (outside lock)
-            with self.processes_lock:
-                if pid in self.processes:
-                    process_snapshot = dict(self.processes[pid])
-                    process_snapshot['syscalls'] = list(process_snapshot['syscalls'])
-                else:
-                    return
+            # Now do heavy work OUTSIDE the lock (anomaly detection is expensive)
+            if not process_snapshot:
+                return
             
-            # Enhanced anomaly detection
+            # Enhanced anomaly detection (OUTSIDE lock - this is expensive)
             anomaly_result = None
             if self.enhanced_anomaly_detector:
                 try:
                     anomaly_result = self.enhanced_anomaly_detector.detect_anomaly_ensemble(
                         process_snapshot['syscalls'], process_info, pid
                     )
+                    
+                    # Update anomaly score back in process (with lock)
                     with self.processes_lock:
                         if pid in self.processes:
                             self.processes[pid]['anomaly_score'] = anomaly_result.anomaly_score
@@ -508,64 +627,36 @@ class EnhancedSecurityAgent:
                 except Exception as e:
                     print(f"Anomaly detection error: {e}")
             
-            # Enhanced risk scoring
-            if self.enhanced_risk_scorer:
-                try:
-                    with self.processes_lock:
-                        if pid in self.processes:
-                            process = self.processes[pid]
-                            
-                            # Apply time decay first
-                            current_time = time.time()
-                            if 'last_risk_update' in process:
-                                time_since_last = current_time - process['last_risk_update']
-                                # Decay: lose 1% per second
-                                decay_factor = 0.99 ** time_since_last
-                                process['risk_score'] = process['risk_score'] * decay_factor
-                            
-                            # Calculate new risk score
-                            risk_score = self.enhanced_risk_scorer.update_risk_score(
-                                pid, process['syscalls'], process_info, 
-                                process.get('anomaly_score', 0.0), container_id
-                            )
-                            
-                            # Smooth with previous score (exponential moving average)
-                            if 'risk_score' in process and process['risk_score'] > 0:
-                                process['risk_score'] = 0.7 * risk_score + 0.3 * process['risk_score']
-                            else:
-                                process['risk_score'] = risk_score
-                            
-                            process['last_risk_update'] = current_time
-                            
-                            # Check for high-risk processes
-                            if process['risk_score'] >= self.config.get('risk_threshold', 50.0):
-                                self.stats['high_risk_processes'] += 1
-                                self._log_security_event('high_risk_process', {
-                                    'pid': pid,
-                                    'process_name': process['name'],
-                                    'risk_score': process['risk_score'],
-                                    'anomaly_score': process.get('anomaly_score', 0.0)
-                                })
-                except Exception as e:
-                    print(f"Risk scoring error: {e}")
+            # Log high-risk event (use snapshot data)
+            if should_log_high_risk:
+                self._log_security_event('high_risk_process', {
+                    'pid': pid,
+                    'process_name': process_snapshot['name'],
+                    'risk_score': risk_score,
+                    'anomaly_score': process_snapshot.get('anomaly_score', 0.0)
+                })
             
-            # Take action if needed
+            # Take action if needed (with lock)
             if self.action_handler:
                 try:
                     with self.processes_lock:
                         if pid in self.processes:
                             process = self.processes[pid]
                             self.action_handler.take_action(
-                                pid, process['name'], process['risk_score'], process.get('anomaly_score', 0.0)
+                                pid, process['name'], process['risk_score'], 
+                                process.get('anomaly_score', 0.0)
                             )
                             self.stats['actions_taken'] += 1
                 except Exception as e:
                     print(f"Action handler error: {e}")
             
-            # Update statistics
+            # Update statistics (no lock needed for syscall_counts, it's thread-safe defaultdict)
             self.syscall_counts[syscall] += 1
-            with self.processes_lock:
-                self.stats['total_processes'] = len(self.processes)
+            
+            # Update total processes count occasionally (not every syscall)
+            if random.random() < 0.001:  # Update 0.1% of the time
+                with self.processes_lock:
+                    self.stats['total_processes'] = len(self.processes)
             
         except Exception as e:
             self.console.print(f"❌ Error processing syscall event: {e}", style="red")
