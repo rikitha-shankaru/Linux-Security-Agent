@@ -307,7 +307,19 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         if self.bpf_program is not None:
             print("DEBUG: bpf_program exists, opening perf buffer...")
             try:
-                self.bpf_program["syscall_events"].open_perf_buffer(self._process_perf_event)
+                # Increase page_cnt and provide a lost callback to avoid spammy 'Possibly lost X samples'
+                self.lost_events = 0
+                def _lost_cb(lost_cnt):
+                    self.lost_events += lost_cnt
+                    # Log occasionally to avoid spam
+                    if self.lost_events % 1000 < lost_cnt:
+                        print(f"⚠️ Lost perf events so far: {self.lost_events}")
+
+                self.bpf_program["syscall_events"].open_perf_buffer(
+                    self._process_perf_event,
+                    lost_cb=_lost_cb,
+                    page_cnt=64,
+                )
                 print("✅ Perf event buffer ATTACHED!")
             except Exception as e:
                 print(f"⚠️ Failed to open perf buffer: {e}")
@@ -331,6 +343,12 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         self.running = False
         if hasattr(self, 'event_thread'):
             self.event_thread.join(timeout=5)
+        # Best-effort cleanup to release perf buffers/kprobes cleanly
+        try:
+            if self.bpf_program is not None:
+                self.bpf_program.cleanup()
+        except Exception:
+            pass
         print("Enhanced eBPF monitoring stopped")
     
     def _process_events(self):
@@ -365,6 +383,13 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             print(f"Error in event processing thread: {e}")
             import traceback
             traceback.print_exc()
+        finally:
+            # Ensure BPF resources are cleaned up when the loop exits
+            try:
+                if self.bpf_program is not None:
+                    self.bpf_program.cleanup()
+            except Exception:
+                pass
     
     def _process_perf_event(self, cpu, data, size):
         """Process REAL perf events from eBPF"""
