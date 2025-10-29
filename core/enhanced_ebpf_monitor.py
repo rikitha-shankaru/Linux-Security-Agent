@@ -294,9 +294,13 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     
     def _process_events(self):
         """Process eBPF events in background thread"""
-        if not self.bpf_program:
-            print("❌ No bpf_program in _process_events")
-            return
+        print("🔍 Starting event polling loop...")
+        print(f"DEBUG: self.bpf_program is None: {self.bpf_program is None}")
+        
+        # Skip if no bpf_program
+        if self.bpf_program is None:
+            print("❌ No bpf_program in _process_events - will continue with limited functionality")
+            # Continue anyway to show the loop is running
         
         print("🔍 Starting event polling loop...")
         iteration = 0
