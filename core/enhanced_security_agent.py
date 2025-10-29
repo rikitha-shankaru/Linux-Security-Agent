@@ -481,10 +481,16 @@ class EnhancedSecurityAgent:
         while self.running:
             try:
                 self._cleanup_old_processes()
-                time.sleep(60)  # Run cleanup every minute
-            except Exception as e:
-                print(f"Error in cleanup loop: {e}")
-                time.sleep(60)
+                # Check running flag frequently
+                for _ in range(60):  # 60 x 1 = 60 seconds
+                    if not self.running:
+                        return
+                    time.sleep(1)
+            except Exception:
+                # Exit on any exception if we're shutting down
+                if not self.running:
+                    return
+                time.sleep(1)
     
     def stop_monitoring(self):
         """Stop enhanced security monitoring"""
@@ -495,9 +501,8 @@ class EnhancedSecurityAgent:
         
         self.running = False
         
-        # Stop cleanup thread
-        if hasattr(self, 'cleanup_thread'):
-            self.cleanup_thread.join(timeout=5)
+        # Stop cleanup thread (daemon thread, no need to join)
+        # Just mark as stopped - daemon thread will exit automatically
         
         # Stop enhanced eBPF monitoring
         if self.enhanced_ebpf_monitor:
@@ -1055,14 +1060,23 @@ def main():
     
     # Set up signal handlers for clean exit - MUST be before start_monitoring
     exit_requested = threading.Event()
+    shutdown_initiated = False
     
     def signal_handler(signum, frame):
-        print("\n🛑 Ctrl+C detected! Stopping agent... (this may take 2-3 seconds)")
+        nonlocal shutdown_initiated
+        if shutdown_initiated:
+            # Force immediate exit on second Ctrl+C
+            print("\n🛑 Force exit!")
+            os._exit(1)
+        
+        shutdown_initiated = True
+        print("\n🛑 Ctrl+C detected! Stopping agent...")
         exit_requested.set()
         agent.running = False
-        # Force stop threads immediately
-        if hasattr(agent, 'cleanup_thread'):
-            agent.cleanup_thread.join(timeout=1)
+        
+        # Force immediate stop of all threads
+        if agent.enhanced_ebpf_monitor:
+            agent.enhanced_ebpf_monitor.running = False
     
     # Install signal handlers
     signal.signal(signal.SIGINT, signal_handler)
@@ -1077,27 +1091,37 @@ def main():
         if args.dashboard:
             # Show real-time dashboard - use Live with screen=False for better signal handling
             from rich.live import Live
-            live = Live(agent._create_dashboard(), refresh_per_second=2, screen=False)
-            
+            live = None
             try:
+                live = Live(agent._create_dashboard(), refresh_per_second=2, screen=False)
                 live.start()
+                
                 while agent.running and not exit_requested.is_set():
                     if args.timeout > 0 and (time.time() - start_time) >= args.timeout:
                         break
                     
-                    try:
-                        live.update(agent._create_dashboard())
-                    except:
+                    if exit_requested.is_set() or not agent.running:
                         break
                     
-                    # Short sleep to allow signal handling
-                    for _ in range(10):  # 10 x 0.05 = 0.5 seconds
-                        if exit_requested.is_set():
-                            break
-                        time.sleep(0.05)
+                    try:
+                        live.update(agent._create_dashboard())
+                    except (KeyboardInterrupt, SystemExit):
+                        break
+                    except:
+                        pass
+                    
+                    # Very short sleep - check exit frequently
+                    time.sleep(0.1)
+                    if exit_requested.is_set() or not agent.running:
+                        break
+            except (KeyboardInterrupt, SystemExit):
+                pass
             finally:
-                live.stop()
-                live.refresh()
+                if live:
+                    try:
+                        live.stop()
+                    except:
+                        pass
         else:
             # Run without dashboard
             while agent.running and not exit_requested.is_set():

@@ -330,10 +330,9 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         else:
             print("DEBUG: NO bpf_program found!")
         
-        # Start event processing thread - ALWAYS start it
+        # Start event processing thread - ALWAYS start it (daemon for clean exit)
         print("DEBUG: Starting event thread...")
-        self.event_thread = threading.Thread(target=self._process_events)
-        self.event_thread.daemon = True
+        self.event_thread = threading.Thread(target=self._process_events, daemon=True)
         self.event_thread.start()
         print("DEBUG: Event thread started!")
         
@@ -343,8 +342,10 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     def stop_monitoring(self):
         """Stop the enhanced eBPF monitoring"""
         self.running = False
-        if hasattr(self, 'event_thread'):
-            self.event_thread.join(timeout=5)
+        # Daemon thread - no need to join, will exit automatically when main thread exits
+        # Give it a tiny moment to see the flag, but don't block
+        if hasattr(self, 'event_thread') and self.event_thread.is_alive():
+            self.event_thread.join(timeout=0.5)  # Very short timeout
         # Best-effort cleanup to release perf buffers/kprobes cleanly (only once)
         if not getattr(self, '_cleanup_done', False):
             try:
