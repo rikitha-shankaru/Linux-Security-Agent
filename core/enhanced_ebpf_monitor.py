@@ -342,22 +342,36 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     def stop_monitoring(self):
         """Stop the enhanced eBPF monitoring"""
         self.running = False
-        # Daemon thread - no need to join, will exit automatically when main thread exits
-        # Give it a tiny moment to see the flag, but don't block
-        if hasattr(self, 'event_thread') and self.event_thread.is_alive():
-            self.event_thread.join(timeout=0.5)  # Very short timeout
+        # Daemon thread - will exit automatically, don't wait for it
         # Best-effort cleanup to release perf buffers/kprobes cleanly (only once)
         if not getattr(self, '_cleanup_done', False):
             try:
                 if self.bpf_program is not None:
-                    self.bpf_program.cleanup()
+                    # Cleanup can sometimes hang, use timeout
+                    import signal
+                    
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError("Cleanup timeout")
+                    
+                    # Set 1 second timeout for cleanup
+                    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(1)
+                    
+                    try:
+                        self.bpf_program.cleanup()
+                        signal.alarm(0)  # Cancel alarm
+                        signal.signal(signal.SIGALRM, old_handler)
+                    except (TimeoutError, Exception):
+                        signal.alarm(0)  # Cancel alarm
+                        signal.signal(signal.SIGALRM, old_handler)
+                        pass  # Ignore cleanup errors
+                
                 self._cleanup_done = True
                 # Log lost events summary only at shutdown
                 if hasattr(self, 'lost_events') and self.lost_events > 0:
-                    print(f"ℹ️  Total perf events lost during monitoring: {self.lost_events}")
+                    print(f"ℹ️  Total perf events lost: {self.lost_events}")
             except Exception:
                 pass
-        print("Enhanced eBPF monitoring stopped")
     
     def _process_events(self):
         """Process eBPF events in background thread - READS REAL EVENTS"""
@@ -380,18 +394,26 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     poll_count += 1
                     if poll_count % 10 == 0:
                         print(f"DEBUG: Polling perf buffer (count={poll_count}), events_so_far={len(self.events)}")
-                    # Use shorter timeout to check self.running more frequently
-                    bpf_prog.perf_buffer_poll(timeout=100)  # 100ms timeout - check running flag more often
+                    
+                    # Use very short timeout to check self.running frequently
+                    # This allows immediate exit when running=False
+                    bpf_prog.perf_buffer_poll(timeout=50)  # 50ms timeout - very responsive to exit
+                    
+                    # Check running flag immediately after each poll
+                    if not self.running:
+                        break
                 except KeyboardInterrupt:
                     self.running = False
                     break
                 except Exception as e:
-                    if "Interrupted system call" not in str(e) and "Interrupted" not in str(e):
-                        # Ignore interrupt errors - we're shutting down
-                        pass
+                    error_str = str(e)
+                    if "Interrupted" in error_str or "EINTR" in error_str:
+                        # Normal interrupt - check if we should exit
+                        if not self.running:
+                            break
+                    # For other errors, check running flag and exit if needed
                     if not self.running:
                         break
-                    time.sleep(0.1)
         except Exception as e:
             print(f"Error in event processing thread: {e}")
             import traceback

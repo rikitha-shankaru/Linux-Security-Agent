@@ -496,25 +496,35 @@ class EnhancedSecurityAgent:
         if not self.running:
             return  # Already stopped
         
-        self.console.print("🛑 Stopping Enhanced Linux Security Agent...", style="yellow")
+        print("\n🛑 Stopping Enhanced Linux Security Agent...", flush=True)
         
         self.running = False
         
         # Stop cleanup thread (daemon thread, no need to join)
         # Just mark as stopped - daemon thread will exit automatically
         
-        # Stop enhanced eBPF monitoring
+        # Stop enhanced eBPF monitoring immediately
         if self.enhanced_ebpf_monitor:
-            self.enhanced_ebpf_monitor.stop_monitoring()
+            try:
+                self.enhanced_ebpf_monitor.running = False  # Force stop first
+                self.enhanced_ebpf_monitor.stop_monitoring()
+            except:
+                pass
         
         # Stop container security monitoring
         if self.container_security_monitor:
-            self.container_security_monitor.stop_monitoring()
+            try:
+                self.container_security_monitor.stop_monitoring()
+            except:
+                pass
         
-        # Save risk scores before shutdown
-        self._save_risk_scores()
+        # Save risk scores before shutdown (fast, non-blocking)
+        try:
+            self._save_risk_scores()
+        except:
+            pass
         
-        self.console.print("✅ Enhanced security monitoring stopped", style="green")
+        print("✅ Enhanced security monitoring stopped", flush=True)
     
     def _load_risk_scores(self):
         """Load risk scores from previous run if available"""
@@ -1134,6 +1144,7 @@ def main():
                 
                 while agent.running and not exit_requested.is_set():
                     if args.timeout > 0 and (time.time() - start_time) >= args.timeout:
+                        agent.running = False
                         break
                     
                     if exit_requested.is_set() or not agent.running:
@@ -1142,22 +1153,28 @@ def main():
                     try:
                         live.update(agent._create_dashboard())
                     except (KeyboardInterrupt, SystemExit):
+                        agent.running = False
                         break
                     except:
                         pass
                     
-                    # Very short sleep - check exit frequently
-                    time.sleep(0.1)
-                    if exit_requested.is_set() or not agent.running:
-                        break
+                    # Very short sleep - check exit VERY frequently
+                    for _ in range(10):  # 10 x 0.01 = 0.1 seconds total
+                        if exit_requested.is_set() or not agent.running:
+                            break
+                        time.sleep(0.01)
             except (KeyboardInterrupt, SystemExit):
-                pass
+                agent.running = False
             finally:
                 if live:
                     try:
+                        # Stop Live immediately, don't wait
                         live.stop()
+                        live.refresh()
                     except:
                         pass
+                # Force exit flag
+                exit_requested.set()
         else:
             # Run without dashboard
             while agent.running and not exit_requested.is_set():
