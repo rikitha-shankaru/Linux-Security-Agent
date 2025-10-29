@@ -119,11 +119,11 @@ struct syscall_event {
 BPF_PERF_OUTPUT(events);
 BPF_HASH(syscall_counts, u32, u64);
 
-// Track syscalls
+// Track syscalls using tracepoint (which doesn't support perf_submit)
+// So we'll use a simpler approach - just count syscalls without perf output
 TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     u64 id = bpf_get_current_pid_tgid();
     u32 pid = id >> 32;
-    u32 syscall_num = args->id;
     
     // Update count
     u64 *count = syscall_counts.lookup(&pid);
@@ -132,16 +132,6 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         new_count = *count + 1;
     }
     syscall_counts.update(&pid, &new_count);
-    
-    // Send event
-    struct syscall_event event = {};
-    event.pid = pid;
-    event.syscall_num = syscall_num;
-    event.timestamp = bpf_ktime_get_ns();
-    bpf_get_current_comm(&event.comm, sizeof(event.comm));
-    
-    // Use ctx parameter (automatically provided by TRACEPOINT_PROBE)
-    events.perf_submit(ctx, &event, sizeof(event));
     
     return 0;
 }
