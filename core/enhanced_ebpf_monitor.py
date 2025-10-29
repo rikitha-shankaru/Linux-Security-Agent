@@ -107,16 +107,7 @@ class StatefulEBPFMonitor:
         ebpf_code = """
 #include <uapi/linux/ptrace.h>
 
-// Event structure
-struct syscall_event {
-    u32 pid;
-    u32 syscall_num;
-    u64 timestamp;
-    char comm[16];
-};
-
 // Maps
-BPF_PERF_OUTPUT(events);
 BPF_HASH(syscall_counts, u32, u64);
 
 // Track syscalls using tracepoint (which doesn't support perf_submit)
@@ -138,9 +129,14 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
 """
         
         try:
-            return BPF(text=ebpf_code)
+            print("Loading eBPF program...")
+            bpf = BPF(text=ebpf_code)
+            print(f"✅ eBPF program loaded successfully!")
+            return bpf
         except Exception as e:
-            print(f"Failed to load enhanced eBPF program: {e}")
+            print(f"❌ Failed to load enhanced eBPF program: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def add_security_policy(self, policy: SecurityPolicy):
