@@ -488,11 +488,16 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     })
                 except Exception as callback_error:
                     # Log callback errors but don't stop event processing
-                    logger.warning(f"Error in event callback: {callback_error}")
+                    logger.error(f"❌ CRITICAL: Error in event callback: {callback_error}", exc_info=True)
+                    # Only log first few errors to avoid spam
+                    if len(self.events) <= 10:
+                        print(f"❌ Callback error for event {len(self.events)}: {callback_error}")
             else:
                 # Log if callback is not set (shouldn't happen but useful for debugging)
-                if len(self.events) % 1000 == 0:  # Only log every 1000 events to avoid spam
-                    logger.warning(f"Event callback not set! Events captured: {len(self.events)}")
+                if len(self.events) <= 10 or len(self.events) % 100 == 0:  # Log first 10, then every 100
+                    logger.error(f"❌ CRITICAL: Event callback not set! Events captured: {len(self.events)}")
+                    if len(self.events) <= 10:
+                        print(f"❌ CRITICAL: Event callback not set! Event #{len(self.events)}: PID={pid}, syscall={syscall_name}")
                 
         except Exception as e:
             logger.error(f"Error processing perf event: {e}", exc_info=True)

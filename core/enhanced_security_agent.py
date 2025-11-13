@@ -556,8 +556,19 @@ class EnhancedSecurityAgent:
             
             # Also check eBPF monitor's event count
             ebpf_events = 0
+            ebpf_callback_set = False
             if self.enhanced_ebpf_monitor:
                 ebpf_events = len(self.enhanced_ebpf_monitor.events)
+                ebpf_callback_set = self.enhanced_ebpf_monitor.event_callback is not None
+            
+            # BRUTAL VERIFICATION: Check everything
+            self.console.print(f"🔍 VERIFICATION:", style="yellow")
+            self.console.print(f"   eBPF monitor exists: {self.enhanced_ebpf_monitor is not None}", style="dim")
+            self.console.print(f"   eBPF callback set: {ebpf_callback_set}", style="dim")
+            self.console.print(f"   eBPF events captured: {ebpf_events}", style="dim")
+            self.console.print(f"   Processes in dict: {initial_processes}", style="dim")
+            self.console.print(f"   Total syscalls in processes: {initial_syscalls}", style="dim")
+            self.console.print(f"   Monitoring started: {getattr(self, 'collector_started', False)}", style="dim")
             
             if initial_processes == 0 and initial_syscalls == 0 and ebpf_events == 0:
                 self.console.print("⚠️ No events captured yet. Testing eBPF by generating test activity...", style="yellow")
@@ -587,9 +598,27 @@ class EnhancedSecurityAgent:
                         # Check if callback is set
                         if self.enhanced_ebpf_monitor and not self.enhanced_ebpf_monitor.event_callback:
                             self.console.print("❌ ERROR: Event callback not set!", style="red")
+                            self.console.print("❌ This is a CRITICAL BUG - callback should be set!", style="bold red")
+                        elif ebpf_events > 0:
+                            self.console.print(f"⚠️ eBPF captured {test_ebpf_events} events but callback didn't populate processes!", style="yellow")
+                            self.console.print("❌ This suggests callback is failing or processes aren't being created", style="red")
                         else:
-                            self.console.print("💡 eBPF may need more time or system activity", style="dim")
+                            self.console.print("⚠️ eBPF not capturing ANY events - tracepoint may not be working", style="yellow")
                             self.console.print("💡 Try running commands manually in another terminal", style="dim")
+                            # Force some test syscalls
+                            self.console.print("💡 Generating test syscalls to verify eBPF...", style="dim")
+                            import subprocess
+                            for _ in range(10):
+                                subprocess.run(['ls', '/'], capture_output=True, timeout=0.5)
+                                subprocess.run(['ps', 'aux'], capture_output=True, timeout=0.5)
+                            time.sleep(2)
+                            # Check again
+                            if self.enhanced_ebpf_monitor:
+                                final_events = len(self.enhanced_ebpf_monitor.events)
+                                self.console.print(f"📊 After test: eBPF events = {final_events}", style="dim")
+                                if final_events == 0:
+                                    self.console.print("❌ CRITICAL: eBPF tracepoint is NOT working!", style="bold red")
+                                    self.console.print("   The tracepoint may not be attached or kernel doesn't support it", style="dim")
                 except Exception as e:
                     self.console.print(f"⚠️ Could not test eBPF: {e}", style="yellow")
             elif ebpf_events > 0 and initial_syscalls == 0:
@@ -620,8 +649,15 @@ class EnhancedSecurityAgent:
             total_processes_seen = 0
             
             try:
+                last_iteration_log = 0
                 while (time.time() - start_time) < collection_time:
                     iteration += 1
+                    
+                    # Log every 20 iterations to show progress (every ~10 seconds)
+                    if iteration - last_iteration_log >= 20:
+                        elapsed = time.time() - start_time
+                        self.console.print(f"⏳ Iteration {iteration}, elapsed: {int(elapsed)}s...", style="dim")
+                        last_iteration_log = iteration
                     
                     # Quick pass to collect candidate PIDs (minimize lock time)
                     # Use context manager but with timeout to avoid blocking on interrupt
@@ -632,6 +668,12 @@ class EnhancedSecurityAgent:
                             try:
                                 processes_snapshot = {pid: dict(proc) for pid, proc in self.processes.items()}
                                 total_processes_seen = len(processes_snapshot)
+                                
+                                # DEBUG: Log if we're seeing processes but no syscalls
+                                if iteration % 20 == 0 and total_processes_seen > 0:
+                                    total_sys = sum(len(p.get('syscalls', [])) for p in processes_snapshot.values())
+                                    if total_sys == 0:
+                                        self.console.print(f"⚠️ Found {total_processes_seen} processes but 0 syscalls - callback may not be working", style="yellow")
                             finally:
                                 self.processes_lock.release()
                         else:
