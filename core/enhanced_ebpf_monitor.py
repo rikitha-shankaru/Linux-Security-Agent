@@ -10,18 +10,22 @@ import time
 import json
 import struct
 import threading
+import logging
 from collections import defaultdict, deque
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Callable
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import ctypes
+
+# Setup logging
+logger = logging.getLogger('security_agent.ebpf')
 
 try:
     from bcc import BPF
     BCC_AVAILABLE = True
 except ImportError:
     BCC_AVAILABLE = False
-    print("Warning: BCC not available. Install with: sudo apt install python3-bpfcc")
+    logger.warning("BCC not available. Install with: sudo apt install python3-bpfcc")
 
 @dataclass
 class ProcessState:
@@ -53,7 +57,7 @@ class StatefulEBPFMonitor:
     Based on recent research on programmable system call security
     """
     
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.config = config or {}
         self.running = False
         self.events = deque(maxlen=100000)
@@ -78,13 +82,13 @@ class StatefulEBPFMonitor:
         if BCC_AVAILABLE:
             try:
                 self.bpf_program = self._load_enhanced_ebpf_program()
-                print(f"DEBUG __init__: bpf_program created: {self.bpf_program is not None}")
+                logger.debug(f"eBPF program created: {self.bpf_program is not None}")
             except Exception as e:
-                print(f"Failed to load eBPF: {e}")
+                logger.error(f"Failed to load eBPF: {e}")
                 self.bpf_program = None
         else:
             self.bpf_program = None
-            print("Warning: Running without eBPF - limited functionality")
+            logger.warning("Running without eBPF - limited functionality")
     
     def _load_default_policies(self):
         """Load default security policies"""
@@ -106,7 +110,7 @@ class StatefulEBPFMonitor:
         self.security_policies["default"] = default_policy
         self.active_policies.append("default")
     
-    def _load_enhanced_ebpf_program(self) -> BPF:
+    def _load_enhanced_ebpf_program(self) -> Optional[BPF]:
         """Load enhanced eBPF program with stateful tracking"""
         # Real eBPF code that captures actual syscalls
         ebpf_code = """
@@ -161,14 +165,25 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
 """
         
         try:
-            print("Loading eBPF program...")
+            logger.info("Loading eBPF program...")
             bpf = BPF(text=ebpf_code)
-            print(f"✅ eBPF program loaded successfully!")
+            logger.info("eBPF program loaded successfully")
+            
+            # Verify tracepoint is available
+            tracepoint_path = "/sys/kernel/debug/tracing/events/raw_syscalls/sys_enter"
+            if os.path.exists(tracepoint_path):
+                logger.debug(f"Tracepoint exists: {tracepoint_path}")
+            else:
+                # Try alternative path
+                alt_path = "/sys/kernel/tracing/events/raw_syscalls/sys_enter"
+                if os.path.exists(alt_path):
+                    logger.debug(f"Tracepoint exists (alt): {alt_path}")
+                else:
+                    logger.warning(f"Tracepoint not found at {tracepoint_path} or {alt_path}")
+            
             return bpf
         except Exception as e:
-            print(f"❌ Failed to load enhanced eBPF program: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Failed to load enhanced eBPF program: {e}", exc_info=True)
             return None
     
     def add_security_policy(self, policy: SecurityPolicy):
@@ -254,7 +269,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                 self.cross_container_attempts.append(attempt)
                 return True
         except Exception as e:
-            print(f"Error detecting cross-container attempts: {e}")
+            logger.error(f"Error detecting cross-container attempts: {e}")
         
         return False
     
@@ -300,17 +315,15 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             return state.policy_violations
         return 0
     
-    def start_monitoring(self, event_callback=None):
+    def start_monitoring(self, event_callback: Optional[Callable] = None) -> bool:
         """Start the enhanced eBPF monitoring"""
-        print(f"DEBUG start_monitoring: bpf_program exists: {self.bpf_program is not None}")
+        logger.debug(f"Starting monitoring: bpf_program exists: {self.bpf_program is not None}")
         self.running = True
         self.event_callback = event_callback
         
         # Attach perf event handler for REAL syscall events
-        print(f"DEBUG: self.bpf_program is not None? {self.bpf_program is not None}")
-        
         if self.bpf_program is not None:
-            print("DEBUG: bpf_program exists, opening perf buffer...")
+            logger.debug("bpf_program exists, opening perf buffer...")
             try:
                 # Increase page_cnt and provide a lost callback to suppress 'Possibly lost X samples' spam
                 self.lost_events = 0
@@ -326,24 +339,20 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     lost_cb=_lost_cb,
                     page_cnt=64,
                 )
-                print("✅ Perf event buffer ATTACHED!")
+                logger.info("Perf event buffer attached")
             except Exception as e:
-                print(f"⚠️ Failed to open perf buffer: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"Failed to open perf buffer: {e}", exc_info=True)
         else:
-            print("DEBUG: NO bpf_program found!")
+            logger.warning("No bpf_program found - monitoring will have limited functionality")
         
         # Start event processing thread - ALWAYS start it (daemon for clean exit)
-        print("DEBUG: Starting event thread...")
+        logger.debug("Starting event thread...")
         self.event_thread = threading.Thread(target=self._process_events, daemon=True)
         self.event_thread.start()
-        print("DEBUG: Event thread started!")
-        
-        print("Enhanced eBPF monitoring started with stateful tracking")
+        logger.info("Enhanced eBPF monitoring started with stateful tracking")
         return True
     
-    def stop_monitoring(self):
+    def stop_monitoring(self) -> None:
         """Stop the enhanced eBPF monitoring"""
         self.running = False
         # Daemon thread - will exit automatically, don't wait for it
@@ -365,13 +374,13 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
     
     def _process_events(self):
         """Process eBPF events in background thread - READS REAL EVENTS"""
-        print(f"🔍 Starting real syscall event loop... bpf_program={self.bpf_program}")
+        logger.info(f"Starting syscall event loop (bpf_program={self.bpf_program is not None})")
         
         # Store reference to avoid issues
         bpf_prog = self.bpf_program
         
         if bpf_prog is None:
-            print("⚠️ No bpf_program - monitoring without eBPF data")
+            logger.warning("No bpf_program - monitoring without eBPF data")
             while self.running:
                 time.sleep(1)
             return
@@ -379,6 +388,9 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         try:
             # Poll perf buffer for REAL syscall events
             poll_count = 0
+            last_event_count = 0
+            no_event_warnings = 0
+            
             while self.running:
                 # Check running flag BEFORE expensive operations
                 if not self.running:
@@ -386,8 +398,21 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     
                 try:
                     poll_count += 1
-                    if poll_count % 10 == 0:
-                        print(f"DEBUG: Polling perf buffer (count={poll_count}), events_so_far={len(self.events)}")
+                    
+                    # Log every 100 polls (roughly every 2.5 seconds) if no events
+                    if poll_count % 100 == 0:
+                        current_events = len(self.events)
+                        if current_events == last_event_count:
+                            no_event_warnings += 1
+                            if no_event_warnings <= 5:  # Only warn first 5 times
+                                logger.warning(
+                                    f"No events captured after {poll_count * 25}ms of polling. "
+                                    f"Make sure system has activity (run commands in another terminal)."
+                                )
+                        else:
+                            no_event_warnings = 0  # Reset if we got events
+                            logger.debug(f"Events flowing: {current_events - last_event_count} new events")
+                        last_event_count = current_events
                     
                     # Use VERY short timeout to check self.running frequently
                     # This allows immediate exit when running=False
@@ -412,7 +437,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     if not self.running:
                         break
         except Exception as e:
-            print(f"Error in event processing thread: {e}")
+            logger.error(f"Error in event processing thread: {e}", exc_info=True)
             import traceback
             traceback.print_exc()
         # Note: Cleanup is handled by stop_monitoring() to avoid double-free
@@ -449,7 +474,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                 })
                 
         except Exception as e:
-            print(f"Error processing perf event: {e}")
+                logger.error(f"Error processing perf event: {e}")
     
     def _syscall_num_to_name(self, syscall_num: int) -> str:
         """Convert syscall number to name - complete x86_64 syscall table"""
@@ -591,20 +616,20 @@ if __name__ == "__main__":
     
     # Start monitoring
     if monitor.start_monitoring():
-        print("Enhanced eBPF monitoring started successfully")
+        logger.info("Enhanced eBPF monitoring started successfully")
         
         # Run for a short time
         time.sleep(10)
         
         # Get statistics
         stats = monitor.get_monitoring_stats()
-        print(f"Monitoring stats: {stats}")
+        logger.info(f"Monitoring stats: {stats}")
         
         # Export state data
         state_data = monitor.export_state_data()
-        print(f"Exported state data: {len(state_data)} entries")
+        logger.info(f"Exported state data: {len(state_data)} entries")
         
         # Stop monitoring
         monitor.stop_monitoring()
     else:
-        print("Failed to start enhanced eBPF monitoring")
+        logger.error("Failed to start enhanced eBPF monitoring")

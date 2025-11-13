@@ -544,8 +544,37 @@ class EnhancedSecurityAgent:
         if not getattr(self, 'collector_started', False):
             self.console.print("⚠️ Monitoring not started. Starting monitoring first...", style="yellow")
             self.start_monitoring()
-            # Give monitoring a moment to initialize
-            time.sleep(2)
+            # Give monitoring more time to initialize and start capturing events
+            self.console.print("⏳ Waiting for monitoring to initialize...", style="dim")
+            time.sleep(3)  # Increased wait time
+            
+            # Check if we're actually getting events
+            with self.processes_lock:
+                initial_processes = len(self.processes)
+                initial_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
+            
+            if initial_processes == 0 and initial_syscalls == 0:
+                self.console.print("⚠️ No events captured yet. Testing eBPF by generating test activity...", style="yellow")
+                # Generate some test syscalls to verify eBPF is working
+                import subprocess
+                try:
+                    # Run a simple command to generate syscalls
+                    subprocess.run(['ls', '/'], capture_output=True, timeout=1)
+                    subprocess.run(['ps', 'aux'], capture_output=True, timeout=1)
+                    time.sleep(1)  # Give eBPF time to capture events
+                    
+                    # Check again
+                    with self.processes_lock:
+                        test_processes = len(self.processes)
+                        test_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
+                    
+                    if test_processes > 0 or test_syscalls > 0:
+                        self.console.print(f"✅ eBPF is working! Captured {test_processes} processes, {test_syscalls} syscalls", style="green")
+                    else:
+                        self.console.print("⚠️ Still no events. eBPF may not be capturing syscalls.", style="yellow")
+                        self.console.print("💡 Try running commands manually in another terminal", style="dim")
+                except Exception as e:
+                    self.console.print(f"⚠️ Could not test eBPF: {e}", style="yellow")
         
         # Verify monitoring is actually running
         if not getattr(self, 'collector_started', False):
