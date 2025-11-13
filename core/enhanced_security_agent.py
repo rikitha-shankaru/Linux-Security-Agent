@@ -646,22 +646,22 @@ class EnhancedSecurityAgent:
                             break
                         try:
                             p = psutil.Process(pid)
-                        # Batch all psutil calls at once
-                        with p.oneshot():  # Context manager optimizes multiple calls
-                            cpu_val = p.cpu_percent(interval=None) or 0
-                            mem_val = p.memory_percent()
-                            threads = p.num_threads()
-                        
-                        process_info = {
-                            'cpu_percent': cpu_val,
-                            'memory_percent': mem_val,
-                            'num_threads': threads,
-                            'pid': pid
-                        }
-                        training_data.append((syscalls, process_info))
-                    except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
-                        sampled_pids.discard(pid_key)  # Allow retry
-                        continue
+                            # Batch all psutil calls at once
+                            with p.oneshot():  # Context manager optimizes multiple calls
+                                cpu_val = p.cpu_percent(interval=None) or 0
+                                mem_val = p.memory_percent()
+                                threads = p.num_threads()
+                            
+                            process_info = {
+                                'cpu_percent': cpu_val,
+                                'memory_percent': mem_val,
+                                'num_threads': threads,
+                                'pid': pid
+                            }
+                            training_data.append((syscalls, process_info))
+                        except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+                            sampled_pids.discard(pid_key)  # Allow retry
+                            continue
                     
                     candidates.clear()  # Reset for next iteration
                     
