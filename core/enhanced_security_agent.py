@@ -549,32 +549,52 @@ class EnhancedSecurityAgent:
             time.sleep(3)  # Increased wait time
             
             # Check if we're actually getting events
+            time.sleep(1)  # Give eBPF a moment to start capturing
             with self.processes_lock:
                 initial_processes = len(self.processes)
                 initial_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
             
-            if initial_processes == 0 and initial_syscalls == 0:
+            # Also check eBPF monitor's event count
+            ebpf_events = 0
+            if self.enhanced_ebpf_monitor:
+                ebpf_events = len(self.enhanced_ebpf_monitor.events)
+            
+            if initial_processes == 0 and initial_syscalls == 0 and ebpf_events == 0:
                 self.console.print("⚠️ No events captured yet. Testing eBPF by generating test activity...", style="yellow")
                 # Generate some test syscalls to verify eBPF is working
                 import subprocess
                 try:
-                    # Run a simple command to generate syscalls
+                    # Run multiple commands to generate syscalls
                     subprocess.run(['ls', '/'], capture_output=True, timeout=1)
                     subprocess.run(['ps', 'aux'], capture_output=True, timeout=1)
-                    time.sleep(1)  # Give eBPF time to capture events
+                    subprocess.run(['cat', '/etc/passwd'], capture_output=True, timeout=1)
+                    time.sleep(2)  # Give eBPF more time to capture events
                     
                     # Check again
                     with self.processes_lock:
                         test_processes = len(self.processes)
                         test_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
                     
+                    # Check eBPF events
+                    if self.enhanced_ebpf_monitor:
+                        test_ebpf_events = len(self.enhanced_ebpf_monitor.events)
+                        self.console.print(f"📊 eBPF events captured: {test_ebpf_events}", style="dim")
+                    
                     if test_processes > 0 or test_syscalls > 0:
                         self.console.print(f"✅ eBPF is working! Captured {test_processes} processes, {test_syscalls} syscalls", style="green")
                     else:
-                        self.console.print("⚠️ Still no events. eBPF may not be capturing syscalls.", style="yellow")
-                        self.console.print("💡 Try running commands manually in another terminal", style="dim")
+                        self.console.print("⚠️ Still no events. Debugging...", style="yellow")
+                        # Check if callback is set
+                        if self.enhanced_ebpf_monitor and not self.enhanced_ebpf_monitor.event_callback:
+                            self.console.print("❌ ERROR: Event callback not set!", style="red")
+                        else:
+                            self.console.print("💡 eBPF may need more time or system activity", style="dim")
+                            self.console.print("💡 Try running commands manually in another terminal", style="dim")
                 except Exception as e:
                     self.console.print(f"⚠️ Could not test eBPF: {e}", style="yellow")
+            elif ebpf_events > 0 and initial_syscalls == 0:
+                self.console.print(f"⚠️ eBPF captured {ebpf_events} events but processes dict is empty", style="yellow")
+                self.console.print("💡 This suggests callback may not be working properly", style="dim")
         
         # Verify monitoring is actually running
         if not getattr(self, 'collector_started', False):

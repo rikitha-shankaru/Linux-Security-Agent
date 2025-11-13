@@ -466,7 +466,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             syscall_num = event.syscall_num
             syscall_name = self._syscall_num_to_name(syscall_num)
             
-            # Store event (DEBUG removed for clean output)
+            # Store event
             self.events.append({
                 'pid': pid,
                 'syscall_num': syscall_num,
@@ -479,15 +479,23 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             
             # Call callback with REAL syscall name
             if self.event_callback:
-                self.event_callback(pid, syscall_name, {
-                    'pid': pid,
-                    'syscall_num': syscall_num,
-                    'syscall_name': syscall_name,  # ✅ REAL syscall name!
-                    'timestamp': event.timestamp / 1e9  # Convert to seconds
-                })
+                try:
+                    self.event_callback(pid, syscall_name, {
+                        'pid': pid,
+                        'syscall_num': syscall_num,
+                        'syscall_name': syscall_name,  # ✅ REAL syscall name!
+                        'timestamp': event.timestamp / 1e9  # Convert to seconds
+                    })
+                except Exception as callback_error:
+                    # Log callback errors but don't stop event processing
+                    logger.warning(f"Error in event callback: {callback_error}")
+            else:
+                # Log if callback is not set (shouldn't happen but useful for debugging)
+                if len(self.events) % 1000 == 0:  # Only log every 1000 events to avoid spam
+                    logger.warning(f"Event callback not set! Events captured: {len(self.events)}")
                 
         except Exception as e:
-                logger.error(f"Error processing perf event: {e}")
+            logger.error(f"Error processing perf event: {e}", exc_info=True)
     
     def _syscall_num_to_name(self, syscall_num: int) -> str:
         """Convert syscall number to name - complete x86_64 syscall table"""
