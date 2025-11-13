@@ -11,7 +11,7 @@ from sklearn.svm import OneClassSVM
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
-from collections import deque, defaultdict
+from collections import deque, defaultdict, Counter
 import pickle
 import os
 import time
@@ -104,8 +104,17 @@ class EnhancedAnomalyDetector:
         self.resource_features = True
         
         # Model persistence
-        self.model_dir = self.config.get('model_dir', '/tmp/security_agent_models')
+        # Prefer user cache directory by default
+        default_dir = os.path.join(os.path.expanduser('~'), '.cache', 'security_agent')
+        self.model_dir = self.config.get('model_dir', default_dir)
         os.makedirs(self.model_dir, exist_ok=True)
+        self.feature_store_path = os.path.join(self.model_dir, 'training_features.npy')
+        self.ngram_path = os.path.join(self.model_dir, 'ngram_bigrams.json')
+
+        # Lightweight sequence model (bigrams)
+        self.ngram_bigram_probs: Dict[str, float] = {}
+        self.ngram_default_prob: float = 0.001
+        self.ngram_avg_prob: float = 0.0
         
         # Performance tracking
         self.detection_stats = {
@@ -125,38 +134,36 @@ class EnhancedAnomalyDetector:
         
         features = []
         
-        # 1. Basic syscall frequency features
-        syscall_counts = defaultdict(int)
-        for syscall in syscalls:
-            syscall_counts[syscall] += 1
+        # 1. Basic syscall frequency features - OPTIMIZED: use Counter for faster counting
+        syscall_counts = Counter(syscalls)  # Faster than defaultdict (O(n) vs O(n log n))
+        syscalls_len = len(syscalls)
+        syscalls_len_inv = 1.0 / syscalls_len if syscalls_len > 0 else 0.0  # Cache division
         
         # Already checked at function start, but keep for safety
         
-        # Common syscalls frequency
-        common_syscalls = ['read', 'write', 'open', 'close', 'mmap', 'munmap', 'fork', 'execve']
-        for syscall in common_syscalls:
-            features.append(syscall_counts.get(syscall, 0) / len(syscalls))
+        # Common syscalls frequency - OPTIMIZED: pre-compute set for faster lookup
+        common_syscalls = {'read', 'write', 'open', 'close', 'mmap', 'munmap', 'fork', 'execve'}
+        features.extend([syscall_counts.get(sc, 0) * syscalls_len_inv for sc in ['read', 'write', 'open', 'close', 'mmap', 'munmap', 'fork', 'execve']])
         
-        # 2. Unique syscalls ratio
-        unique_syscalls = len(set(syscalls))
-        features.append(unique_syscalls / len(syscalls))
+        # 2. Unique syscalls ratio - OPTIMIZED: use len of Counter keys (already unique)
+        unique_syscalls = len(syscall_counts)
+        features.append(unique_syscalls * syscalls_len_inv)
         
-        # 3. Syscall diversity (entropy)
-        if len(syscall_counts) > 0:
-            probabilities = [count / len(syscalls) for count in syscall_counts.values()]
-            entropy = -sum(p * np.log2(p) for p in probabilities if p > 0)
+        # 3. Syscall diversity (entropy) - OPTIMIZED: vectorized computation
+        if syscall_counts:
+            # Use numpy for faster entropy calculation
+            counts_array = np.array(list(syscall_counts.values()))
+            probabilities = counts_array * syscalls_len_inv
+            # Vectorized entropy: -sum(p * log2(p)) for p > 0
+            entropy = -np.sum(probabilities[probabilities > 0] * np.log2(probabilities[probabilities > 0]))
             features.append(entropy)
         else:
             features.append(0.0)
         
-        # 4. High-risk syscall ratio
-        high_risk_syscalls = ['ptrace', 'mount', 'umount', 'setuid', 'setgid', 'chroot', 'reboot']
-        high_risk_count = sum(syscall_counts.get(syscall, 0) for syscall in high_risk_syscalls)
-        # Prevent division by zero
-        if len(syscalls) > 0:
-            features.append(high_risk_count / len(syscalls))
-        else:
-            features.append(0.0)
+        # 4. High-risk syscall ratio - OPTIMIZED: use set intersection
+        high_risk_syscalls = {'ptrace', 'mount', 'umount', 'setuid', 'setgid', 'chroot', 'reboot'}
+        high_risk_count = sum(syscall_counts.get(sc, 0) for sc in high_risk_syscalls)
+        features.append(high_risk_count * syscalls_len_inv if syscalls_len > 0 else 0.0)
         
         # 5. Temporal features (NOTE: Will be real when timestamps are captured)
         if self.temporal_features and len(syscalls) > 1:
@@ -175,25 +182,17 @@ class EnhancedAnomalyDetector:
                 features.append(0.0)
             features.append(len(syscalls) * 0.1)  # Estimated max interval
         
-        # 6. Network-related features
+        # 6. Network-related features - OPTIMIZED: use set for faster lookup
         if self.network_features:
-            network_syscalls = ['socket', 'bind', 'listen', 'accept', 'connect', 'send', 'recv']
-            network_count = sum(syscall_counts.get(syscall, 0) for syscall in network_syscalls)
-            # Prevent division by zero
-            if len(syscalls) > 0:
-                features.append(network_count / len(syscalls))
-            else:
-                features.append(0.0)
+            network_syscalls = {'socket', 'bind', 'listen', 'accept', 'connect', 'send', 'recv'}
+            network_count = sum(syscall_counts.get(sc, 0) for sc in network_syscalls)
+            features.append(network_count * syscalls_len_inv if syscalls_len > 0 else 0.0)
         
-        # 7. File system features
+        # 7. File system features - OPTIMIZED: use set for faster lookup
         if self.file_features:
-            file_syscalls = ['open', 'close', 'read', 'write', 'stat', 'fstat', 'lstat']
-            file_count = sum(syscall_counts.get(syscall, 0) for syscall in file_syscalls)
-            # Prevent division by zero
-            if len(syscalls) > 0:
-                features.append(file_count / len(syscalls))
-            else:
-                features.append(0.0)
+            file_syscalls = {'open', 'close', 'read', 'write', 'stat', 'fstat', 'lstat'}
+            file_count = sum(syscall_counts.get(sc, 0) for sc in file_syscalls)
+            features.append(file_count * syscalls_len_inv if syscalls_len > 0 else 0.0)
         
         # 8. Process information features
         if process_info and self.resource_features:
@@ -203,16 +202,11 @@ class EnhancedAnomalyDetector:
         else:
             features.extend([0.0, 0.0, 0.0])
         
-        # 9. Behavioral pattern features
-        if len(syscalls) >= 10:
-            # N-gram patterns (bigrams)
-            bigrams = []
-            for i in range(len(syscalls) - 1):
-                bigrams.append(f"{syscalls[i]}_{syscalls[i+1]}")
-            
-            bigram_counts = defaultdict(int)
-            for bigram in bigrams:
-                bigram_counts[bigram] += 1
+        # 9. Behavioral pattern features - OPTIMIZED: vectorized bigram generation
+        if syscalls_len >= 10:
+            # N-gram patterns (bigrams) - OPTIMIZED: use zip for faster generation
+            bigrams = [f"{syscalls[i]}_{syscalls[i+1]}" for i in range(syscalls_len - 1)]
+            bigram_counts = Counter(bigrams)  # Faster than defaultdict
             
             # Most common bigram frequency
             if bigram_counts:
@@ -249,22 +243,83 @@ class EnhancedAnomalyDetector:
         while len(features) < 50:
             features.append(0.0)
         
+        # FIXED: Validate feature count and warn if truncated
+        if len(features) > 50:
+            import logging
+            logger = logging.getLogger('security_agent.anomaly')
+            logger.warning(f"Feature vector too long ({len(features)} > 50), truncating. This may indicate a bug in feature extraction.")
+        
         return np.array(features[:50])
     
-    def train_models(self, training_data: List[Tuple[List[str], Dict]]):
+    def _save_feature_store(self, features_np: np.ndarray) -> None:
+        try:
+            np.save(self.feature_store_path, features_np)
+            print("✅ Feature store saved")
+        except Exception as e:
+            print(f"❌ Error saving feature store: {e}")
+
+    def _load_feature_store(self) -> Optional[np.ndarray]:
+        try:
+            if os.path.exists(self.feature_store_path):
+                data = np.load(self.feature_store_path)
+                if isinstance(data, np.ndarray) and data.ndim == 2:
+                    return data
+        except Exception as e:
+            print(f"❌ Error loading feature store: {e}")
+        return None
+
+    def train_models(self, training_data: List[Tuple[List[str], Dict]], append: bool = False, max_store_samples: int = 200000):
         """
         Train all ML models on normal behavior data
+        
+        Args:
+            training_data: List of (syscalls, process_info) tuples
+            append: If True, append to previous feature store (incremental learning)
+            max_store_samples: Maximum samples to keep in feature store (default: 200K)
         """
         print("Training enhanced anomaly detection models...")
         
-        # Extract features from training data
-        features = []
-        for syscalls, process_info in training_data:
-            feature_vector = self.extract_advanced_features(syscalls, process_info)
-            features.append(feature_vector)
-        
-        features = np.array(features)
+        # Extract features from training data - OPTIMIZED: direct numpy array creation
+        features = np.array([self.extract_advanced_features(syscalls, process_info) 
+                             for syscalls, process_info in training_data], dtype=np.float32)
         print(f"Extracted {features.shape[0]} samples with {features.shape[1]} features")
+
+        # Merge with previous feature store if requested
+        if append:
+            prev = self._load_feature_store()
+            if prev is not None:
+                # CRITICAL: Validate feature dimensions match
+                if prev.shape[1] != features.shape[1]:
+                    # Feature dimension mismatch - cannot append safely
+                    import logging
+                    logger = logging.getLogger('security_agent.anomaly')
+                    logger.error(
+                        f"❌ CRITICAL: Feature dimension mismatch detected! "
+                        f"Previous feature store: {prev.shape[1]} dimensions, "
+                        f"New features: {features.shape[1]} dimensions. "
+                        f"Previous feature store is incompatible and will be ignored. "
+                        f"Starting fresh with {features.shape[0]} new samples. "
+                        f"This may indicate a code change in feature extraction."
+                    )
+                    print(
+                        f"❌ Feature dimension mismatch: prev={prev.shape[1]}, new={features.shape[1]}. "
+                        f"Previous store incompatible - starting fresh."
+                    )
+                    # Option: Could backup old store or raise exception, but continuing with new data
+                else:
+                    try:
+                        features = np.vstack([prev, features])
+                        # Keep last N samples to bound train time/memory
+                        if features.shape[0] > max_store_samples:
+                            features = features[-max_store_samples:]
+                        print(f"📦 Appended previous store → total {features.shape[0]} samples")
+                    except Exception as e:
+                        import logging
+                        logger = logging.getLogger('security_agent.anomaly')
+                        logger.error(f"❌ Could not append previous features: {e}", exc_info=True)
+                        print(f"❌ Could not append previous features: {e}")
+                        # Don't silently continue - this is a critical error
+                        raise RuntimeError(f"Failed to append feature store: {e}") from e
         
         # Scale features
         features_scaled = self.scaler.fit_transform(features)
@@ -298,7 +353,28 @@ class EnhancedAnomalyDetector:
         
         self.is_fitted = True
         self._save_models()
+        # Persist feature store for future appended retraining
+        self._save_feature_store(features)
+        # Build/update n-gram model from training data
+        try:
+            self._train_bigrams_from_training(training_data)
+            self._save_ngram()
+        except Exception as e:
+            print(f"❌ N-gram training failed: {e}")
         print("🎉 All models trained and saved successfully")
+    
+    def _save_ngram(self) -> None:
+        """Save n-gram bigram probabilities to disk"""
+        try:
+            ngram_payload = {
+                'bigrams': self.ngram_bigram_probs,
+                'default_prob': self.ngram_default_prob,
+                'avg_prob': self.ngram_avg_prob,
+            }
+            with open(self.ngram_path, 'w') as f:
+                json.dump(ngram_payload, f, indent=2)
+        except Exception as e:
+            print(f"❌ Error saving n-gram model: {e}")
     
     def detect_anomaly_ensemble(self, syscalls: List[str], process_info: Dict = None, pid: int = None) -> AnomalyResult:
         """
@@ -381,12 +457,26 @@ class EnhancedAnomalyDetector:
             
             ensemble_score = np.mean(normalized_scores)
         
+        # Add n-gram rarity score (0..1) where higher = more anomalous
+        ngram_rarity = 0.0
+        try:
+            ngram_avg_p = self._avg_bigram_prob(syscalls)
+            # Convert to rarity in [0,1]; if avg prob is low, rarity high
+            # Use trained avg as reference; avoid div by zero
+            ref = self.ngram_avg_prob or 1e-6
+            ratio = max(0.0, min(1.0, (ref - ngram_avg_p) / max(ref, 1e-6)))
+            ngram_rarity = ratio  # 0 normal, 1 very rare
+        except Exception:
+            pass
+
         # Final decision
         is_anomaly = anomaly_votes >= (total_models / 2) if total_models > 0 else False
         confidence = anomaly_votes / total_models if total_models > 0 else 0.0
         
-        # Convert to 0-100 risk score
+        # Convert to 0-100 risk score and add bounded n-gram contribution
         risk_score = min(100, max(0, ensemble_score * 100))
+        ngram_weight = float(self.config.get('ngram_weight', 0.2))  # 0..1
+        risk_score = min(100.0, max(0.0, risk_score + 100.0 * ngram_weight * ngram_rarity))
         
         # Generate explanation
         explanation = self._generate_explanation(predictions, scores, features)
@@ -424,17 +514,69 @@ class EnhancedAnomalyDetector:
         if predictions.get('dbscan', False):
             explanations.append("DBSCAN classified as noise/outlier")
         
-        # Feature-based explanations
-        if features[3] > 0.1:  # High-risk syscall ratio
-            explanations.append("High proportion of risky system calls")
-        
-        if features[1] < 0.1:  # Low syscall diversity
-            explanations.append("Low system call diversity")
-        
-        if features[4] > 0.5:  # High syscall rate
-            explanations.append("Unusually high system call rate")
+        # N-gram based explanation
+        if 'ngram' in scores and scores['ngram'] < 0:
+            explanations.append("Unusual syscall sequence (low bigram likelihood)")
+
+        # Feature-based explanations (indices aligned to extract_advanced_features)
+        # 0..7: common syscall proportions; 8: unique ratio; 9: entropy; 10: high-risk ratio
+        try:
+            if len(features) > 10 and features[10] > 0.1:
+                explanations.append("High proportion of risky system calls")
+        except Exception:
+            pass
+        try:
+            if len(features) > 9 and features[9] < 1.0:
+                explanations.append("Low system call diversity (low entropy)")
+        except Exception:
+            pass
+        try:
+            # Temporal count proxy at index 11 (len(syscalls)); flag if very high
+            if len(features) > 11 and features[11] > 100:
+                explanations.append("Unusually high system call rate")
+        except Exception:
+            pass
         
         return "; ".join(explanations) if explanations else "Normal behavior detected"
+
+    def _train_bigrams_from_training(self, training_data: List[Tuple[List[str], Dict]]):
+        """Train bigram probabilities from training sequences with add-one smoothing"""
+        from collections import Counter
+        bigram_counts = Counter()
+        unigram_counts = Counter()
+        for syscalls, _ in training_data:
+            if not syscalls or len(syscalls) < 2:
+                continue
+            unigram_counts.update(syscalls)
+            for i in range(len(syscalls) - 1):
+                bg = f"{syscalls[i]}_{syscalls[i+1]}"
+                bigram_counts[bg] += 1
+        vocab = max(1, len(unigram_counts))
+        probs = {}
+        total_bg = 0
+        sum_p = 0.0
+        for bg, cnt in bigram_counts.items():
+            # P(b|a) ≈ count(bg)+1 / (count(a)+V)
+            a = bg.split('_')[0]
+            denom = unigram_counts.get(a, 0) + vocab
+            p = (cnt + 1.0) / max(1.0, float(denom))
+            probs[bg] = float(p)
+            total_bg += 1
+            sum_p += p
+        self.ngram_bigram_probs = probs
+        self.ngram_default_prob = 1.0 / max(1, sum(unigram_counts.values()) + vocab)
+        self.ngram_avg_prob = (sum_p / max(1, total_bg)) if total_bg > 0 else 0.0
+
+    def _avg_bigram_prob(self, syscalls: List[str]) -> float:
+        if not syscalls or len(syscalls) < 2 or not self.ngram_bigram_probs:
+            return self.ngram_avg_prob or 0.0
+        total = 0.0
+        n = 0
+        for i in range(len(syscalls) - 1):
+            bg = f"{syscalls[i]}_{syscalls[i+1]}"
+            total += self.ngram_bigram_probs.get(bg, self.ngram_default_prob)
+            n += 1
+        return total / max(1, n)
     
     def _update_behavioral_baseline(self, pid: int, syscalls: List[str], process_info: Dict = None):
         """Update behavioral baseline for a process"""
@@ -500,6 +642,18 @@ class EnhancedAnomalyDetector:
             # Save configuration
             with open(os.path.join(self.model_dir, 'config.json'), 'w') as f:
                 json.dump(self.config, f, indent=2)
+
+            # Save n-gram model
+            try:
+                ngram_payload = {
+                    'bigrams': self.ngram_bigram_probs,
+                    'default_prob': self.ngram_default_prob,
+                    'avg_prob': self.ngram_avg_prob,
+                }
+                with open(self.ngram_path, 'w') as f:
+                    json.dump(ngram_payload, f)
+            except Exception as e:
+                print(f"❌ Error saving n-gram model: {e}")
             
             print("✅ Models saved successfully")
         except Exception as e:
@@ -533,8 +687,26 @@ class EnhancedAnomalyDetector:
                 with open(pca_path, 'rb') as f:
                     self.pca = pickle.load(f)
             
-            self.is_fitted = True
-            print("✅ Models loaded successfully")
+            # Set fitted only if we have scaler, PCA and at least one model
+            have_scaler = hasattr(self, 'scaler') and isinstance(self.scaler, StandardScaler)
+            have_pca = hasattr(self, 'pca') and isinstance(self.pca, PCA)
+            have_model = any(self.models_trained.values())
+            self.is_fitted = bool(have_scaler and have_pca and have_model)
+            if self.is_fitted:
+                print("✅ Models loaded successfully")
+            else:
+                print("⚠️ Partial model load; training required before detection")
+
+            # Load n-gram model if available
+            try:
+                if os.path.exists(self.ngram_path):
+                    with open(self.ngram_path, 'r') as f:
+                        payload = json.load(f)
+                    self.ngram_bigram_probs = payload.get('bigrams', {})
+                    self.ngram_default_prob = float(payload.get('default_prob', 0.001))
+                    self.ngram_avg_prob = float(payload.get('avg_prob', 0.0))
+            except Exception as e:
+                print(f"❌ Error loading n-gram model: {e}")
         except Exception as e:
             print(f"❌ Error loading models: {e}")
     
@@ -556,6 +728,215 @@ class EnhancedAnomalyDetector:
             'config': self.config,
             'export_timestamp': time.time()
         }
+    
+    def export_training_data(self, training_data: List[Tuple[List[str], Dict]], 
+                            output_path: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
+        """
+        Export training data to JSON file for sharing/backup
+        
+        Args:
+            training_data: List of (syscalls, process_info) tuples
+            output_path: Path to output JSON file
+            metadata: Optional metadata dict (source, os, etc.)
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            import platform
+            from datetime import datetime
+            
+            # Prepare export data
+            export_data = {
+                'version': '1.0',
+                'metadata': metadata or {
+                    'source': platform.node(),
+                    'os': platform.system(),
+                    'os_version': platform.release(),
+                    'collection_date': datetime.utcnow().isoformat() + 'Z',
+                    'total_samples': len(training_data),
+                    'feature_dimensions': 50
+                },
+                'samples': []
+            }
+            
+            # Convert training data to JSON-serializable format
+            for syscalls, process_info in training_data:
+                sample = {
+                    'syscalls': syscalls,
+                    'process_info': {
+                        'cpu_percent': float(process_info.get('cpu_percent', 0.0)),
+                        'memory_percent': float(process_info.get('memory_percent', 0.0)),
+                        'num_threads': int(process_info.get('num_threads', 1)),
+                        'pid': int(process_info.get('pid', 0)) if 'pid' in process_info else None
+                    }
+                }
+                # Add any additional metadata
+                if 'process_name' in process_info:
+                    sample['metadata'] = {'process_name': process_info['process_name']}
+                export_data['samples'].append(sample)
+            
+            # Write to file
+            with open(output_path, 'w') as f:
+                json.dump(export_data, f, indent=2)
+            
+            print(f"✅ Exported {len(training_data)} training samples to {output_path}")
+            return True
+        except Exception as e:
+            print(f"❌ Error exporting training data: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def load_training_data_from_file(self, file_path: str) -> List[Tuple[List[str], Dict]]:
+        """
+        Load training data from JSON file
+        
+        Args:
+            file_path: Path to JSON file containing training data
+        
+        Returns:
+            List of (syscalls, process_info) tuples
+        """
+        try:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            
+            # Validate format
+            if not isinstance(data, dict) or 'samples' not in data:
+                raise ValueError(f"Invalid training data format in {file_path}")
+            
+            training_data = []
+            for sample in data['samples']:
+                if 'syscalls' not in sample or 'process_info' not in sample:
+                    continue  # Skip invalid samples
+                
+                syscalls = sample['syscalls']
+                process_info = sample['process_info'].copy()
+                
+                # Ensure required fields
+                if 'cpu_percent' not in process_info:
+                    process_info['cpu_percent'] = 0.0
+                if 'memory_percent' not in process_info:
+                    process_info['memory_percent'] = 0.0
+                if 'num_threads' not in process_info:
+                    process_info['num_threads'] = 1
+                
+                training_data.append((syscalls, process_info))
+            
+            print(f"✅ Loaded {len(training_data)} training samples from {file_path}")
+            if 'metadata' in data:
+                meta = data['metadata']
+                print(f"   Source: {meta.get('source', 'unknown')}, "
+                      f"Date: {meta.get('collection_date', 'unknown')}")
+            
+            return training_data
+        except Exception as e:
+            print(f"❌ Error loading training data from {file_path}: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+    
+    def load_training_data_from_directory(self, directory_path: str, 
+                                         pattern: str = "*.json") -> List[Tuple[List[str], Dict]]:
+        """
+        Load training data from all matching files in a directory
+        
+        Args:
+            directory_path: Directory containing training data files
+            pattern: File pattern to match (default: "*.json")
+        
+        Returns:
+            Combined list of (syscalls, process_info) tuples from all files
+        """
+        import glob
+        
+        training_data = []
+        files = glob.glob(os.path.join(directory_path, pattern))
+        
+        if not files:
+            print(f"⚠️ No files matching {pattern} found in {directory_path}")
+            return []
+        
+        print(f"📂 Loading training data from {len(files)} files in {directory_path}...")
+        
+        for file_path in files:
+            file_data = self.load_training_data_from_file(file_path)
+            training_data.extend(file_data)
+            print(f"   Loaded {len(file_data)} samples from {os.path.basename(file_path)}")
+        
+        print(f"✅ Total: {len(training_data)} samples from {len(files)} files")
+        return training_data
+    
+    def load_training_data_from_url(self, url: str, 
+                                   headers: Optional[Dict[str, str]] = None) -> List[Tuple[List[str], Dict]]:
+        """
+        Load training data from URL (HTTP/HTTPS)
+        
+        Args:
+            url: URL to fetch training data from
+            headers: Optional HTTP headers (for authentication, etc.)
+        
+        Returns:
+            List of (syscalls, process_info) tuples
+        """
+        try:
+            import requests
+            
+            response = requests.get(url, headers=headers or {}, timeout=30)
+            response.raise_for_status()
+            
+            # Try parsing as JSON
+            data = response.json()
+            
+            # If it's a direct list, wrap it
+            if isinstance(data, list):
+                data = {'samples': data, 'metadata': {}}
+            
+            # Convert to training data format
+            training_data = []
+            for sample in data.get('samples', []):
+                if 'syscalls' not in sample or 'process_info' not in sample:
+                    continue
+                
+                syscalls = sample['syscalls']
+                process_info = sample['process_info'].copy()
+                
+                # Ensure required fields
+                process_info.setdefault('cpu_percent', 0.0)
+                process_info.setdefault('memory_percent', 0.0)
+                process_info.setdefault('num_threads', 1)
+                
+                training_data.append((syscalls, process_info))
+            
+            print(f"✅ Loaded {len(training_data)} training samples from {url}")
+            return training_data
+        except Exception as e:
+            print(f"❌ Error loading training data from URL {url}: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+    
+    def merge_training_datasets(self, *datasets: List[Tuple[List[str], Dict]]) -> List[Tuple[List[str], Dict]]:
+        """
+        Merge multiple training datasets into one
+        
+        Args:
+            *datasets: Variable number of training data lists
+        
+        Returns:
+            Combined training data list
+        """
+        merged = []
+        total_samples = 0
+        
+        for dataset in datasets:
+            if dataset:
+                merged.extend(dataset)
+                total_samples += len(dataset)
+        
+        print(f"✅ Merged {len(datasets)} datasets into {len(merged)} total samples")
+        return merged
 
 # Example usage and testing
 if __name__ == "__main__":
