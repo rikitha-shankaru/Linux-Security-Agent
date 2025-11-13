@@ -2204,6 +2204,15 @@ def main():
             # Pass append flag via config for downstream use
             agent.config['append_training'] = args.append
             agent._train_anomaly_models()
+            
+            # Training complete - show summary
+            print("\n" + "="*60)
+            print("✅ TRAINING COMPLETE")
+            print("="*60)
+            print("Models are saved and ready to use.")
+            print("You can now run the agent with:")
+            print("  sudo python3 core/enhanced_security_agent.py --dashboard")
+            print("="*60 + "\n")
         except KeyboardInterrupt:
             print("\n⚠️ Training interrupted by user")
             print("Stopping monitoring and exiting...")
@@ -2211,6 +2220,7 @@ def main():
             # Always stop monitoring, even on interrupt
             try:
                 agent.stop_monitoring()
+                print("✅ Monitoring stopped")
             except:
                 pass
         return
