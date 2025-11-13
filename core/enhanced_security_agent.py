@@ -629,8 +629,8 @@ class EnhancedSecurityAgent:
                     
                     # Process snapshot outside lock
                     for pid, proc in processes_snapshot.items():
-                    syscalls_list = proc.get('syscalls', [])
-                    if len(syscalls_list) >= 5:
+                        syscalls_list = proc.get('syscalls', [])
+                        if len(syscalls_list) >= 5:
                         pid_key = f"{pid}_{iteration // 10}"
                         if pid_key not in sampled_pids:
                             syscalls = list(syscalls_list)[-50:]  # Take last 50
@@ -642,9 +642,9 @@ class EnhancedSecurityAgent:
                     
                     # Batch psutil calls (outside lock, faster)
                     for pid, syscalls, pid_key in candidates:
-                    if len(training_data) >= 500:
-                        break
-                    try:
+                        if len(training_data) >= 500:
+                            break
+                        try:
                         p = psutil.Process(pid)
                         # Batch all psutil calls at once
                         with p.oneshot():  # Context manager optimizes multiple calls
