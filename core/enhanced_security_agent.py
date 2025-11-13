@@ -716,15 +716,24 @@ class EnhancedSecurityAgent:
                     
                     # Use interruptible sleep - check for interrupt frequently
                     try:
-                        # Sleep in small chunks to allow interrupt
-                        for _ in range(5):  # 5 * 0.1 = 0.5 seconds total
+                        # Sleep in small chunks to allow interrupt and show progress
+                        for i in range(5):  # 5 * 0.1 = 0.5 seconds total
                             time.sleep(0.1)
+                            # Show a dot every second to indicate progress
+                            if iteration % 10 == 0 and i == 0:
+                                elapsed = time.time() - start_time
+                                if int(elapsed) % 5 == 0:  # Every 5 seconds
+                                    self.console.print(".", end="", style="dim")
                     except KeyboardInterrupt:
                         self.console.print("\n⚠️ Training interrupted by user", style="yellow")
                         raise
             except KeyboardInterrupt:
                 self.console.print("\n⚠️ Training interrupted. Saving collected data...", style="yellow")
                 # Don't re-raise - continue with what we have
+            
+            # Show final collection stats
+            elapsed_total = time.time() - start_time
+            self.console.print(f"\n📊 Collection complete: {len(training_data)} samples collected in {int(elapsed_total)}s", style="dim")
         
         # If still not enough data, supplement with baseline patterns
         real_samples = len(training_data)
@@ -764,8 +773,10 @@ class EnhancedSecurityAgent:
             
             # Use append mode if requested via config
             append = bool(self.config.get('append_training', False))
+            self.console.print("🧠 Starting model training...", style="yellow")
             self.enhanced_anomaly_detector.train_models(training_data, append=append)
-            self.console.print("✅ Anomaly detection models trained on REAL data", style="green")
+            self.console.print("✅ Anomaly detection models trained successfully!", style="green")
+            self.console.print(f"✅ Models saved to: ~/.cache/security_agent/", style="green")
         else:
             self.console.print("⚠️ No data to train on", style="yellow")
     
