@@ -334,6 +334,13 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         self.running = True
         self.event_callback = event_callback
         
+        # VERIFY callback is set
+        if event_callback is None:
+            logger.error("❌ CRITICAL: event_callback is None when starting monitoring!")
+            print("❌ CRITICAL: event_callback is None!")
+        else:
+            logger.debug(f"✅ Event callback set: {event_callback.__name__ if hasattr(event_callback, '__name__') else type(event_callback)}")
+        
         # Attach perf event handler for REAL syscall events
         if self.bpf_program is not None:
             logger.debug("bpf_program exists, opening perf buffer...")
@@ -353,16 +360,47 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     page_cnt=64,
                 )
                 logger.info("Perf event buffer attached")
+                
+                # VERIFY tracepoint is attached
+                try:
+                    # Check if tracepoint is actually attached by looking at tracefs
+                    tracepoint_path = "/sys/kernel/debug/tracing/events/raw_syscalls/sys_enter/enable"
+                    if os.path.exists(tracepoint_path):
+                        with open(tracepoint_path, 'r') as f:
+                            enabled = f.read().strip()
+                            if enabled == "1":
+                                logger.debug("✅ Tracepoint is enabled")
+                            else:
+                                logger.warning(f"⚠️ Tracepoint enable file shows: {enabled}")
+                    else:
+                        # Try alternative path
+                        alt_path = "/sys/kernel/tracing/events/raw_syscalls/sys_enter/enable"
+                        if os.path.exists(alt_path):
+                            with open(alt_path, 'r') as f:
+                                enabled = f.read().strip()
+                                if enabled == "1":
+                                    logger.debug("✅ Tracepoint is enabled (alt path)")
+                                else:
+                                    logger.warning(f"⚠️ Tracepoint enable file shows: {enabled}")
+                except Exception as e:
+                    logger.debug(f"Could not verify tracepoint status: {e}")
+                    
             except Exception as e:
                 logger.error(f"Failed to open perf buffer: {e}", exc_info=True)
+                print(f"❌ CRITICAL: Failed to open perf buffer: {e}")
         else:
             logger.warning("No bpf_program found - monitoring will have limited functionality")
+            print("❌ CRITICAL: No bpf_program!")
         
         # Start event processing thread - ALWAYS start it (daemon for clean exit)
         logger.debug("Starting event thread...")
         self.event_thread = threading.Thread(target=self._process_events, daemon=True)
         self.event_thread.start()
         logger.info("Enhanced eBPF monitoring started with stateful tracking")
+        
+        # Give thread a moment to start
+        time.sleep(0.5)
+        
         return True
     
     def stop_monitoring(self) -> None:
