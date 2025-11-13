@@ -2164,17 +2164,24 @@ def main():
     
     # Train models if requested (original behavior)
     if args.train_models and agent.enhanced_anomaly_detector:
-        # CRITICAL: Start monitoring BEFORE training to collect real syscall data
-        agent.start_monitoring()
-        # Give monitoring a moment to initialize and start capturing events
-        time.sleep(2)
-        
-        # Pass append flag via config for downstream use
-        agent.config['append_training'] = args.append
-        agent._train_anomaly_models()
-        
-        # Stop monitoring after training
-        agent.stop_monitoring()
+        try:
+            # CRITICAL: Start monitoring BEFORE training to collect real syscall data
+            agent.start_monitoring()
+            # Give monitoring a moment to initialize and start capturing events
+            time.sleep(2)
+            
+            # Pass append flag via config for downstream use
+            agent.config['append_training'] = args.append
+            agent._train_anomaly_models()
+        except KeyboardInterrupt:
+            print("\n⚠️ Training interrupted by user")
+            print("Stopping monitoring and exiting...")
+        finally:
+            # Always stop monitoring, even on interrupt
+            try:
+                agent.stop_monitoring()
+            except:
+                pass
         return
     
     # Handle query commands (list processes, anomalies, stats)
