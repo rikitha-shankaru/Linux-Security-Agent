@@ -626,9 +626,9 @@ class EnhancedSecurityAgent:
                         except:
                             pass
                         raise
-                
-                # Process snapshot outside lock
-                for pid, proc in processes_snapshot.items():
+                    
+                    # Process snapshot outside lock
+                    for pid, proc in processes_snapshot.items():
                     syscalls_list = proc.get('syscalls', [])
                     if len(syscalls_list) >= 5:
                         pid_key = f"{pid}_{iteration // 10}"
@@ -639,9 +639,9 @@ class EnhancedSecurityAgent:
                             
                             if len(candidates) >= 20 or len(training_data) + len(candidates) >= 500:
                                 break
-                
-                # Batch psutil calls (outside lock, faster)
-                for pid, syscalls, pid_key in candidates:
+                    
+                    # Batch psutil calls (outside lock, faster)
+                    for pid, syscalls, pid_key in candidates:
                     if len(training_data) >= 500:
                         break
                     try:
@@ -662,46 +662,46 @@ class EnhancedSecurityAgent:
                     except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
                         sampled_pids.discard(pid_key)  # Allow retry
                         continue
-                
-                candidates.clear()  # Reset for next iteration
-                
-                # Check if we have enough data
-                if len(training_data) >= 500:
-                    self.console.print(f"✅ Collected enough data ({len(training_data)} samples)!", style="green")
-                    break
-                
-                # Show progress every 10 seconds (optimized timing)
-                elapsed = time.time() - start_time
-                if elapsed - (last_progress_time - start_time) >= 10.0:
-                    # Show more informative progress
-                    total_syscalls = 0
-                    try:
-                        if self.processes_lock.acquire(timeout=0.1):
-                            try:
-                                total_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
-                            finally:
-                                self.processes_lock.release()
-                    except:
-                        pass
                     
-                    self.console.print(
-                        f"📊 Real data: {len(training_data)} samples | "
-                        f"Processes: {total_processes_seen} | "
-                        f"Syscalls captured: {total_syscalls} | "
-                        f"({int(elapsed)}/{collection_time}s) | "
-                        f"Press Ctrl+C to stop early", 
-                        style="dim"
-                    )
-                    last_progress_time = time.time()
-                
-                # Use interruptible sleep - check for interrupt frequently
-                try:
-                    # Sleep in small chunks to allow interrupt
-                    for _ in range(5):  # 5 * 0.1 = 0.5 seconds total
-                        time.sleep(0.1)
-                except KeyboardInterrupt:
-                    self.console.print("\n⚠️ Training interrupted by user", style="yellow")
-                    raise
+                    candidates.clear()  # Reset for next iteration
+                    
+                    # Check if we have enough data
+                    if len(training_data) >= 500:
+                        self.console.print(f"✅ Collected enough data ({len(training_data)} samples)!", style="green")
+                        break
+                    
+                    # Show progress every 10 seconds (optimized timing)
+                    elapsed = time.time() - start_time
+                    if elapsed - (last_progress_time - start_time) >= 10.0:
+                        # Show more informative progress
+                        total_syscalls = 0
+                        try:
+                            if self.processes_lock.acquire(timeout=0.1):
+                                try:
+                                    total_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
+                                finally:
+                                    self.processes_lock.release()
+                        except:
+                            pass
+                        
+                        self.console.print(
+                            f"📊 Real data: {len(training_data)} samples | "
+                            f"Processes: {total_processes_seen} | "
+                            f"Syscalls captured: {total_syscalls} | "
+                            f"({int(elapsed)}/{collection_time}s) | "
+                            f"Press Ctrl+C to stop early", 
+                            style="dim"
+                        )
+                        last_progress_time = time.time()
+                    
+                    # Use interruptible sleep - check for interrupt frequently
+                    try:
+                        # Sleep in small chunks to allow interrupt
+                        for _ in range(5):  # 5 * 0.1 = 0.5 seconds total
+                            time.sleep(0.1)
+                    except KeyboardInterrupt:
+                        self.console.print("\n⚠️ Training interrupted by user", style="yellow")
+                        raise
             except KeyboardInterrupt:
                 self.console.print("\n⚠️ Training interrupted. Saving collected data...", style="yellow")
                 # Don't re-raise - continue with what we have
