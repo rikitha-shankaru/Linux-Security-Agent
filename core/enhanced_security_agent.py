@@ -540,97 +540,122 @@ class EnhancedSecurityAgent:
         """Train anomaly detection models with REAL behavior data"""
         self.console.print("🧠 Training anomaly detection models with real data...", style="yellow")
         
-        # Collect ACTUAL syscall data from running processes
-        training_data = []
-        collection_time = 60  # Collect for 60 seconds (increased from 30)
-        start_time = time.time()
+        # CRITICAL: Ensure monitoring is started BEFORE collecting data
+        if not getattr(self, 'collector_started', False):
+            self.console.print("⚠️ Monitoring not started. Starting monitoring first...", style="yellow")
+            self.start_monitoring()
+            # Give monitoring a moment to initialize
+            time.sleep(2)
         
-        self.console.print(f"📊 Collecting real syscall data for {collection_time} seconds...", style="yellow")
-        self.console.print("💡 Tip: Run commands (ls, ps, cat, etc.) in another terminal to generate syscalls!", style="dim")
-        
-        # Track which processes we've already sampled to avoid duplicates
-        sampled_pids = set()
-        
-        # Collect real data - OPTIMIZED: batch operations, reduce lock time
-        iteration = 0
-        last_progress_time = start_time
-        candidates = []  # Collect candidates first, then batch psutil calls
-        
-        while (time.time() - start_time) < collection_time:
-            iteration += 1
+        # Verify monitoring is actually running
+        if not getattr(self, 'collector_started', False):
+            self.console.print("❌ Monitoring failed to start. Cannot collect real data.", style="red")
+            self.console.print("⚠️ Will use baseline patterns only", style="yellow")
+            training_data = []
+        else:
+            # Collect ACTUAL syscall data from running processes
+            training_data = []
+            collection_time = 60  # Collect for 60 seconds (increased from 30)
+            start_time = time.time()
             
-            # Quick pass to collect candidate PIDs (minimize lock time)
-            with self.processes_lock:
-                processes_snapshot = {pid: dict(proc) for pid, proc in self.processes.items()}
+            self.console.print(f"📊 Collecting real syscall data for {collection_time} seconds...", style="yellow")
+            self.console.print("💡 Tip: Run commands (ls, ps, cat, etc.) in another terminal to generate syscalls!", style="dim")
             
-            # Process snapshot outside lock
-            for pid, proc in processes_snapshot.items():
-                syscalls_list = proc.get('syscalls', [])
-                if len(syscalls_list) >= 5:
-                    pid_key = f"{pid}_{iteration // 10}"
-                    if pid_key not in sampled_pids:
-                        syscalls = list(syscalls_list)[-50:]  # Take last 50
-                        candidates.append((pid, syscalls, pid_key))
-                        sampled_pids.add(pid_key)
+            # Track which processes we've already sampled to avoid duplicates
+            sampled_pids = set()
+            
+            # Collect real data - OPTIMIZED: batch operations, reduce lock time
+            iteration = 0
+            last_progress_time = start_time
+            candidates = []  # Collect candidates first, then batch psutil calls
+            total_processes_seen = 0
+            
+            while (time.time() - start_time) < collection_time:
+                iteration += 1
+                
+                # Quick pass to collect candidate PIDs (minimize lock time)
+                with self.processes_lock:
+                    processes_snapshot = {pid: dict(proc) for pid, proc in self.processes.items()}
+                    total_processes_seen = len(processes_snapshot)
+                
+                # Process snapshot outside lock
+                for pid, proc in processes_snapshot.items():
+                    syscalls_list = proc.get('syscalls', [])
+                    if len(syscalls_list) >= 5:
+                        pid_key = f"{pid}_{iteration // 10}"
+                        if pid_key not in sampled_pids:
+                            syscalls = list(syscalls_list)[-50:]  # Take last 50
+                            candidates.append((pid, syscalls, pid_key))
+                            sampled_pids.add(pid_key)
+                            
+                            if len(candidates) >= 20 or len(training_data) + len(candidates) >= 500:
+                                break
+                
+                # Batch psutil calls (outside lock, faster)
+                for pid, syscalls, pid_key in candidates:
+                    if len(training_data) >= 500:
+                        break
+                    try:
+                        p = psutil.Process(pid)
+                        # Batch all psutil calls at once
+                        with p.oneshot():  # Context manager optimizes multiple calls
+                            cpu_val = p.cpu_percent(interval=None) or 0
+                            mem_val = p.memory_percent()
+                            threads = p.num_threads()
                         
-                        if len(candidates) >= 20 or len(training_data) + len(candidates) >= 500:
-                            break
-            
-            # Batch psutil calls (outside lock, faster)
-            for pid, syscalls, pid_key in candidates:
+                        process_info = {
+                            'cpu_percent': cpu_val,
+                            'memory_percent': mem_val,
+                            'num_threads': threads,
+                            'pid': pid
+                        }
+                        training_data.append((syscalls, process_info))
+                    except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+                        sampled_pids.discard(pid_key)  # Allow retry
+                        continue
+                
+                candidates.clear()  # Reset for next iteration
+                
+                # Check if we have enough data
                 if len(training_data) >= 500:
+                    self.console.print(f"✅ Collected enough data ({len(training_data)} samples)!", style="green")
                     break
-                try:
-                    p = psutil.Process(pid)
-                    # Batch all psutil calls at once
-                    with p.oneshot():  # Context manager optimizes multiple calls
-                        cpu_val = p.cpu_percent(interval=None) or 0
-                        mem_val = p.memory_percent()
-                        threads = p.num_threads()
-                    
-                    process_info = {
-                        'cpu_percent': cpu_val,
-                        'memory_percent': mem_val,
-                        'num_threads': threads,
-                        'pid': pid
-                    }
-                    training_data.append((syscalls, process_info))
-                except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
-                    sampled_pids.discard(pid_key)  # Allow retry
-                    continue
-            
-            candidates.clear()  # Reset for next iteration
-            
-            # Check if we have enough data
-            if len(training_data) >= 500:
-                self.console.print(f"✅ Collected enough data ({len(training_data)} samples)!", style="green")
-                break
-            
-            # Show progress every 10 seconds (optimized timing)
-            elapsed = time.time() - start_time
-            if elapsed - (last_progress_time - start_time) >= 10.0:
-                self.console.print(f"📊 Collected {len(training_data)} samples so far... ({int(elapsed)}/{collection_time}s)", style="dim")
-                last_progress_time = time.time()
-            
-            time.sleep(0.5)  # Collect every 0.5 seconds
+                
+                # Show progress every 10 seconds (optimized timing)
+                elapsed = time.time() - start_time
+                if elapsed - (last_progress_time - start_time) >= 10.0:
+                    # Show more informative progress
+                    with self.processes_lock:
+                        total_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
+                    self.console.print(
+                        f"📊 Real data: {len(training_data)} samples | "
+                        f"Processes: {total_processes_seen} | "
+                        f"Syscalls captured: {total_syscalls} | "
+                        f"({int(elapsed)}/{collection_time}s)", 
+                        style="dim"
+                    )
+                    last_progress_time = time.time()
+                
+                time.sleep(0.5)  # Collect every 0.5 seconds
         
         # If still not enough data, supplement with baseline patterns
-        if len(training_data) < 50:  # Lower threshold from 100 to 50
-            self.console.print("⚠️ Not enough real data, using baseline patterns", style="yellow")
+        real_samples = len(training_data)
+        if real_samples < 50:  # Lower threshold from 100 to 50
+            self.console.print(f"⚠️ Only collected {real_samples} real samples (need 50+), adding baseline patterns", style="yellow")
             self.console.print("💡 For better results, generate system activity during training!", style="dim")
             if self.config.get('debug', False):
-                self.console.print(f"🐛 DEBUG: Only collected {len(training_data)} samples, need 50+", style="dim")
+                self.console.print(f"🐛 DEBUG: Only collected {real_samples} samples, need 50+", style="dim")
             baseline_data = self._get_baseline_patterns()
             training_data.extend(baseline_data)
-            if self.config.get('debug', False):
-                self.console.print(f"🐛 DEBUG: Added {len(baseline_data)} baseline samples", style="dim")
-        elif len(training_data) < 100:
-            self.console.print(f"✅ Collected {len(training_data)} real training samples (supplemented with baseline)", style="green")
+            self.console.print(f"✅ Added {len(baseline_data)} baseline samples (total: {len(training_data)} samples)", style="green")
+        elif real_samples < 100:
+            self.console.print(f"✅ Collected {real_samples} real training samples (supplementing with baseline)", style="green")
             # Add some baseline data but keep real data primary
             baseline_data = self._get_baseline_patterns()[:100]  # Add 100 baseline samples
             training_data.extend(baseline_data)
+            self.console.print(f"✅ Total: {len(training_data)} samples ({real_samples} real + {len(baseline_data)} baseline)", style="green")
         else:
-            self.console.print(f"✅ Collected {len(training_data)} real training samples", style="green")
+            self.console.print(f"✅ Collected {real_samples} real training samples", style="green")
         
         # Train models on REAL data
         if self.enhanced_anomaly_detector and training_data:
@@ -2071,9 +2096,17 @@ def main():
     
     # Train models if requested (original behavior)
     if args.train_models and agent.enhanced_anomaly_detector:
+        # CRITICAL: Start monitoring BEFORE training to collect real syscall data
+        agent.start_monitoring()
+        # Give monitoring a moment to initialize and start capturing events
+        time.sleep(2)
+        
         # Pass append flag via config for downstream use
         agent.config['append_training'] = args.append
         agent._train_anomaly_models()
+        
+        # Stop monitoring after training
+        agent.stop_monitoring()
         return
     
     # Handle query commands (list processes, anomalies, stats)
