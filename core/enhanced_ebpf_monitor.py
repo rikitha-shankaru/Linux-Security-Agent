@@ -114,10 +114,23 @@ class StatefulEBPFMonitor:
         """Load enhanced eBPF program with stateful tracking"""
         # Real eBPF code that captures actual syscalls
         ebpf_code = """
-// Suppress harmless macro redefinition warnings
+// Suppress harmless macro redefinition warnings - must be at the very top
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmacro-redefined"
 #pragma clang diagnostic ignored "-Wunused-macros"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+
+// Undefine macros before including headers to avoid redefinition warnings
+#ifdef __HAVE_BUILTIN_BSWAP32__
+#undef __HAVE_BUILTIN_BSWAP32__
+#endif
+#ifdef __HAVE_BUILTIN_BSWAP64__
+#undef __HAVE_BUILTIN_BSWAP64__
+#endif
+#ifdef __HAVE_BUILTIN_BSWAP16__
+#undef __HAVE_BUILTIN_BSWAP16__
+#endif
+
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
 
