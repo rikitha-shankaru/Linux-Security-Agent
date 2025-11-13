@@ -599,13 +599,33 @@ class EnhancedSecurityAgent:
             candidates = []  # Collect candidates first, then batch psutil calls
             total_processes_seen = 0
             
-            while (time.time() - start_time) < collection_time:
-                iteration += 1
-                
-                # Quick pass to collect candidate PIDs (minimize lock time)
-                with self.processes_lock:
-                    processes_snapshot = {pid: dict(proc) for pid, proc in self.processes.items()}
-                    total_processes_seen = len(processes_snapshot)
+            try:
+                while (time.time() - start_time) < collection_time:
+                    iteration += 1
+                    
+                    # Quick pass to collect candidate PIDs (minimize lock time)
+                    # Use context manager but with timeout to avoid blocking on interrupt
+                    processes_snapshot = {}
+                    try:
+                        # Try to acquire lock with timeout - allows interrupt to work
+                        if self.processes_lock.acquire(timeout=0.1):
+                            try:
+                                processes_snapshot = {pid: dict(proc) for pid, proc in self.processes.items()}
+                                total_processes_seen = len(processes_snapshot)
+                            finally:
+                                self.processes_lock.release()
+                        else:
+                            # Lock timeout - skip this iteration
+                            time.sleep(0.1)
+                            continue
+                    except KeyboardInterrupt:
+                        # Release lock if held
+                        try:
+                            if self.processes_lock.locked():
+                                self.processes_lock.release()
+                        except:
+                            pass
+                        raise
                 
                 # Process snapshot outside lock
                 for pid, proc in processes_snapshot.items():
@@ -654,18 +674,37 @@ class EnhancedSecurityAgent:
                 elapsed = time.time() - start_time
                 if elapsed - (last_progress_time - start_time) >= 10.0:
                     # Show more informative progress
-                    with self.processes_lock:
-                        total_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
+                    total_syscalls = 0
+                    try:
+                        if self.processes_lock.acquire(timeout=0.1):
+                            try:
+                                total_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
+                            finally:
+                                self.processes_lock.release()
+                    except:
+                        pass
+                    
                     self.console.print(
                         f"📊 Real data: {len(training_data)} samples | "
                         f"Processes: {total_processes_seen} | "
                         f"Syscalls captured: {total_syscalls} | "
-                        f"({int(elapsed)}/{collection_time}s)", 
+                        f"({int(elapsed)}/{collection_time}s) | "
+                        f"Press Ctrl+C to stop early", 
                         style="dim"
                     )
                     last_progress_time = time.time()
                 
-                time.sleep(0.5)  # Collect every 0.5 seconds
+                # Use interruptible sleep - check for interrupt frequently
+                try:
+                    # Sleep in small chunks to allow interrupt
+                    for _ in range(5):  # 5 * 0.1 = 0.5 seconds total
+                        time.sleep(0.1)
+                except KeyboardInterrupt:
+                    self.console.print("\n⚠️ Training interrupted by user", style="yellow")
+                    raise
+            except KeyboardInterrupt:
+                self.console.print("\n⚠️ Training interrupted. Saving collected data...", style="yellow")
+                # Don't re-raise - continue with what we have
         
         # If still not enough data, supplement with baseline patterns
         real_samples = len(training_data)
