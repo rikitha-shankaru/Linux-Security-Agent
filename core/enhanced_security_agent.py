@@ -2275,21 +2275,30 @@ def main():
             print("✅ TRAINING COMPLETE")
             print("="*60)
             print("Models are saved and ready to use.")
-            print("You can now run the agent with:")
-            print("  sudo python3 core/enhanced_security_agent.py --dashboard")
-            print("="*60 + "\n")
+            
+            # If dashboard was also requested, continue to monitoring
+            if args.dashboard or args.tui:
+                print("Starting dashboard with trained models...")
+                print("="*60 + "\n")
+                # Don't return - fall through to dashboard code below
+            else:
+                print("You can now run the agent with:")
+                print("  sudo python3 core/enhanced_security_agent.py --dashboard")
+                print("="*60 + "\n")
+                # Stop monitoring and exit
+                try:
+                    agent.stop_monitoring()
+                except Exception:
+                    pass
+                return
         except KeyboardInterrupt:
             print("\n⚠️ Training interrupted by user")
             print("Stopping monitoring and exiting...")
-        finally:
-            # Always stop monitoring, even on interrupt
             try:
                 agent.stop_monitoring()
-                print("✅ Monitoring stopped")
-            except Exception as e:
-                # Ignore errors during final cleanup - process is exiting
-                logger.debug(f"Error during final cleanup: {e}")
-        return
+            except Exception:
+                pass
+            return
     
     # Handle query commands (list processes, anomalies, stats)
     if args.list_processes or args.list_anomalies or args.stats:
@@ -2338,8 +2347,9 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Start monitoring
-    agent.start_monitoring()
+    # Start monitoring (skip if already started from training)
+    if not agent.running:
+        agent.start_monitoring()
     
     try:
         start_time = time.time()

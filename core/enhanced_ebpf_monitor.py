@@ -363,29 +363,48 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                 )
                 logger.info("Perf event buffer attached")
                 
-                # VERIFY tracepoint is attached
+                # VERIFY and AUTO-ENABLE tracepoint if needed
                 try:
                     # Check if tracepoint is actually attached by looking at tracefs
                     tracepoint_path = "/sys/kernel/debug/tracing/events/raw_syscalls/sys_enter/enable"
+                    alt_path = "/sys/kernel/tracing/events/raw_syscalls/sys_enter/enable"
+                    
+                    # Try primary path first
                     if os.path.exists(tracepoint_path):
                         with open(tracepoint_path, 'r') as f:
                             enabled = f.read().strip()
                             if enabled == "1":
                                 logger.debug("✅ Tracepoint is enabled")
                             else:
-                                logger.warning(f"⚠️ Tracepoint enable file shows: {enabled}")
-                    else:
+                                logger.warning(f"⚠️ Tracepoint enable file shows: {enabled}, attempting to enable...")
+                                try:
+                                    with open(tracepoint_path, 'w') as f:
+                                        f.write("1")
+                                    logger.info("✅ Tracepoint enabled successfully")
+                                except PermissionError:
+                                    logger.warning("⚠️ Cannot enable tracepoint (need root) - events may not be captured")
+                                except Exception as e:
+                                    logger.warning(f"⚠️ Failed to enable tracepoint: {e}")
+                    elif os.path.exists(alt_path):
                         # Try alternative path
-                        alt_path = "/sys/kernel/tracing/events/raw_syscalls/sys_enter/enable"
-                        if os.path.exists(alt_path):
-                            with open(alt_path, 'r') as f:
-                                enabled = f.read().strip()
-                                if enabled == "1":
-                                    logger.debug("✅ Tracepoint is enabled (alt path)")
-                                else:
-                                    logger.warning(f"⚠️ Tracepoint enable file shows: {enabled}")
+                        with open(alt_path, 'r') as f:
+                            enabled = f.read().strip()
+                            if enabled == "1":
+                                logger.debug("✅ Tracepoint is enabled (alt path)")
+                            else:
+                                logger.warning(f"⚠️ Tracepoint enable file shows: {enabled}, attempting to enable...")
+                                try:
+                                    with open(alt_path, 'w') as f:
+                                        f.write("1")
+                                    logger.info("✅ Tracepoint enabled successfully (alt path)")
+                                except PermissionError:
+                                    logger.warning("⚠️ Cannot enable tracepoint (need root) - events may not be captured")
+                                except Exception as e:
+                                    logger.warning(f"⚠️ Failed to enable tracepoint: {e}")
+                    else:
+                        logger.warning("⚠️ Tracepoint path not found - eBPF may not work correctly")
                 except Exception as e:
-                    logger.debug(f"Could not verify tracepoint status: {e}")
+                    logger.debug(f"Could not verify/enable tracepoint status: {e}")
                     
             except Exception as e:
                 logger.error(f"Failed to open perf buffer: {e}", exc_info=True)
