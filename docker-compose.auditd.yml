@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  security-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.auditd
+    privileged: true
+    volumes:
+      - /var/log/audit:/var/log/audit:ro  # Read audit logs
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - ./config:/app/config:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - COLLECTOR=auditd
+    command: ["--collector", "auditd", "--dashboard", "--threshold", "30"]
+    restart: unless-stopped
+    network_mode: "host"  # May need host network for auditd
+

@@ -1,0 +1,22 @@
+FROM ubuntu:22.04
+
+# Install system dependencies (NO BCC - just auditd)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-dev \
+    auditd \
+    procps \
+    net-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy project files
+COPY . /app
+WORKDIR /app
+
+# Install Python dependencies
+RUN pip3 install -r requirements.txt
+
+# Set entrypoint
+ENTRYPOINT ["python3", "core/enhanced_security_agent.py"]
+
