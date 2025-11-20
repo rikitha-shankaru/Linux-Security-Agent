@@ -239,16 +239,27 @@ class SimpleSecurityAgent:
                 reverse=True
             )[:20]  # Top 20
             
-            for pid, proc in sorted_procs:
-                risk = proc['risk_score']
-                risk_style = "red" if risk >= 50 else "yellow" if risk >= 30 else "green"
-                
+            # Add processes or "Waiting for data..." message
+            if sorted_procs:
+                for pid, proc in sorted_procs:
+                    risk = proc['risk_score']
+                    risk_style = "red" if risk >= 50 else "yellow" if risk >= 30 else "green"
+                    
+                    table.add_row(
+                        str(pid),
+                        proc['name'][:30],
+                        f"[{risk_style}]{risk:.1f}[/]",
+                        f"{proc['anomaly_score']:.2f}",
+                        str(len(proc['syscalls']))
+                    )
+            else:
+                # Show info panel when no data yet
                 table.add_row(
-                    str(pid),
-                    proc['name'][:30],
-                    f"[{risk_style}]{risk:.1f}[/]",
-                    f"{proc['anomaly_score']:.2f}",
-                    str(len(proc['syscalls']))
+                    "---",
+                    "Waiting for syscalls...",
+                    "---",
+                    "---",
+                    "---"
                 )
             
             # Stats
@@ -259,10 +270,50 @@ class SimpleSecurityAgent:
                 f"Syscalls: {self.stats['total_syscalls']}"
             )
             
-            return Panel(table, title=stats_text, border_style="green")
+            # Create info panel explaining scores
+            info_panel = self._create_info_panel()
+            
+            # Combine table and info
+            from rich.console import Group
+            content = Group(table, info_panel)
+            
+            return Panel(content, title=stats_text, border_style="green")
+    
+    def _create_info_panel(self) -> Panel:
+        """Create info panel explaining risk and anomaly scores"""
+        threshold = self.config.get('risk_threshold', 30.0)
+        
+        info_text = f"""
+[bold cyan]📊 Score Guide:[/bold cyan]
+
+[bold]Risk Score (0-100):[/bold]
+  [green]🟢 0-{threshold:.0f}[/green]   Normal behavior - typical system operations
+  [yellow]🟡 {threshold:.0f}-50[/yellow]  Suspicious - unusual patterns detected
+  [red]🔴 50-100[/red]  High Risk - potential threat, investigate immediately
+
+[bold]Anomaly Score (ML-based):[/bold]
+  [green]0.00-10.00[/green]  Normal - matches learned behavior patterns
+  [yellow]10.00-30.00[/yellow]  Unusual - deviates from baseline
+  [red]30.00+[/red]      Anomalous - significant deviation, likely threat
+
+[bold]How Scores Work:[/bold]
+  • Risk Score: Based on syscall types, frequency, and behavioral patterns
+  • Anomaly Score: ML model detects deviations from normal behavior
+  • Both scores update in real-time as processes execute syscalls
+  • Scores reset when agent restarts (not persisted between runs)
+
+[bold]Current Threshold:[/bold] {threshold:.1f} (configurable with --threshold)
+"""
+        
+        return Panel(info_text.strip(), title="ℹ️  Score Information", border_style="blue")
     
     def run_dashboard(self):
         """Run with dashboard"""
+        # Show startup info
+        self.console.print("\n[bold green]🛡️  Security Agent Starting...[/bold green]")
+        self.console.print("[yellow]ℹ️  Score information will be displayed in the dashboard[/yellow]\n")
+        time.sleep(2)  # Give user time to read startup message
+        
         if not self.start():
             return
         
