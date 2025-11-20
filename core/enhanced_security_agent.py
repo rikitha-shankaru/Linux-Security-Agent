@@ -118,11 +118,14 @@ except ImportError as e:
 # Optional auditd collector (fallback)
 try:
     try:
-        from core.collector_auditd import AuditdCollector
+        from core.collectors.auditd_collector import AuditdCollector
         AUDITD_AVAILABLE = True
     except ImportError:
-        from collector_auditd import AuditdCollector
-        AUDITD_AVAILABLE = True
+        try:
+            from collectors.auditd_collector import AuditdCollector
+            AUDITD_AVAILABLE = True
+        except ImportError:
+            AUDITD_AVAILABLE = False
 except ImportError:
     AUDITD_AVAILABLE = False
 

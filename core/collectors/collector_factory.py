@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 
 from .base import BaseCollector
 from .ebpf_collector import EBPFCollector
-from .auditd_collector import AuditdCollectorWrapper
+from .auditd_collector import AuditdCollector
 
 logger = logging.getLogger('security_agent.collector.factory')
 
@@ -35,7 +35,7 @@ def get_collector(config: Optional[Dict[str, Any]] = None, preferred: Optional[s
             logger.warning("⚠️ eBPF not available, falling back to auditd")
     
     # Fallback to auditd
-    collector = AuditdCollectorWrapper(config)
+    collector = AuditdCollector(config)
     if collector.is_available():
         logger.info("✅ Using auditd collector")
         return collector
