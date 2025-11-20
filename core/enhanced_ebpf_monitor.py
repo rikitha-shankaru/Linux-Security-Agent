@@ -110,7 +110,7 @@ class StatefulEBPFMonitor:
         self.security_policies["default"] = default_policy
         self.active_policies.append("default")
     
-    def _load_enhanced_ebpf_program(self) -> Optional[BPF]:
+    def _load_enhanced_ebpf_program(self) -> Optional[Any]:
         """Load enhanced eBPF program with stateful tracking"""
         # Real eBPF code that captures actual syscalls
         ebpf_code = """
