@@ -11,6 +11,10 @@ This folder contains automation scripts, setup utilities, and helper scripts for
 - **`practice_demo.sh`** - Practice demo script for presentations
 - **`docker_demo.sh`** - Docker-based demo script
 - **`setup_linux_vm.sh`** - Automated Linux VM setup script
+- **`check_dependencies.py`** - Dependency checking utility
+- **`quick_demo.sh`** - Quick demo script
+- **`quick_test.sh`** - Quick test script
+- **`trigger_activity.sh`** - Script to trigger system activity for testing
 
 ## 🎯 Usage
 
@@ -183,7 +187,7 @@ chmod +x scripts/*.sh
 
 ### **Setup Guides**
 - `../docs/INSTALL.md` - Installation instructions
-- `../docs/LINUX_SETUP_GUIDE.txt` - Linux setup guide
+- `../docs/LINUX_SETUP_GUIDE.md` - Linux setup guide
 - `../docs/MACOS_GUIDE.md` - macOS setup guide
 
 ### **Usage Guides**

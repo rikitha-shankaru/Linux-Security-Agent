@@ -2,7 +2,8 @@
 
 Real-time system call monitoring and threat detection agent for Linux. Uses eBPF to capture syscalls from the kernel and ML to detect anomalies.
 
-**Status:** Working - Fixed several bugs (January 2025)
+**Status:** Functional Prototype - Research/Academic Project  
+**Classification:** Not Production Ready - See [PROJECT_STATUS.md](PROJECT_STATUS.md) for details
 
 **Recent fixes:**
 - Now captures actual syscall names (333 mapped) instead of just counting
@@ -15,6 +16,7 @@ Real-time system call monitoring and threat detection agent for Linux. Uses eBPF
 
 - Real-time syscall monitoring via eBPF on Linux
 - ML-based anomaly detection trained on real system behavior
+- **Automatic incremental retraining** - Models continuously improve with new data
 - Risk scoring (0-100) based on syscall patterns
 - Process tracking with automatic memory cleanup
 - Container detection for Docker and Kubernetes
@@ -84,9 +86,9 @@ sudo usermod -aG docker $USER
 newgrp docker
 
 # Verify enhanced components
-python3 -c "from enhanced_ebpf_monitor import StatefulEBPFMonitor; print('✅ Enhanced eBPF monitor available')"
-python3 -c "from enhanced_anomaly_detector import EnhancedAnomalyDetector; print('✅ Enhanced anomaly detector available')"
-python3 -c "from container_security_monitor import ContainerSecurityMonitor; print('✅ Container security monitor available')"
+python3 -c "from core.enhanced_ebpf_monitor import StatefulEBPFMonitor; print('✅ Enhanced eBPF monitor available')"
+python3 -c "from core.enhanced_anomaly_detector import EnhancedAnomalyDetector; print('✅ Enhanced anomaly detector available')"
+python3 -c "from core.container_security_monitor import ContainerSecurityMonitor; print('✅ Container security monitor available')"
 ```
 
 ## Usage
@@ -97,6 +99,15 @@ python3 -c "from container_security_monitor import ContainerSecurityMonitor; pri
 sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
 ```
 
+### Collector selection (eBPF default, auditd fallback)
+```bash
+# eBPF (default)
+sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard
+
+# Auditd (fallback/portable on Ubuntu)
+sudo python3 core/enhanced_security_agent.py --collector auditd --dashboard
+```
+
 ### With training
 ```bash
 # Train models first on real data
@@ -104,6 +115,9 @@ python3 core/enhanced_security_agent.py --train-models
 
 # Then run monitoring
 sudo python3 core/enhanced_security_agent.py --dashboard
+
+# Append to previous feature store when retraining
+python3 core/enhanced_security_agent.py --train-models --append
 ```
 
 ### Other options
@@ -113,6 +127,25 @@ sudo python3 core/enhanced_security_agent.py --output json --timeout 60
 
 # With timeout (auto-stop)
 sudo python3 core/enhanced_security_agent.py --dashboard --timeout 30
+
+# Compact TUI (table-only) instead of full dashboard
+sudo python3 core/enhanced_security_agent.py --tui --timeout 60
+```
+
+## Configuration (config.yml)
+
+Place a YAML (or JSON) config at `config/config.yml` (auto-loaded) or pass via `--config path/to/file`. Example:
+```yaml
+risk_threshold: 50.0
+anomaly_weight: 0.3
+decay_factor: 0.95
+decay_interval: 60
+collector: ebpf
+base_risk_scores:
+  ptrace: 10
+  setuid: 8
+  execve: 5
+  mount: 4
 ```
 
 ## 🧪 Demo and Testing
@@ -250,7 +283,7 @@ Linux-Security-Agent/
 │   └── setup_linux_vm.sh         # VM setup automation
 ├── tests/                         # 🧪 TESTING & VALIDATION
 │   ├── run_tests.py              # Main test runner
-│   └── test_ebpf.py              # eBPF functionality tests
+│   └── test_ebpf.py              # eBPF functionality tests (in tests/ directory)
 ├── examples/                      # 💡 USAGE EXAMPLES
 │   └── find_syscalls.py          # System call analysis example
 ├── config/                        # ⚙️ CONFIGURATION & SETUP
@@ -264,11 +297,15 @@ Linux-Security-Agent/
 
 ## 📈 Performance
 
-- **Linux**: <5% CPU overhead with eBPF
-- **macOS**: ~2-3% CPU overhead with simulation
-- **Memory**: ~50MB base usage
-- **Scalability**: Tested with 1000+ processes
-- **Accuracy**: >95% for known attack patterns
+**Note:** Performance metrics are estimates and have not been comprehensively benchmarked.
+
+- **Linux**: Estimated <5% CPU overhead with eBPF (not benchmarked)
+- **macOS**: Estimated ~2-3% CPU overhead with simulation (not benchmarked)
+- **Memory**: ~50MB base usage (observed)
+- **Scalability**: Limited testing - needs validation at scale
+- **Accuracy**: No validation metrics available - accuracy claims unverified
+
+See [GAP_ANALYSIS.md](GAP_ANALYSIS.md) for detailed limitations and [PROJECT_STATUS.md](PROJECT_STATUS.md) for honest assessment.
 
 ## 🚀 Getting Started
 
@@ -277,4 +314,23 @@ Linux-Security-Agent/
 3. **Demo**: `python3 demo/run_demo.py`
 4. **Monitor**: `python3 security_agent_mac.py --dashboard --timeout 30`
 
-For detailed documentation, see `INSTALL.md`, `USAGE.md`, and `SUMMARY.md`.
+For detailed docs, see `docs/INSTALL.md`, `docs/USAGE.md`, and `docs/DEMO_GUIDE.md`.
+
+## 📢 Project Positioning
+
+**This is a research prototype / academic project demonstrating:**
+- eBPF-based syscall monitoring
+- ML anomaly detection concepts
+- Container security awareness
+- Research paper implementations
+
+**Not suitable for production use without significant additional work.**  
+See [PROJECT_STATUS.md](PROJECT_STATUS.md) and [GAP_ANALYSIS.md](GAP_ANALYSIS.md) for details.
+
+**Suggested repo topics:** linux-security, ebpf, anomaly-detection, container-security, machine-learning, research, prototype, academic-project
+
+### Demo Prep Checklist (quick)
+- [ ] Linux with eBPF + Docker available
+- [ ] Dependencies installed (`requirements.txt`, BCC)
+- [ ] Optional: train models (`--train-models`)
+- [ ] Backup: JSON output mode and list views

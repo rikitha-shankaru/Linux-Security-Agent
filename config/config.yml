@@ -1,0 +1,16 @@
+risk_threshold: 50.0
+anomaly_weight: 0.3
+decay_factor: 0.95
+decay_interval: 60
+collector: ebpf
+
+# Override base risk weights here if needed
+base_risk_scores:
+  ptrace: 10
+  setuid: 8
+  setgid: 8
+  chroot: 8
+  execve: 5
+  mount: 4
+  umount2: 4
+

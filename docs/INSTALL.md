@@ -468,6 +468,24 @@ docker rm $(docker ps -aq --filter ancestor=security-agent)
 ```
 
 ## Support
+---
+
+## VM Quick Setup Tips (VirtualBox + Ubuntu)
+
+- Allocate 4GB RAM, 25GB disk; enable PAE/NX; 2 CPUs if available.
+- Install Guest Additions; set a shared folder to your project path and add user to `vboxsf`.
+- Fast commands:
+  ```bash
+  sudo apt update && sudo apt install -y \
+    python3 python3-pip python3-dev \
+    bpfcc-tools python3-bpfcc \
+    build-essential linux-headers-$(uname -r)
+  python3 -c "from bcc import BPF; print('✅ eBPF working')"
+  ```
+-
+ Common fixes:
+  - Shared folder: `sudo usermod -a -G vboxsf $USER && sudo reboot`
+  - eBPF missing: `sudo apt install -y bpfcc-tools python3-bpfcc && sudo reboot`
 
 ### Getting Help
 

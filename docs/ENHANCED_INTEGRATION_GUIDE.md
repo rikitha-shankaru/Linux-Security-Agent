@@ -73,13 +73,13 @@ sudo apt install bpfcc-tools python3-bpfcc
 
 ```bash
 # Test enhanced eBPF monitor
-python3 -c "from enhanced_ebpf_monitor import StatefulEBPFMonitor; print('✅ Enhanced eBPF monitor available')"
+python3 -c "from core.enhanced_ebpf_monitor import StatefulEBPFMonitor; print('✅ Enhanced eBPF monitor available')"
 
 # Test enhanced anomaly detector
-python3 -c "from enhanced_anomaly_detector import EnhancedAnomalyDetector; print('✅ Enhanced anomaly detector available')"
+python3 -c "from core.enhanced_anomaly_detector import EnhancedAnomalyDetector; print('✅ Enhanced anomaly detector available')"
 
 # Test container security monitor
-python3 -c "from container_security_monitor import ContainerSecurityMonitor; print('✅ Container security monitor available')"
+python3 -c "from core.container_security_monitor import ContainerSecurityMonitor; print('✅ Container security monitor available')"
 ```
 
 ### **Step 3: Run Enhanced Security Agent**
@@ -151,7 +151,7 @@ sudo python3 enhanced_security_agent.py --config enhanced_config.json --dashboar
 ### **1. Basic Enhanced Monitoring**
 
 ```python
-from enhanced_security_agent import EnhancedSecurityAgent
+from core.enhanced_security_agent import EnhancedSecurityAgent
 
 # Create enhanced agent
 config = {
@@ -182,7 +182,7 @@ agent.stop_monitoring()
 ### **2. Enhanced eBPF Monitoring**
 
 ```python
-from enhanced_ebpf_monitor import StatefulEBPFMonitor, SecurityPolicy
+from core.enhanced_ebpf_monitor import StatefulEBPFMonitor, SecurityPolicy
 
 # Create enhanced eBPF monitor
 monitor = StatefulEBPFMonitor({
@@ -221,7 +221,7 @@ monitor.stop_monitoring()
 ### **3. Enhanced Anomaly Detection**
 
 ```python
-from enhanced_anomaly_detector import EnhancedAnomalyDetector
+from core.enhanced_anomaly_detector import EnhancedAnomalyDetector
 
 # Create enhanced anomaly detector
 detector = EnhancedAnomalyDetector({
@@ -358,7 +358,7 @@ sudo python3 enhanced_ebpf_monitor.py
 python3 -c "import sklearn; print('scikit-learn available')"
 
 # Check training data
-python3 -c "from enhanced_anomaly_detector import EnhancedAnomalyDetector; detector = EnhancedAnomalyDetector(); print('Anomaly detector created')"
+python3 -c "from core.enhanced_anomaly_detector import EnhancedAnomalyDetector; detector = EnhancedAnomalyDetector(); print('Anomaly detector created')"
 ```
 
 #### **3. Container Security Monitor Not Working**
@@ -380,7 +380,7 @@ iotop
 nethogs
 
 # Check eBPF program performance
-sudo python3 -c "from enhanced_ebpf_monitor import StatefulEBPFMonitor; monitor = StatefulEBPFMonitor(); print(monitor.get_monitoring_stats())"
+sudo python3 -c "from core.enhanced_ebpf_monitor import StatefulEBPFMonitor; monitor = StatefulEBPFMonitor(); print(monitor.get_monitoring_stats())"
 ```
 
 ### **Debug Mode**

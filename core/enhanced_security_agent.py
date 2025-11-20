@@ -382,7 +382,11 @@ class EnhancedSecurityAgent:
         self._debug_rate_limit_lock = threading.Lock()
         
         # Risk score persistence (optional - load from file if exists)
-        self.risk_score_file = self.config.get('risk_score_file', '/tmp/security_agent_risk_scores.json')
+        # SECURITY FIX: Use secure user cache directory instead of /tmp
+        default_cache_dir = os.path.join(os.path.expanduser('~'), '.cache', 'security_agent')
+        os.makedirs(default_cache_dir, mode=0o700, exist_ok=True)  # Secure permissions (user-only)
+        default_risk_file = os.path.join(default_cache_dir, 'risk_scores.json')
+        self.risk_score_file = self.config.get('risk_score_file', default_risk_file)
         self._saved_risk_scores = {}  # Initialize for deferred restoration
         self._load_risk_scores()
         
@@ -685,8 +689,9 @@ class EnhancedSecurityAgent:
                         try:
                             if self.processes_lock.locked():
                                 self.processes_lock.release()
-                        except:
-                            pass
+                        except Exception:
+                            # Lock release failed - log but continue with raise
+                            self.logger.debug("Error releasing lock during exception handling")
                         raise
                     
                     # Process snapshot outside lock
@@ -743,8 +748,9 @@ class EnhancedSecurityAgent:
                                     total_syscalls = sum(len(p.get('syscalls', [])) for p in self.processes.values())
                                 finally:
                                     self.processes_lock.release()
-                        except:
-                            pass
+                        except Exception:
+                            # Lock release failed - log but continue
+                            self.logger.debug("Error releasing lock during cleanup")
                         
                         self.console.print(
                             f"📊 Real data: {len(training_data)} samples | "
@@ -1125,7 +1131,7 @@ class EnhancedSecurityAgent:
             pass  # Ignore other errors - start fresh if file doesn't exist
     
     def _save_risk_scores(self):
-        """Save current risk scores to file for next run - ATOMIC WRITE"""
+        """Save current risk scores to file for next run - ATOMIC WRITE with secure permissions"""
         try:
             saved_data = {}
             with self.processes_lock:
@@ -1137,6 +1143,11 @@ class EnhancedSecurityAgent:
                             'last_seen': time.time()
                         }
             if saved_data:
+                # Ensure directory exists with secure permissions
+                score_dir = os.path.dirname(self.risk_score_file)
+                if score_dir:
+                    os.makedirs(score_dir, mode=0o700, exist_ok=True)
+                
                 # Atomic write: write to temp file first, then rename
                 temp_file = self.risk_score_file + '.tmp'
                 try:
@@ -1144,8 +1155,12 @@ class EnhancedSecurityAgent:
                         json.dump(saved_data, f, indent=2)
                         f.flush()
                         os.fsync(f.fileno())  # Force write to disk
+                    # Set secure permissions (user-only read/write)
+                    os.chmod(temp_file, 0o600)
                     # Atomic rename (rename is atomic on POSIX systems)
                     os.rename(temp_file, self.risk_score_file)
+                    # Ensure final file has secure permissions
+                    os.chmod(self.risk_score_file, 0o600)
                 except (OSError, PermissionError) as rename_error:
                     # Clean up temp file if rename fails
                     try:
@@ -1259,8 +1274,9 @@ class EnhancedSecurityAgent:
                 with self.stats_lock:
                     self.stats['policy_violations'] += 1
                 return False
-        except (AttributeError, Exception):
-            pass
+        except (AttributeError, Exception) as e:
+            # Process may have terminated or info unavailable - not an error
+            self.logger.debug(f"Could not validate process {pid}: {e}")
         return True
     
     def _get_process_state(self, pid: int) -> Optional[Any]:
@@ -1949,7 +1965,11 @@ def main():
     parser.add_argument('--stats', action='store_true', help='Show statistics and exit')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode with detailed logging')
     parser.add_argument('--daemon', action='store_true', help='Run as background daemon (logs to file)')
-    parser.add_argument('--log-file', type=str, default='/tmp/security_agent.log', help='Log file for daemon mode')
+    # SECURITY FIX: Use secure cache directory instead of /tmp
+    default_log_dir = os.path.join(os.path.expanduser('~'), '.cache', 'security_agent')
+    os.makedirs(default_log_dir, mode=0o700, exist_ok=True)
+    default_log_file = os.path.join(default_log_dir, 'security_agent.log')
+    parser.add_argument('--log-file', type=str, default=default_log_file, help='Log file for daemon mode')
     
     args = parser.parse_args()
     
@@ -2055,8 +2075,11 @@ def main():
     # Handle daemon mode (background operation) - FUTURE IMPLEMENTATION
     if args.daemon:
         print("⚠️  Daemon mode coming soon!")
-        print("For now, use: nohup sudo python3 core/enhanced_security_agent.py --dashboard --timeout 3600 > /tmp/agent.log 2>&1 &")
-        print("Then check logs: tail -f /tmp/agent.log")
+        # Use secure log directory
+        log_dir = os.path.join(os.path.expanduser('~'), '.cache', 'security_agent')
+        log_file = os.path.join(log_dir, 'agent.log')
+        print(f"For now, use: nohup sudo python3 core/enhanced_security_agent.py --dashboard --timeout 3600 > {log_file} 2>&1 &")
+        print(f"Then check logs: tail -f {log_file}")
         sys.exit(0)
     
     # Create enhanced security agent
@@ -2263,8 +2286,9 @@ def main():
             try:
                 agent.stop_monitoring()
                 print("✅ Monitoring stopped")
-            except:
-                pass
+            except Exception as e:
+                # Ignore errors during final cleanup - process is exiting
+                logger.debug(f"Error during final cleanup: {e}")
         return
     
     # Handle query commands (list processes, anomalies, stats)
@@ -2382,7 +2406,7 @@ def main():
                         # Ignore UI errors during shutdown
                         if args.debug:
                             print(f"Warning: Error stopping live UI: {e}")
-                        pass
+                        # Error during UI cleanup - non-critical, process is exiting
                 # Force exit flag
                 exit_requested.set()
         else:

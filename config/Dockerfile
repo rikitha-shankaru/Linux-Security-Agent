@@ -25,5 +25,5 @@ WORKDIR /app
 # Install Python dependencies
 RUN pip3 install -r requirements.txt
 
-# Set entrypoint
-ENTRYPOINT ["python3", "security_agent.py"]
+# Set entrypoint to enhanced security agent
+ENTRYPOINT ["python3", "core/enhanced_security_agent.py"]

@@ -10,6 +10,10 @@ import time
 import json
 import psutil
 import threading
+import logging
+
+# Setup logging
+logger = logging.getLogger('security_agent.container')
 
 # Docker is optional - only needed for container monitoring
 try:
@@ -19,7 +23,7 @@ except ImportError:
     DOCKER_AVAILABLE = False
     docker = None  # Placeholder for type checking
 from collections import defaultdict, deque
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Callable
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import subprocess
@@ -76,7 +80,7 @@ class ContainerSecurityMonitor:
     Prevents cross-container attacks and enforces container-specific policies
     """
     
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.config = config or {}
         self.running = False
         
@@ -94,15 +98,19 @@ class ContainerSecurityMonitor:
                 self.docker_client = docker.from_env()
                 self.docker_available = True
             except Exception as e:
-                print(f"Note: Docker not running - container monitoring disabled: {e}")
+                logger.info(f"Docker not running - container monitoring disabled: {e}")
         else:
-            print("Note: docker package not installed - container monitoring disabled")
+            logger.info("docker package not installed - container monitoring disabled")
         
         # Container tracking
         self.containers = {}  # container_id -> ContainerInfo
         self.container_processes = {}  # pid -> container_id
         self.container_boundaries = {}  # container_id -> set of pids
         self.process_containers = {}  # pid -> container_id
+        
+        # Cache for container lookups (PID -> container_id, with TTL)
+        self._container_lookup_cache = {}  # pid -> (container_id, timestamp)
+        self._container_cache_ttl = 60  # 1 minute TTL
         
         # Security policies
         self.container_policies = {}  # container_id -> ContainerSecurityPolicy
@@ -154,10 +162,10 @@ class ContainerSecurityMonitor:
             updated_at=time.time()
         )
     
-    def start_monitoring(self):
+    def start_monitoring(self) -> bool:
         """Start container security monitoring"""
         if not self.docker_available:
-            print("Error: Docker not available")
+            logger.error("Docker not available")
             return False
         
         self.running = True
@@ -171,10 +179,10 @@ class ContainerSecurityMonitor:
         self.policy_thread.daemon = True
         self.policy_thread.start()
         
-        print("Container security monitoring started")
+        logger.info("Container security monitoring started")
         return True
     
-    def stop_monitoring(self):
+    def stop_monitoring(self) -> None:
         """Stop container security monitoring"""
         self.running = False
         
@@ -184,9 +192,9 @@ class ContainerSecurityMonitor:
         if self.policy_thread:
             self.policy_thread.join(timeout=5)
         
-        print("Container security monitoring stopped")
+        logger.info("Container security monitoring stopped")
     
-    def _monitor_containers(self):
+    def _monitor_containers(self) -> None:
         """Monitor container lifecycle and process mappings"""
         while self.running:
             try:
@@ -194,7 +202,7 @@ class ContainerSecurityMonitor:
                 self._update_process_mappings()
                 time.sleep(5)  # Check every 5 seconds
             except Exception as e:
-                print(f"Error in container monitoring: {e}")
+                logger.error(f"Error in container monitoring: {e}")
                 time.sleep(10)
     
     def _update_container_info(self):
@@ -212,18 +220,18 @@ class ContainerSecurityMonitor:
                     container_info = self._extract_container_info(container)
                     self.containers[container_id] = container_info
                     self._create_container_policy(container_id)
-                    print(f"New container detected: {container_info.name}")
+                    logger.info(f"New container detected: {container_info.name}")
                 
                 # Update existing container info
                 elif container.status != self.containers[container_id].status:
                     self.containers[container_id].status = container.status
-                    print(f"Container status updated: {container.name} -> {container.status}")
+                    logger.info(f"Container status updated: {container.name} -> {container.status}")
             
             # Remove stopped containers
             stopped_containers = set(self.containers.keys()) - current_containers
             for container_id in stopped_containers:
                 container_info = self.containers[container_id]
-                print(f"Container stopped: {container_info.name}")
+                logger.info(f"Container stopped: {container_info.name}")
                 del self.containers[container_id]
                 if container_id in self.container_policies:
                     del self.container_policies[container_id]
@@ -233,7 +241,7 @@ class ContainerSecurityMonitor:
             self.stats['active_containers'] = len([c for c in self.containers.values() if c.status == 'running'])
             
         except Exception as e:
-            print(f"Error updating container info: {e}")
+            logger.error(f"Error updating container info: {e}")
     
     def _extract_container_info(self, container) -> ContainerInfo:
         """Extract detailed information from Docker container"""
@@ -259,7 +267,7 @@ class ContainerSecurityMonitor:
                 environment=dict(container_details['Config']['Env'] or [])
             )
         except Exception as e:
-            print(f"Error extracting container info: {e}")
+            logger.error(f"Error extracting container info: {e}")
             return ContainerInfo(
                 container_id=container.id,
                 name=container.name,
@@ -275,38 +283,42 @@ class ContainerSecurityMonitor:
             )
     
     def _update_process_mappings(self):
-        """Update process-to-container mappings - THREAD SAFE VERSION"""
+        """Update process-to-container mappings - OPTIMIZED with incremental updates"""
         try:
-            # Thread-safe: use locks to protect shared data structures
             with self.containers_lock:
-                # Create new mappings in local variables first
-                new_container_boundaries = {}
-                new_process_containers = {}
-                
-                # Pre-populate container boundaries from container info
-                for container_id, container_info in self.containers.items():
-                    if container_id not in new_container_boundaries:
-                        new_container_boundaries[container_id] = set()
-                
-                # Only check processes for active containers
                 if not self.containers:
-                    # Clear mappings atomically
+                    # Clear mappings atomically if no containers
                     self.container_boundaries.clear()
                     self.process_containers.clear()
                     return
                 
-                # More efficient: get all PIDs first
-                pids = []
-                try:
-                    pids = list(psutil.pids()[:1000])  # Limit to first 1000 for performance
-                except Exception:
-                    return
-                
-                # Check each PID (outside lock to avoid long hold times)
                 containers_snapshot = dict(self.containers)  # Snapshot for processing
+                current_pids = set(self.process_containers.keys())  # Track existing PIDs
             
-            # Process outside the lock (expensive operations)
-            for pid in pids:
+            # Get current system PIDs (limit for performance)
+            try:
+                system_pids = set(psutil.pids()[:2000])  # Increased limit slightly
+            except Exception:
+                return
+            
+            # Incremental update: only check new/changed PIDs
+            new_pids = system_pids - current_pids
+            removed_pids = current_pids - system_pids
+            
+            # Update mappings for new PIDs only (much faster than full scan)
+            new_process_containers = {}
+            new_container_boundaries = {}
+            
+            # Pre-populate boundaries from existing data
+            with self.containers_lock:
+                for container_id in self.container_boundaries.keys():
+                    new_container_boundaries[container_id] = set(self.container_boundaries[container_id])
+                # Remove dead PIDs from boundaries
+                for container_id in new_container_boundaries:
+                    new_container_boundaries[container_id] -= removed_pids
+            
+            # Only check NEW PIDs (incremental update)
+            for pid in new_pids:
                 try:
                     container_id = self._get_process_container(pid)
                     
@@ -315,9 +327,8 @@ class ContainerSecurityMonitor:
                         
                         if container_id in new_container_boundaries:
                             new_container_boundaries[container_id].add(pid)
-                        # Also initialize if it's a short ID from cgroup
                         elif len(container_id) > 12:
-                            # Try to find matching full ID from snapshot
+                            # Try to find matching full ID
                             for full_id in containers_snapshot.keys():
                                 if full_id.startswith(container_id):
                                     if full_id not in new_container_boundaries:
@@ -325,22 +336,42 @@ class ContainerSecurityMonitor:
                                     new_container_boundaries[full_id].add(pid)
                                     new_process_containers[pid] = full_id
                                     break
+                        else:
+                            # Short ID - create entry
+                            if container_id not in new_container_boundaries:
+                                new_container_boundaries[container_id] = set()
+                            new_container_boundaries[container_id].add(pid)
                 
                 except (psutil.NoSuchProcess, psutil.AccessDenied, Exception):
                     continue
             
-            # Atomic update: replace old mappings with new ones (inside lock)
+            # Merge with existing mappings
             with self.containers_lock:
-                self.container_boundaries.clear()
-                self.container_boundaries.update(new_container_boundaries)
-                self.process_containers.clear()
+                # Add new mappings
                 self.process_containers.update(new_process_containers)
+                # Update boundaries
+                for container_id, pids in new_container_boundaries.items():
+                    if container_id in self.container_boundaries:
+                        self.container_boundaries[container_id].update(pids)
+                    else:
+                        self.container_boundaries[container_id] = pids
             
         except Exception as e:
-            print(f"Error updating process mappings: {e}")
+            logger.error(f"Error updating process mappings: {e}")
     
     def _get_process_container(self, pid: int) -> Optional[str]:
-        """Get container ID for a process - IMPROVED VERSION"""
+        """Get container ID for a process - IMPROVED VERSION with caching"""
+        # Validate PID
+        if not isinstance(pid, int) or pid <= 0:
+            return None
+        
+        # Check cache first
+        current_time = time.time()
+        if pid in self._container_lookup_cache:
+            container_id, cache_time = self._container_lookup_cache[pid]
+            if current_time - cache_time < self._container_cache_ttl:
+                return container_id
+        
         try:
             # Method 1: Use Docker API (most reliable if available)
             if self.docker_client and self.containers:
@@ -394,12 +425,17 @@ class ContainerSecurityMonitor:
                 if container_id in self.container_boundaries:
                     pids = self.container_boundaries[container_id]
                     if pid in pids:
-                        return container_id[:12]
+                        result = container_id[:12]
+                        # Update cache
+                        self._container_lookup_cache[pid] = (result, current_time)
+                        return result
             
         except Exception as e:
             # Silent fail - process might not be in container
             pass
         
+        # Cache None result (not in container)
+        self._container_lookup_cache[pid] = (None, current_time)
         return None
     
     def _is_descendant_of(self, pid: int, ancestor_pid: int) -> bool:
@@ -456,9 +492,9 @@ class ContainerSecurityMonitor:
                 policy.allowed_syscalls.extend(['iptables', 'netlink'])
             
             self.container_policies[container_id] = policy
-            print(f"Created security policy for container: {container_info.name}")
+            logger.info(f"Created security policy for container: {container_info.name}")
     
-    def _enforce_policies(self):
+    def _enforce_policies(self) -> None:
         """Enforce container security policies"""
         while self.running:
             try:
@@ -467,7 +503,7 @@ class ContainerSecurityMonitor:
                 self._check_syscall_violations()
                 time.sleep(1)  # Check every second
             except Exception as e:
-                print(f"Error enforcing policies: {e}")
+                logger.error(f"Error enforcing policies: {e}")
                 time.sleep(5)
     
     def _check_cross_container_access(self):
@@ -540,7 +576,7 @@ class ContainerSecurityMonitor:
                         'severity': 'high'
                     }
                     self.policy_violations.append(violation)
-                    print(f"Memory violation in container {container_id}: {total_memory} > {policy.max_memory_usage}")
+                    logger.warning(f"Memory violation in container {container_id}: {total_memory} > {policy.max_memory_usage}")
                 
                 if total_cpu > policy.max_cpu_usage:
                     violation = {
@@ -552,7 +588,7 @@ class ContainerSecurityMonitor:
                         'severity': 'medium'
                     }
                     self.policy_violations.append(violation)
-                    print(f"CPU violation in container {container_id}: {total_cpu} > {policy.max_cpu_usage}")
+                    logger.warning(f"CPU violation in container {container_id}: {total_cpu} > {policy.max_cpu_usage}")
     
     def _check_syscall_violations(self):
         """Check for syscall policy violations"""
@@ -592,14 +628,14 @@ class ContainerSecurityMonitor:
                             'severity': 'high'
                         }
                         self.policy_violations.append(violation)
-                        print(f"⚠️ High syscall rate in container {container_id}: {cpu_percent}% CPU")
+                        logger.warning(f"High syscall rate in container {container_id}: {cpu_percent}% CPU")
                         
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
                     
             # Log if container is making excessive syscalls
             if high_risk_count > policy.max_syscall_rate / 10:  # Alert at 10% of limit
-                print(f"⚠️ Container {container_id} approaching syscall rate limit")
+                logger.warning(f"Container {container_id} approaching syscall rate limit")
     
     def detect_cross_container_attempt(self, source_pid: int, target_pid: int, syscall: str) -> bool:
         """Detect cross-container access attempt"""
@@ -624,7 +660,7 @@ class ContainerSecurityMonitor:
             self.stats['cross_container_attempts'] += 1
             self.stats['blocked_attempts'] += 1
             
-            print(f"🚨 Cross-container attack blocked: {syscall} from {source_container} to {target_container}")
+            logger.warning(f"Cross-container attack blocked: {syscall} from {source_container} to {target_container}")
             return True
         
         return False
@@ -649,7 +685,7 @@ class ContainerSecurityMonitor:
             }
             self.policy_violations.append(violation)
             self.stats['policy_violations'] += 1
-            print(f"🚨 Blocked syscall {syscall} in container {container_id}")
+            logger.warning(f"Blocked syscall {syscall} in container {container_id}")
             return False
         
         # Check allowed syscalls
@@ -664,7 +700,7 @@ class ContainerSecurityMonitor:
             }
             self.policy_violations.append(violation)
             self.stats['policy_violations'] += 1
-            print(f"⚠️ Unauthorized syscall {syscall} in container {container_id}")
+            logger.warning(f"Unauthorized syscall {syscall} in container {container_id}")
             return False
         
         return True
@@ -677,7 +713,7 @@ class ContainerSecurityMonitor:
         """Get security policy for a container"""
         return self.container_policies.get(container_id)
     
-    def update_container_policy(self, container_id: str, policy_updates: Dict[str, Any]):
+    def update_container_policy(self, container_id: str, policy_updates: Dict[str, Any]) -> None:
         """Update security policy for a container"""
         if container_id in self.container_policies:
             policy = self.container_policies[container_id]
@@ -687,7 +723,7 @@ class ContainerSecurityMonitor:
                     setattr(policy, key, value)
             
             policy.updated_at = time.time()
-            print(f"Updated policy for container {container_id}")
+            logger.info(f"Updated policy for container {container_id}")
     
     def get_security_stats(self) -> Dict[str, Any]:
         """Get security monitoring statistics"""

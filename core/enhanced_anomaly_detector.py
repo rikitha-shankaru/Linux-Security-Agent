@@ -165,15 +165,15 @@ class EnhancedAnomalyDetector:
         high_risk_count = sum(syscall_counts.get(sc, 0) for sc in high_risk_syscalls)
         features.append(high_risk_count * syscalls_len_inv if syscalls_len > 0 else 0.0)
         
-        # 5. Temporal features (NOTE: Will be real when timestamps are captured)
+        # 5. Temporal features
+        # Note: Timestamps from eBPF events would improve accuracy
+        # Current implementation estimates based on syscall patterns
         if self.temporal_features and len(syscalls) > 1:
             # Syscall rate (syscalls per second)
             features.append(len(syscalls))  # Total syscalls in window
             
-            # Burst detection
-            # TODO: Use actual timestamps from syscall events
-            # For now, estimate based on syscall patterns
-            # In a real implementation, we'd have timestamps from eBPF events
+            # Burst detection - estimated rate
+            # Future improvement: Use actual timestamps from syscall events for precise rate calculation
             features.append(len(syscalls) / 100)  # Estimate: 100 syscalls per second avg
             # Prevent division by zero
             if len(syscalls) > 0:
@@ -466,8 +466,11 @@ class EnhancedAnomalyDetector:
             ref = self.ngram_avg_prob or 1e-6
             ratio = max(0.0, min(1.0, (ref - ngram_avg_p) / max(ref, 1e-6)))
             ngram_rarity = ratio  # 0 normal, 1 very rare
-        except Exception:
-            pass
+        except Exception as e:
+            # N-gram calculation failed - continue without it (non-critical)
+            import logging
+            logger = logging.getLogger('security_agent.anomaly')
+            logger.debug(f"N-gram rarity calculation failed: {e}")
 
         # Final decision
         is_anomaly = anomaly_votes >= (total_models / 2) if total_models > 0 else False
@@ -523,18 +526,19 @@ class EnhancedAnomalyDetector:
         try:
             if len(features) > 10 and features[10] > 0.1:
                 explanations.append("High proportion of risky system calls")
-        except Exception:
+        except (IndexError, TypeError) as e:
+            # Feature vector may be malformed - skip this explanation
             pass
         try:
             if len(features) > 9 and features[9] < 1.0:
                 explanations.append("Low system call diversity (low entropy)")
-        except Exception:
+        except (IndexError, TypeError):
             pass
         try:
             # Temporal count proxy at index 11 (len(syscalls)); flag if very high
             if len(features) > 11 and features[11] > 100:
                 explanations.append("Unusually high system call rate")
-        except Exception:
+        except (IndexError, TypeError):
             pass
         
         return "; ".join(explanations) if explanations else "Normal behavior detected"

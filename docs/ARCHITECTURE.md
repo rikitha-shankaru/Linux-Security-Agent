@@ -29,253 +29,194 @@ This is a **production-ready EDR (Endpoint Detection and Response) system** comp
 
 ---
 
-## 📁 **Core Architecture Files**
+## ✅ 2025 Collector Strategy (eBPF-first with auditd fallback)
 
-### **🔧 Main Security Agents**
+- Default collector: eBPF/BCC for low-overhead, high-fidelity syscall events.
+- Fallback collector: auditd (Ubuntu) for portability and guaranteed demos.
+- Both collectors emit the same normalized event schema so downstream logic is identical.
 
-#### **`security_agent.py`** (34KB) - **Main Linux Agent**
-- **Purpose**: Primary Linux security agent with eBPF support
-- **Features**:
-  - Real-time system call monitoring using eBPF
-  - Process risk scoring and threat detection
-  - Enterprise-grade monitoring capabilities
-  - Dashboard and JSON output support
-  - Automated response integration
-- **Usage**: `sudo python3 security_agent.py --dashboard --threshold 30`
+### Unified Event Schema
+```
+{
+  ts: float,            # event timestamp (seconds)
+  pid: int,
+  uid: int,
+  comm: str,            # short command
+  exe: str,             # full path if available
+  syscall: str,         # name (e.g., "execve")
+  args: dict | None     # optional, collector-dependent
+}
+```
 
-#### **`security_agent_mac.py`** (10KB) - **macOS-Compatible Version**
-- **Purpose**: Cross-platform support for macOS development
-- **Features**:
-  - Process monitoring using psutil simulation
-  - Same risk scoring algorithms as Linux version
-  - Timeout support and graceful exit
-  - No root privileges required
-- **Usage**: `python3 security_agent_mac.py --dashboard --timeout 30`
-
-#### **`production_agent.py`** (21KB) - **Production Orchestrator**
-- **Purpose**: Enterprise deployment orchestrator
-- **Features**:
-  - Combines all components for production use
-  - Advanced configuration management
-  - Service management and monitoring
-  - Cloud backend integration
-- **Usage**: `python3 production_agent.py --config production.json`
+### Runtime selection
+- CLI flag (proposed): `--collector=ebpf|auditd` (default: `ebpf`).
+- If eBPF initialization fails, automatically fall back to `auditd` with a warning.
 
 ---
 
-## 🧠 **Advanced Analytics & Detection**
+## 📦 Pipeline Overview (Collector-agnostic)
 
-### **`anomaly_detector.py`** (14KB) - **Machine Learning Engine**
-- **Purpose**: ML-based anomaly detection system
-- **Features**:
-  - **Isolation Forest algorithm** for anomaly detection
-  - Behavioral pattern analysis and learning
-  - Real-time threat identification
-  - ML model training and inference
-  - Feature extraction from system calls
-- **Key Classes**:
-  - `AnomalyDetector`: Main ML detection engine
-  - `FeatureExtractor`: System call feature analysis
-  - `ModelTrainer`: ML model training and validation
-
-### **`advanced_risk_engine.py`** (18KB) - **Behavioral Risk Scoring**
-- **Purpose**: Advanced risk calculation and behavioral analysis
-- **Features**:
-  - Dynamic risk score calculations
-  - Process behavior baselining
-  - Behavioral deviation detection
-  - Time-decay risk scoring
-  - Multi-factor risk assessment
-- **Key Classes**:
-  - `AdvancedRiskEngine`: Main risk calculation engine
-  - `BehavioralBaseline`: Process behavior learning
-  - `RiskCalculator`: Multi-factor risk scoring
-
-### **`mitre_attack_detector.py`** (16KB) - **Threat Intelligence**
-- **Purpose**: MITRE ATT&CK framework integration
-- **Features**:
-  - **50+ attack technique detection**
-  - Threat classification and mapping
-  - Confidence scoring for detections
-  - Attack pattern recognition
-  - Threat intelligence correlation
-- **Key Classes**:
-  - `MitreAttackDetector`: Main threat detection engine
-  - `AttackTechnique`: Individual attack pattern detection
-  - `ThreatClassifier`: Attack classification and scoring
+1) Collector (eBPF or auditd) → normalized events
+2) Process state update (per-PID history, counts)
+3) Risk scoring (base weights, deviation, container context, burst signals)
+4) Feature extraction (50-D vector) → scaler → PCA
+5) ML ensemble (IsolationForest + One‑Class SVM)
+6) Optional: n‑gram/bigram likelihood for sequence explanation
+7) Outputs: dashboard/TUI, list views, JSON export, optional actions
 
 ---
 
-## 🛡️ **Security & Response**
+## 🔁 Training and Retraining
 
-### **`action_handler.py`** (13KB) - **Automated Response System**
-- **Purpose**: Configurable security actions and responses
-- **Features**:
-  - Configurable actions (warn/freeze/kill)
-  - Threshold-based response triggers
-  - Safety checks and logging
-  - Process management capabilities
-  - Action escalation policies
-- **Key Classes**:
-  - `ActionHandler`: Main response system
-  - `ActionPolicy`: Response policy management
-  - `ProcessManager`: Process control operations
+- Persist preprocessing and models (already supported): scaler, PCA, IF, OCSVM.
+- Add a rolling feature store (last N samples, e.g., 50k–200k) on disk.
+- Retrain by loading previous features + appending new features; re-fit scaler/PCA/IF/OCSVM; save.
+- Calibrate thresholds from recent percentiles after retrain (optional `--calibrate <secs>`).
+- Online adaptation already present: per‑PID behavioral baselines via EMA.
 
-### **`security_hardener.py`** (21KB) - **System Hardening**
-- **Purpose**: System security hardening and protection
-- **Features**:
-  - File integrity checking
-  - Process protection mechanisms
-  - Memory leak detection
-  - Tamper protection features
-  - Security policy enforcement
-- **Key Classes**:
-  - `SecurityHardener`: Main hardening engine
-  - `IntegrityChecker`: File integrity monitoring
-  - `ProcessProtector`: Process security enforcement
+Optional (time-permitting): streaming detector (e.g., River Half‑Space Trees) behind `--stream-ml` for continuous learning and drift alerts.
 
 ---
 
-## ⚡ **Performance & Monitoring**
+## 🖥️ Operator Interfaces
 
-### **`ebpf_monitor.py`** (10KB) - **Kernel-Level Monitoring**
-- **Purpose**: Low-level system call monitoring
-- **Features**:
-  - eBPF system call interception
-  - Low-overhead kernel monitoring
-  - Real-time event processing
-  - Performance optimization
-  - Kernel-space data collection
-- **Key Classes**:
-  - `EBPFMonitor`: Main eBPF monitoring engine
-  - `SyscallInterceptor`: System call capture
-  - `EventProcessor`: Real-time event processing
-
-### **`performance_optimizer.py`** (19KB) - **System Optimization**
-- **Purpose**: Performance optimization and scalability
-- **Features**:
-  - Multi-threaded processing
-  - Event batching and queuing
-  - Memory and CPU optimization
-  - Scalability enhancements
-  - Resource management
-- **Key Classes**:
-  - `PerformanceOptimizer`: Main optimization engine
-  - `EventBatcher`: Event batching and queuing
-  - `ResourceManager`: System resource optimization
+- Dashboard (existing): detailed, with risk/anomaly and explanations.
+- TUI (proposed lite mode): compact table refreshed every 1–2s:
+  - Columns: PID | Command | Score | Anom | Status
+  - Enabled with `--tui` (can coexist with dashboard or run standalone)
 
 ---
 
-## ☁️ **Cloud Integration**
+## ⚙️ Configuration and Flags (additions)
 
-### **`cloud_backend.py`** (16KB) - **Centralized Management**
-- **Purpose**: Cloud-based centralized management
-- **Features**:
-  - Agent registration and heartbeat
-  - Event aggregation and reporting
-  - Remote configuration management
-  - REST API integration
-  - Multi-agent coordination
-- **Key Classes**:
-  - `CloudBackend`: Main cloud integration
-  - `AgentRegistry`: Agent registration and management
-  - `EventAggregator`: Event collection and reporting
+- `--collector=ebpf|auditd` – choose data source at runtime (default: ebpf)
+- `--tui` – enable compact table UI (Rich) for quick demos
+- `--train-models [--append]` – train; with `--append`, merge previous feature store
+- `--calibrate <secs>` – sample recent normal to set thresholds by percentile
+- `--stream-ml` – enable streaming detector (optional, if implemented)
 
-### **`cloud_server.py`** (14KB) - **Cloud Backend Server**
-- **Purpose**: Centralized management server
-- **Features**:
-  - Centralized management console
-  - Multi-agent coordination
-  - Dashboard and reporting
-  - Enterprise deployment support
-  - REST API server
-- **Key Classes**:
-  - `CloudServer`: Main server application
-  - `ManagementAPI`: REST API endpoints
-  - `DashboardServer`: Web-based management interface
+Examples
+```bash
+# eBPF with dashboard
+sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard --threshold 30
+
+# Auditd fallback with TUI
+sudo python3 core/enhanced_security_agent.py --collector auditd --tui --timeout 300
+
+# Train and append to previous feature store
+python3 core/enhanced_security_agent.py --train-models --append
+```
 
 ---
 
-## 🛠️ **Setup & Testing**
+## 🎯 Design Rationale and Alternatives
 
-### **`setup.py`** (8KB) - **Linux Installation**
-- **Purpose**: Automated Linux setup and deployment
-- **Features**:
-  - Automated Linux setup
-  - Dependency installation
-  - Service configuration
-  - Production deployment
-  - System integration
-- **Usage**: `python3 setup.py --install`
+### Why eBPF-first with auditd fallback
+- eBPF advantages: low overhead, fine-grained, hard to bypass, rich context; already integrated here.
+- auditd advantages: ubiquitous on Ubuntu, simple to enable, zero kernel/dev headers needed.
+- Tradeoff: auditd events are coarser and can add overhead under heavy load; eBPF requires BCC/kernel headers. Combining both gives performance by default and reliability when eBPF isn’t available.
 
-### **`setup_macos.py`** (9KB) - **macOS Installation**
-- **Purpose**: macOS-specific setup and configuration
-- **Features**:
-  - macOS-specific setup
-  - Virtual environment creation
-  - Cross-platform compatibility
-  - Development environment
-  - Dependency management
-- **Usage**: `python3 setup_macos.py --install`
+Alternatives considered
+- ptrace/strace: easy to prototype but high overhead, intrusive, and trivial to evade.
+- LD_PRELOAD interposition: userland-only, misses kernel-only behavior, bypassable.
+- SystemTap/perf/ftrace: powerful but heavier setup and fewer verifier safety guarantees.
+- Kernel module: maximal control/perf but high maintenance and crash risk.
 
-### **`setup_local.py`** (6KB) - **Local Development**
-- **Purpose**: Local development environment setup
-- **Features**:
-  - Development environment setup
-  - Testing configuration
-  - Local deployment options
-  - Debug configuration
-- **Usage**: `python3 setup_local.py --dev`
+Why this is better here
+- Matches production patterns (modern EDRs use kernel sensors) while preserving a portable fallback for demos and grading.
 
-### **`run_tests.py`** (12KB) - **Comprehensive Testing**
-- **Purpose**: Quality assurance and testing
-- **Features**:
-  - Unit tests for all components
-  - Integration testing
-  - Performance benchmarks
-  - Quality assurance
-  - Test coverage analysis
-- **Usage**: `python3 run_tests.py --all`
+### Why IsolationForest + One‑Class SVM (+ PCA/Scaler)
+- Strengths: robust on tabular features, unsupervised (normal-only), fast inference, mature libraries, explainable with feature attributions.
+- Complementarity: IF isolates outliers via random splits; OCSVM learns a boundary around normal. Disagreement between the two is informative; agreement is high-confidence.
+- PCA/Scaler: stabilizes distances, denoises features, improves generalization across hosts.
+
+Alternatives considered
+- LOF/EllipticEnvelope/KDE: slower or brittle at scale; useful offline but not ideal for hot path.
+- Autoencoder (MLP): powerful but added complexity and tuning; worthwhile later if you need subtle anomaly recall.
+- Sequence models (LSTM/Transformer over syscalls): best for sequence semantics but heavy to train/tune; non-trivial latency.
+- DBSCAN: good for clustering analysis but not suitable for single-sample online inference (we keep it for training-time structure only).
+
+Why this is better here
+- Balances accuracy, speed, and maintainability; integrates cleanly with current 50‑D features; no specialized hardware required.
+
+### Why add n‑gram likelihood and behavioral baselines
+- n‑gram/bigram likelihood: cheap sequence signal that explains anomalies ("unusual syscall pair frequency").
+- Behavioral baselines (EMA): adapts per‑PID to reduce false positives for long-lived benign processes.
+
+### Retraining strategy choice
+- Chosen: rolling feature store (last N samples), re-fit scaler/PCA/IF/OCSVM on previous+new; persist models and features.
+- Alternative: true online models (Half‑Space Trees/RCF via River). We may add this behind a flag when time allows.
+- Why: re-fit on bounded windows remains simple, deterministic, and reproducible, fitting the 40‑day delivery window.
 
 ---
 
-## 📁 **Demo & Documentation**
+## 📁 **Core Architecture Files (Current)**
 
-### **`demo/` Directory**
-- **`normal_behavior.py`** - Simulates normal system operations
-- **`suspicious_behavior.py`** - Simulates attack behaviors  
-- **`run_demo.py`** - Comprehensive demo runner
+### **🔧 Main Agent and Collectors**
 
-### **Documentation Files**
-- **`README.md`** - Project overview and quick start
-- **`ARCHITECTURE.md`** - This file (system architecture)
-- **`INSTALL.md`** - Installation guide
-- **`USAGE.md`** - Usage documentation
-- **`DEMO_GUIDE.md`** - Demo instructions
-- **`PROFESSOR_DEMO_GUIDE.md`** - Academic presentation guide
+#### **`core/enhanced_security_agent.py`** – Main agent
+- Orchestrates collection, scoring, ML, outputs (dashboard/TUI/JSON).
+- Handles process state, configuration, thresholds.
+
+#### **`core/enhanced_ebpf_monitor.py`** – eBPF collector (default)
+- Loads/attaches eBPF, captures syscall events, normalizes to unified schema.
+
+#### (Proposed) `collector_auditd.py` – auditd collector (fallback)
+- Tails `/var/log/audit/audit.log`, parses `type=SYSCALL`, emits unified events.
+
+### **🧠 ML & Features**
+
+#### **`core/enhanced_anomaly_detector.py`** – Ensemble ML
+- 50‑D features → StandardScaler → PCA → IsolationForest + One‑Class SVM.
+- Saves/loads models; supports retrain with appended feature store.
+
+### **🛡️ Container Context**
+
+#### **`core/container_security_monitor.py`** – Container mapping
+- Maps PID↔container (if Docker), adds context to scoring/policy.
 
 ---
 
-## 🔄 **Data Flow**
+## 🛠️ **Setup & Testing (Relevant)**
 
-### **1. System Call Monitoring**
+- Installation and platform details: `docs/INSTALL.md`
+- Demo and usage: `docs/DEMO_GUIDE.md`
+- Tests: `tests/` and top-level `test_*.py`
+
+---
+
+## 📁 **Docs & Demo**
+
+- `README.md` – Overview and quick start
+- `docs/ARCHITECTURE.md` – This file
+- `docs/INSTALL.md` – Installation and VM tips
+- `docs/DEMO_GUIDE.md` – Demo instructions and pitch
+- `PROJECT_EXPLANATION.md` – Consolidated explanation and talk track
+
+---
+
+## 🔄 **Data Flow (Current)**
+
+### 1) Collection (two interchangeable sources)
 ```
-Kernel (eBPF) → eBPF Monitor → Security Agent → Risk Engine
+Kernel (eBPF) → enhanced_ebpf_monitor → normalized events
+OR
+auditd → collector_auditd → normalized events
 ```
 
-### **2. Threat Detection**
+### 2) Processing
 ```
-System Calls → Anomaly Detector → MITRE Detector → Action Handler
-```
-
-### **3. Response Actions**
-```
-High Risk Process → Action Handler → Security Hardener → Cloud Backend
+Events → enhanced_security_agent → process state → risk scoring → features (50‑D)
 ```
 
-### **4. Cloud Integration**
+### 3) Detection
 ```
-Local Agent → Cloud Backend → Cloud Server → Management Dashboard
+Features → scaler → PCA → IF + OCSVM (ensemble) [+ n‑gram likelihood]
+```
+
+### 4) Output / Response
+```
+Dashboard/TUI/List/JSON → optional actions (warn/freeze/kill; if enabled)
 ```
 
 ---

@@ -225,9 +225,11 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         if not self.bpf_program:
             return
         
+        # TODO: Implement eBPF map updates for dynamic policy changes
         # This would involve updating the eBPF maps with new policy data
         # Implementation would depend on specific eBPF map structure
-        pass
+        # For now, policies are checked in userspace during event processing
+        logger.debug("Policy update requested - currently handled in userspace")
     
     def get_process_state(self, pid: int) -> Optional[ProcessState]:
         """Get stateful information for a process"""
@@ -253,8 +255,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     behavioral_baseline={}
                 )
         except Exception as e:
-            # Silently ignore - process might be dead
-            pass
+            # Log error but don't fail - process might be dead or state unavailable
+            logger.debug(f"Could not get process state for PID {pid}: {e}")
         
         return None
     

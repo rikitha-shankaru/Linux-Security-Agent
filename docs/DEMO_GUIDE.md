@@ -134,6 +134,17 @@ demo/
 
 ## 🔧 Advanced Usage
 
+### Demo Prep Checklist (condensed)
+- [ ] Linux with eBPF and Docker (for container demo)
+- [ ] Dependencies installed (BCC, requirements.txt)
+- [ ] Optional: train models (`--train-models`)
+- [ ] Backup: JSON output and list views (`--list-*`, `--stats`)
+
+### Two‑Minute Pitch (use in presentation)
+- Monitor syscalls at kernel level (eBPF) → userspace features → risk + ML anomaly.
+- Ensemble ML (Isolation Forest + One‑Class SVM), container‑aware context.
+- Low overhead, explainable scoring, real‑time dashboard with reasons and thresholds.
+
 ### Docker Implementation (Linux)
 
 ```bash

@@ -18,7 +18,7 @@ This folder contains comprehensive documentation, guides, and setup instructions
 - **`QUICK_START_MAC.md`** - Quick start guide for macOS
 
 ### **Setup and Configuration**
-- **`LINUX_SETUP_GUIDE.txt`** - Comprehensive Linux setup guide
+- **`LINUX_SETUP_GUIDE.md`** - Comprehensive Linux setup guide
 - **`QUICK_VM_COMMANDS.md`** - Quick commands for VM setup
 - **`VIRTUALBOX_SETUP_GUIDE.md`** - VirtualBox setup instructions
 - **`VM_SETUP_CHECKLIST.md`** - VM setup checklist
@@ -51,7 +51,7 @@ This folder contains comprehensive documentation, guides, and setup instructions
 4. Use `PROFESSOR_DEMO_GUIDE.md` for presentations
 
 ### **For System Administrators**
-1. Follow `LINUX_SETUP_GUIDE.txt` for production setup
+1. Follow `LINUX_SETUP_GUIDE.md` for production setup
 2. Use `VIRTUALBOX_SETUP_GUIDE.md` for VM deployment
 3. Check `VM_SETUP_CHECKLIST.md` for validation
 4. Review `QUICK_VM_COMMANDS.md` for quick reference
@@ -85,14 +85,14 @@ sudo python3 legacy/security_agent.py --dashboard
 - **New Users**: `INSTALL.md`, `USAGE.md`, `QUICK_START_MAC.md`
 - **Developers**: `ARCHITECTURE.md`, `ENHANCED_INTEGRATION_GUIDE.md`
 - **Researchers**: `../research/` folder
-- **System Admins**: `LINUX_SETUP_GUIDE.txt`, `VIRTUALBOX_SETUP_GUIDE.md`
+- **System Admins**: `LINUX_SETUP_GUIDE.md`
 - **Presenters**: `DEMO_AND_GITHUB_STRATEGY.md`, `PROFESSOR_DEMO_GUIDE.md`
 
 ### **By Topic**
 - **Installation**: `INSTALL.md`, `MACOS_GUIDE.md`
 - **Usage**: `USAGE.md`, `DEMO_GUIDE.md`
 - **Architecture**: `ARCHITECTURE.md`, `SUMMARY.md`
-- **Setup**: `LINUX_SETUP_GUIDE.txt`, `VM_SETUP_CHECKLIST.md`
+- **Setup**: `LINUX_SETUP_GUIDE.md`
 - **Integration**: `ENHANCED_INTEGRATION_GUIDE.md`
 - **Presentation**: `DEMO_AND_GITHUB_STRATEGY.md`, `PROFESSOR_DEMO_GUIDE.md`
 
@@ -115,7 +115,7 @@ sudo python3 legacy/security_agent.py --dashboard
 ### **Common Issues**
 - Check `INSTALL.md` for installation problems
 - Review `MACOS_GUIDE.md` for macOS-specific issues
-- Use `LINUX_SETUP_GUIDE.txt` for Linux setup problems
+- Use `LINUX_SETUP_GUIDE.md` for Linux setup problems
 - Check `VM_SETUP_CHECKLIST.md` for VM issues
 
 ### **Advanced Issues**
