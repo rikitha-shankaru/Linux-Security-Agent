@@ -2363,6 +2363,10 @@ def main():
             if args.dashboard or args.tui:
                 print("Starting dashboard with trained models...")
                 print("="*60 + "\n")
+                # Ensure agent is still running
+                if not agent.running:
+                    print("⚠️ Agent not running, restarting monitoring...")
+                    agent.start_monitoring()
                 # Don't return - fall through to dashboard code below
             else:
                 print("You can now run the agent with:")
@@ -2439,14 +2443,26 @@ def main():
         
         if args.dashboard or args.tui:
             # Show real-time dashboard - use Live with screen=False for better signal handling
+            print(f"📊 Starting dashboard (agent.running={agent.running})...")
             from rich.live import Live
             live = None
             try:
-                if args.tui:
-                    live = Live(agent._create_tui_table(), refresh_per_second=2, screen=False)
-                else:
-                    live = Live(agent._create_dashboard(), refresh_per_second=2, screen=False)
-                live.start()
+                print("Creating dashboard view...")
+                try:
+                    if args.tui:
+                        view = agent._create_tui_table()
+                        live = Live(view, refresh_per_second=2, screen=False)
+                    else:
+                        view = agent._create_dashboard()
+                        live = Live(view, refresh_per_second=2, screen=False)
+                    print("Starting live dashboard...")
+                    live.start()
+                    print("✅ Dashboard started! Press Ctrl+C to exit.")
+                except Exception as e:
+                    print(f"❌ Failed to create dashboard: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    raise
                 
                 while agent.running and not exit_requested.is_set():
                     elapsed = time.time() - start_time
