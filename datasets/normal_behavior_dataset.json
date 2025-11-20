@@ -1,0 +1,7705 @@
+{
+  "metadata": {
+    "source": "synthetic_normal_behavior",
+    "collection_date": "2025-11-20",
+    "description": "Normal Linux process behavior patterns for initial training",
+    "sample_count": 500
+  },
+  "samples": [
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 2.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 2.7,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 2.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 3.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 2.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 0.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 3.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 0.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 4.0,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 0.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "access",
+        "lstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 0.6,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 0.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 1.6,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 2.9,
+        "memory_percent": 2.0,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "access",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.7,
+        "memory_percent": 1.2,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.9,
+        "memory_percent": 3.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close",
+        "ioctl",
+        "fstat",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 3.9,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 1.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 2.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 1.8,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.9,
+        "memory_percent": 2.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 3.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "ioctl",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 2.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.9,
+        "memory_percent": 3.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.4,
+        "memory_percent": 3.0,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 1.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 3.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "fcntl",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 2.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 1.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 2.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "ioctl",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 3.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "fcntl",
+        "access",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 1.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 0.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 2.9,
+        "memory_percent": 1.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 0.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "lstat",
+        "access",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 0.2,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "ioctl",
+        "fcntl",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 2.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 0.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 2.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.5,
+        "memory_percent": 3.7,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 2.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 3.8,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "lstat",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 0.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 3.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.5,
+        "memory_percent": 3.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 0.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 3.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 0.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 1.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 1.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 0.5,
+        "memory_percent": 0.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 2.9,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close",
+        "fstat",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 3.0,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close",
+        "fcntl",
+        "ioctl",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.5,
+        "memory_percent": 1.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 5.0,
+        "memory_percent": 2.8,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 3.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 0.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 2.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 1.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 2.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 1.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 0.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 1.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 0.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.7,
+        "memory_percent": 0.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 1.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.5,
+        "memory_percent": 0.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 1.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "fcntl",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 3.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 3.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 3.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 1.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 1.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 0.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 4.0,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 2.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "fstat",
+        "fcntl",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 1.0,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "lstat",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 0.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 4.0,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 2.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 1.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "ioctl",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 1.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 3.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 1.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 3.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 3.0,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.9,
+        "memory_percent": 0.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close",
+        "fcntl",
+        "access",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 3.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 3.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 0.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 0.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "lstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 0.1,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 1.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "access",
+        "fstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 0.3,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 0.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 2.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.4,
+        "memory_percent": 0.9,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 3.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "lstat",
+        "access",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 1.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "ioctl",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 3.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "ioctl",
+        "fcntl",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 0.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.9,
+        "memory_percent": 1.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 1.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 1.3,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.7,
+        "memory_percent": 1.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 0.6,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "access",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 0.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 2.7,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 3.1,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 2.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.4,
+        "memory_percent": 3.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 2.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 0.7,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 2.8,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 3.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 0.8,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.9,
+        "memory_percent": 3.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 2.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "fcntl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 2.1,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 0.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 3.7,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 3.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.7,
+        "memory_percent": 2.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 0.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 2.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 0.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "access",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 0.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.4,
+        "memory_percent": 1.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 1.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 2.7,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 0.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 3.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 3.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 2.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 0.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.7,
+        "memory_percent": 0.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close",
+        "fstat",
+        "fcntl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 3.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 2.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 0.1,
+        "memory_percent": 2.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.9,
+        "memory_percent": 3.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "access",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 0.6,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.9,
+        "memory_percent": 2.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 0.6,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 2.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "fstat",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 3.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 3.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 1.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "fstat",
+        "ioctl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 2.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "access",
+        "fcntl",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.4,
+        "memory_percent": 1.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.5,
+        "memory_percent": 0.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.6,
+        "memory_percent": 3.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 1.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.1,
+        "memory_percent": 1.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "fstat",
+        "fcntl",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.1,
+        "memory_percent": 3.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.6,
+        "memory_percent": 3.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 0.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 1.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 3.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 2.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 2.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 2.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 1.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "access",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 1.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 3.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 3.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "fstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 1.6,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.7,
+        "memory_percent": 0.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 1.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.7,
+        "memory_percent": 1.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 3.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 0.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 1.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 2.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 1.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 3.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.1,
+        "memory_percent": 0.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 2.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 3.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.5,
+        "memory_percent": 3.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 2.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 3.2,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close",
+        "fcntl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 0.1,
+        "memory_percent": 2.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 2.9,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 0.1,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 1.6,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 0.9,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 3.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 1.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "lstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.9,
+        "memory_percent": 2.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 1.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 2.2,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "access",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.6,
+        "memory_percent": 2.8,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 3.8,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "lstat",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 0.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 3.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close",
+        "ioctl",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.7,
+        "memory_percent": 2.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 3.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 0.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "fcntl",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.4,
+        "memory_percent": 3.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "access",
+        "fcntl",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 2.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 3.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 3.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 1.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 3.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 3.9,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 0.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 1.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 0.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 2.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 3.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 2.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 1.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 1.1,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 3.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 0.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 0.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 2.3,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 3.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 2.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "fcntl",
+        "access",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 2.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 3.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 0.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "lstat",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 1.9,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "ioctl",
+        "lstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 1.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 2.7,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "fstat",
+        "fcntl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 3.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 1.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 1.1,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 2.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 2.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "lstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 2.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.5,
+        "memory_percent": 3.6,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 3.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 1.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 2.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 2.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 3.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 0.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 1.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 3.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 3.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 0.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 3.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 3.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 2.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "access",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 1.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 2.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "fstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.9,
+        "memory_percent": 0.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 1.7,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 2.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 1.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 2.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 2.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 1.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "fstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.1,
+        "memory_percent": 0.6,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 3.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 0.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 2.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 1.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 0.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 2.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 0.6,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 3.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 1.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close",
+        "ioctl",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 1.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 3.6,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.7,
+        "memory_percent": 0.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close",
+        "lstat",
+        "access",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 2.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 3.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 0.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "fcntl",
+        "lstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.5,
+        "memory_percent": 0.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close",
+        "fcntl",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.4,
+        "memory_percent": 0.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 1.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 0.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 1.0,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "access",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 0.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 2.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.7,
+        "memory_percent": 2.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 0.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 1.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 1.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 1.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.7,
+        "memory_percent": 3.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 2.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close",
+        "fcntl",
+        "access",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 2.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 1.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 1.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.1,
+        "memory_percent": 3.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "access",
+        "fcntl",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 2.1,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "ioctl",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 1.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 2.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 2.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 3.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 1.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 3.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 2.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 0.8,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 1.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.1,
+        "memory_percent": 3.8,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 2.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 1.0,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "lstat",
+        "fstat",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.5,
+        "memory_percent": 1.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close",
+        "fstat",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 3.0,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 3.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 3.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close",
+        "fstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 1.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "access",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 0.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 1.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 0.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close",
+        "access",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 3.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.5,
+        "memory_percent": 2.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.9,
+        "memory_percent": 1.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 0.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "access",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.9,
+        "memory_percent": 3.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 2.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 1.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 2.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "ioctl",
+        "fcntl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 0.1,
+        "memory_percent": 2.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 3.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.5,
+        "memory_percent": 2.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 0.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 1.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 0.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 0.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 0.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 1.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 1.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "fstat",
+        "fcntl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 0.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 2.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.7,
+        "memory_percent": 0.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.9,
+        "memory_percent": 2.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 0.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 3.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "fcntl",
+        "ioctl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 3.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 1.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "access",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 1.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "ioctl",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 1.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 0.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "lstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.9,
+        "memory_percent": 2.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "ioctl",
+        "access",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 2.0,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 3.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 1.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 1.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 2.8,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 2.0,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 3.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.6,
+        "memory_percent": 3.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 2.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close",
+        "ioctl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 1.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 2.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 2.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 1.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 3.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 0.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.5,
+        "memory_percent": 0.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close",
+        "lstat",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 2.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.3,
+        "memory_percent": 3.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 5.0,
+        "memory_percent": 2.5,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 2.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 0.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 2.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 3.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 1.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 2.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 1.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "fstat",
+        "access",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 0.3,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 2.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 2.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 1.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 0.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 3.8,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close",
+        "fstat",
+        "access",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.1,
+        "memory_percent": 2.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 2.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 3.9,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 1.8,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 2.9,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 3.3,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.5,
+        "memory_percent": 1.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 2.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 1.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 1.2,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 3.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 1.6,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 1.6,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 3.3,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 2.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 1.0,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 3.6,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 3.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close",
+        "fcntl",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.6,
+        "memory_percent": 2.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "fstat",
+        "ioctl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 1.9,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 0.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 2.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 0.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 3.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 0.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 0.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 0.6,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 3.9,
+        "memory_percent": 2.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.3,
+        "memory_percent": 0.6,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 4.0,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 3.7,
+        "memory_percent": 0.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 3.9,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.5,
+        "memory_percent": 2.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 4.0,
+        "memory_percent": 3.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 5.0,
+        "memory_percent": 3.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.2,
+        "memory_percent": 2.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.6,
+        "memory_percent": 1.7,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 2.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "lstat",
+        "fstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 3.2,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 3.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 3.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 3.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 0.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 5.0,
+        "memory_percent": 0.1,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.5,
+        "memory_percent": 2.2,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 0.2,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 3.9,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 1.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat",
+        "fstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 2.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.2,
+        "memory_percent": 3.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 1.9,
+        "memory_percent": 2.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 0.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 2.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 2.5,
+        "memory_percent": 2.5,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.5,
+        "memory_percent": 3.8,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 3.8,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 0.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 2.3,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 2.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 1.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 3.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 2.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "fstat",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.8,
+        "memory_percent": 2.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 0.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.1,
+        "memory_percent": 0.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 1.3,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 0.5,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 0.5,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 2.0,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 3.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap",
+        "fstat",
+        "ioctl",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 2.2,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 1.7,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 1.6,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 0.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 2.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.8,
+        "memory_percent": 3.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.2,
+        "memory_percent": 1.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 3.1,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 0.1,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 3.9,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "fstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.1,
+        "memory_percent": 0.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.3,
+        "memory_percent": 3.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.1,
+        "memory_percent": 3.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 2.3,
+        "memory_percent": 2.1,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.2,
+        "memory_percent": 0.8,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "ioctl",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 3.8,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 1.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.5,
+        "memory_percent": 4.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.8,
+        "memory_percent": 1.4,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 0.3,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 3.6,
+        "memory_percent": 2.9,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 1.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 3.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 4.0,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "ioctl",
+        "fcntl",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 1.5,
+        "memory_percent": 0.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise",
+        "lstat",
+        "fstat",
+        "fcntl"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 4.0,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.0,
+        "memory_percent": 1.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.6,
+        "memory_percent": 3.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.7,
+        "memory_percent": 1.5,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "bind",
+        "listen",
+        "accept",
+        "recv",
+        "send",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 2.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 3.3,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "access",
+        "lstat",
+        "fstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 0.6,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 4.4,
+        "memory_percent": 3.7,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 3.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "ioctl",
+        "access",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.1,
+        "memory_percent": 3.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.5,
+        "memory_percent": 1.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 0.7,
+        "memory_percent": 2.2,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.4,
+        "memory_percent": 2.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 1.5,
+        "memory_percent": 2.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.4,
+        "memory_percent": 1.7,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "lstat",
+        "ioctl"
+      ],
+      "process_info": {
+        "cpu_percent": 0.8,
+        "memory_percent": 2.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "read",
+        "write",
+        "close",
+        "stat",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.3,
+        "memory_percent": 3.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.6,
+        "memory_percent": 1.9,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 3.0,
+        "memory_percent": 2.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 2.2,
+        "memory_percent": 1.7,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "send",
+        "recv",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 3.4,
+        "memory_percent": 3.8,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "access"
+      ],
+      "process_info": {
+        "cpu_percent": 4.9,
+        "memory_percent": 0.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "read",
+        "write",
+        "msync",
+        "munmap"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 2.2,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "getdents64",
+        "readlinkat",
+        "fstatat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.9,
+        "memory_percent": 2.6,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "madvise"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 1.1,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "pread",
+        "pwrite",
+        "lseek",
+        "close",
+        "fsync",
+        "fcntl",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 0.9,
+        "memory_percent": 1.4,
+        "num_threads": 2
+      }
+    },
+    {
+      "syscalls": [
+        "openat",
+        "read",
+        "write",
+        "close",
+        "access",
+        "faccessat"
+      ],
+      "process_info": {
+        "cpu_percent": 3.8,
+        "memory_percent": 3.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "socket",
+        "connect",
+        "sendto",
+        "recvfrom",
+        "poll",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.1,
+        "memory_percent": 1.4,
+        "num_threads": 1
+      }
+    },
+    {
+      "syscalls": [
+        "clone",
+        "execve",
+        "wait4",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 0.6,
+        "memory_percent": 1.8,
+        "num_threads": 3
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "getdents",
+        "readlink",
+        "stat",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.9,
+        "memory_percent": 2.2,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 1.0,
+        "memory_percent": 3.4,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "vfork",
+        "execve",
+        "wait",
+        "read",
+        "write"
+      ],
+      "process_info": {
+        "cpu_percent": 1.6,
+        "memory_percent": 2.0,
+        "num_threads": 5
+      }
+    },
+    {
+      "syscalls": [
+        "fork",
+        "execve",
+        "wait",
+        "read",
+        "write",
+        "close"
+      ],
+      "process_info": {
+        "cpu_percent": 4.6,
+        "memory_percent": 0.4,
+        "num_threads": 4
+      }
+    },
+    {
+      "syscalls": [
+        "open",
+        "mmap",
+        "read",
+        "write",
+        "munmap",
+        "close",
+        "ioctl",
+        "fstat",
+        "lstat"
+      ],
+      "process_info": {
+        "cpu_percent": 1.7,
+        "memory_percent": 2.9,
+        "num_threads": 4
+      }
+    }
+  ]
+}
