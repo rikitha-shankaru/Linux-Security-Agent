@@ -23,7 +23,7 @@ def get_collector(config: Optional[Dict[str, Any]] = None, preferred: Optional[s
         BaseCollector instance or None if no collector available
     """
     config = config or {}
-    preferred = preferred or config.get('collector', 'auditd').lower()
+    preferred = preferred or config.get('collector', 'ebpf').lower()  # Default to eBPF
     
     # Try preferred collector first
     if preferred == 'ebpf':

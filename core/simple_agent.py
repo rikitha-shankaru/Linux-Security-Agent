@@ -96,8 +96,8 @@ class SimpleSecurityAgent:
             print_validation_results(False, errors)
             return False
         
-        # Get collector
-        collector_type = self.config.get('collector', 'auditd')
+        # Get collector (default to eBPF, fallback to auditd)
+        collector_type = self.config.get('collector', 'ebpf')
         self.collector = get_collector(self.config, preferred=collector_type)
         if not self.collector:
             logger.error("No collector available")
