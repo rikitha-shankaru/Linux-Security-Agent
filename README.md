@@ -93,19 +93,34 @@ python3 -c "from core.container_security_monitor import ContainerSecurityMonitor
 
 ## Usage
 
-### Basic usage
+### Option 1: Simple Agent (Recommended for Testing)
 ```bash
-# Run the agent with dashboard
+# Run simple agent with auditd (most reliable)
+sudo python3 core/simple_agent.py --collector auditd --threshold 30
+
+# Or with eBPF
+sudo python3 core/simple_agent.py --collector ebpf --threshold 30
+```
+
+**Benefits:**
+- ✅ Upfront system validation with clear error messages
+- ✅ Automatic collector fallback
+- ✅ Clean, working dashboard
+- ✅ Easy to debug
+
+### Option 2: Enhanced Agent (Full Features)
+```bash
+# Run the enhanced agent with dashboard
 sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
 ```
 
-### Collector selection (eBPF default, auditd fallback)
+### Collector selection (auditd default, eBPF fallback)
 ```bash
-# eBPF (default)
-sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard
-
-# Auditd (fallback/portable on Ubuntu)
+# Auditd (default, most reliable)
 sudo python3 core/enhanced_security_agent.py --collector auditd --dashboard
+
+# eBPF (if available)
+sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard
 ```
 
 ### With training
@@ -260,39 +275,26 @@ Permission errors on Linux - need to run with sudo for eBPF. On macOS it works w
 ### **Project Structure**
 ```
 Linux-Security-Agent/
-├── core/                           # 🏆 MAIN ENHANCED COMPONENTS
-│   ├── enhanced_security_agent.py  # Primary implementation (RECOMMENDED)
-│   ├── enhanced_ebpf_monitor.py    # Stateful eBPF monitoring
+├── core/                           # 🏆 MAIN COMPONENTS
+│   ├── simple_agent.py            # Simple working agent (RECOMMENDED for testing)
+│   ├── enhanced_security_agent.py # Full-featured agent with all research features
+│   ├── collectors/                # Collector modules
+│   │   ├── base.py                # Abstract collector interface
+│   │   ├── auditd_collector.py    # Auditd collector (consolidated)
+│   │   ├── ebpf_collector.py      # eBPF collector
+│   │   └── collector_factory.py  # Factory with auto-fallback
+│   ├── detection/                 # Detection modules
+│   │   └── risk_scorer.py        # Risk scoring
+│   ├── utils/                     # Utility modules
+│   │   └── validator.py           # System validation
+│   ├── enhanced_ebpf_monitor.py   # Stateful eBPF monitoring
 │   ├── enhanced_anomaly_detector.py # Advanced ML anomaly detection
 │   └── container_security_monitor.py # Container security monitoring
-├── legacy/                         # 📚 ORIGINAL/BASIC COMPONENTS
-│   ├── security_agent.py          # Basic Linux agent
-│   ├── security_agent_mac.py      # macOS-compatible version
-│   └── anomaly_detector.py        # Simple ML implementation
-├── research/                       # 🔬 RESEARCH DOCUMENTATION
-│   ├── RESEARCH_BACKGROUND_2025.md # Literature review and analysis
-│   ├── IMPLEMENTATION_ROADMAP_2025.md # Implementation plan
-│   └── CODE_COMPARISON_ANALYSIS.md # Version comparison
-├── docs/                          # 📚 DOCUMENTATION & GUIDES
-│   ├── ENHANCED_INTEGRATION_GUIDE.md # Integration instructions
-│   ├── DEMO_AND_GITHUB_STRATEGY.md # Demo and publication guide
-│   └── ARCHITECTURE.md            # System architecture
+├── docs/                          # 📚 DOCUMENTATION (all MD files organized here)
+├── research/                      # 🔬 RESEARCH DOCUMENTATION
 ├── scripts/                       # 🔧 AUTOMATION SCRIPTS
-│   ├── run_agent.sh              # Main run script
-│   ├── run_demo.sh               # Demo execution
-│   └── setup_linux_vm.sh         # VM setup automation
 ├── tests/                         # 🧪 TESTING & VALIDATION
-│   ├── run_tests.py              # Main test runner
-│   └── test_ebpf.py              # eBPF functionality tests (in tests/ directory)
-├── examples/                      # 💡 USAGE EXAMPLES
-│   └── find_syscalls.py          # System call analysis example
-├── config/                        # ⚙️ CONFIGURATION & SETUP
-│   ├── setup.py                  # Main setup script
-│   ├── Dockerfile                # Docker configuration
-│   └── docker-compose.yml        # Container orchestration
-└── demo/                         # 🎬 DEMO SCRIPTS
-    ├── normal_behavior.py        # Normal behavior demo
-    └── suspicious_behavior.py    # Suspicious behavior demo
+└── config/                        # ⚙️ CONFIGURATION & SETUP
 ```
 
 ## 📈 Performance

@@ -158,11 +158,14 @@ Why this is better here
 - Orchestrates collection, scoring, ML, outputs (dashboard/TUI/JSON).
 - Handles process state, configuration, thresholds.
 
-#### **`core/enhanced_ebpf_monitor.py`** – eBPF collector (default)
-- Loads/attaches eBPF, captures syscall events, normalizes to unified schema.
+#### **`core/collectors/`** – Collector modules (modular architecture)
+- **`base.py`** – Abstract `BaseCollector` interface with `SyscallEvent` dataclass
+- **`ebpf_collector.py`** – eBPF collector (wraps `enhanced_ebpf_monitor.py`)
+- **`auditd_collector.py`** – Auditd collector (consolidated, implements `BaseCollector` directly)
+- **`collector_factory.py`** – Factory with automatic fallback (eBPF → auditd)
 
-#### (Proposed) `collector_auditd.py` – auditd collector (fallback)
-- Tails `/var/log/audit/audit.log`, parses `type=SYSCALL`, emits unified events.
+#### **`core/enhanced_ebpf_monitor.py`** – eBPF implementation
+- Loads/attaches eBPF, captures syscall events, used by `ebpf_collector.py`
 
 ### **🧠 ML & Features**
 
@@ -197,11 +200,13 @@ Why this is better here
 
 ## 🔄 **Data Flow (Current)**
 
-### 1) Collection (two interchangeable sources)
+### 1) Collection (two interchangeable sources via factory)
 ```
-Kernel (eBPF) → enhanced_ebpf_monitor → normalized events
+Kernel (eBPF) → collectors/ebpf_collector → BaseCollector → SyscallEvent
 OR
-auditd → collector_auditd → normalized events
+auditd → collectors/auditd_collector → BaseCollector → SyscallEvent
+
+Factory: collectors/collector_factory.py (auto-selects with fallback)
 ```
 
 ### 2) Processing
