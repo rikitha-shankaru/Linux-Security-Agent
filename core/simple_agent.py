@@ -171,12 +171,10 @@ class SimpleSecurityAgent:
             proc['last_update'] = time.time()
             self.stats['total_syscalls'] += 1
             
-            # Calculate risk score
             syscall_list = list(proc['syscalls'])
-            risk_score = self.risk_scorer.update_risk_score(pid, syscall_list)
-            proc['risk_score'] = risk_score
             
-            # Calculate anomaly score (if ML available and trained)
+            # Calculate anomaly score FIRST (needed for risk score)
+            anomaly_score = 0.0
             if self.anomaly_detector:
                 # Try to load models if not fitted
                 if not self.anomaly_detector.is_fitted:
@@ -203,17 +201,27 @@ class SimpleSecurityAgent:
                         anomaly_result = self.anomaly_detector.detect_anomaly_ensemble(
                             syscall_list, process_info, pid
                         )
-                        proc['anomaly_score'] = abs(anomaly_result.anomaly_score)  # Use absolute value
+                        anomaly_score = abs(anomaly_result.anomaly_score)  # Use absolute value
+                        proc['anomaly_score'] = anomaly_score
                         if anomaly_result.is_anomaly:
                             self.stats['anomalies'] += 1
                     except Exception as e:
                         logger.debug(f"ML detection failed for PID {pid}: {e}")
+                        anomaly_score = 0.0
                         proc['anomaly_score'] = 0.0
                 else:
                     # ML not trained yet - set to 0.00
+                    anomaly_score = 0.0
                     proc['anomaly_score'] = 0.0
             else:
+                anomaly_score = 0.0
                 proc['anomaly_score'] = 0.0
+            
+            # Calculate risk score WITH anomaly score included
+            risk_score = self.risk_scorer.update_risk_score(
+                pid, syscall_list, process_info, anomaly_score
+            )
+            proc['risk_score'] = risk_score
             
             # Update high risk count
             threshold = self.config.get('risk_threshold', 30.0)
@@ -270,12 +278,12 @@ class SimpleSecurityAgent:
                 f"Syscalls: {self.stats['total_syscalls']}"
             )
             
-            # Create info panel explaining scores
+            # Create info panel explaining scores (show FIRST)
             info_panel = self._create_info_panel()
             
-            # Combine table and info
+            # Combine info FIRST, then table
             from rich.console import Group
-            content = Group(table, info_panel)
+            content = Group(info_panel, table)
             
             return Panel(content, title=stats_text, border_style="green")
     
