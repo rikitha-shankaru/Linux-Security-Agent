@@ -120,16 +120,10 @@ class StatefulEBPFMonitor:
 #pragma clang diagnostic ignored "-Wunused-macros"
 #pragma clang diagnostic ignored "-Wunused-parameter"
 
-// Undefine macros before including headers to avoid redefinition warnings
-#ifdef __HAVE_BUILTIN_BSWAP32__
+// Undefine macros BEFORE any includes to avoid redefinition warnings
 #undef __HAVE_BUILTIN_BSWAP32__
-#endif
-#ifdef __HAVE_BUILTIN_BSWAP64__
 #undef __HAVE_BUILTIN_BSWAP64__
-#endif
-#ifdef __HAVE_BUILTIN_BSWAP16__
 #undef __HAVE_BUILTIN_BSWAP16__
-#endif
 
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
@@ -359,7 +353,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                 self.bpf_program["syscall_events"].open_perf_buffer(
                     self._process_perf_event,
                     lost_cb=_lost_cb,
-                    page_cnt=64,
+                    page_cnt=256,  # Increased from 64 to reduce lost events (256 pages = ~1MB buffer)
                 )
                 logger.info("Perf event buffer attached")
                 

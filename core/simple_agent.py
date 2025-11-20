@@ -130,14 +130,34 @@ class SimpleSecurityAgent:
         with self.processes_lock:
             # Update process info
             if pid not in self.processes:
+                # Get actual process name from psutil if comm is empty
+                process_name = event.comm
+                if not process_name or process_name.startswith('pid_'):
+                    try:
+                        p = psutil.Process(pid)
+                        process_name = p.name()
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        process_name = event.comm or f'pid_{pid}'
+                
                 self.processes[pid] = {
-                    'name': event.comm or f'pid_{pid}',
+                    'name': process_name,
                     'syscalls': deque(maxlen=100),
                     'risk_score': 0.0,
                     'anomaly_score': 0.0,
                     'last_update': time.time()
                 }
                 self.stats['total_processes'] += 1
+            else:
+                # Update process name if we have a better one
+                if not self.processes[pid]['name'] or self.processes[pid]['name'].startswith('pid_'):
+                    if event.comm:
+                        self.processes[pid]['name'] = event.comm
+                    else:
+                        try:
+                            p = psutil.Process(pid)
+                            self.processes[pid]['name'] = p.name()
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            pass
             
             proc = self.processes[pid]
             proc['syscalls'].append(syscall)
@@ -149,8 +169,8 @@ class SimpleSecurityAgent:
             risk_score = self.risk_scorer.update_risk_score(pid, syscall_list)
             proc['risk_score'] = risk_score
             
-            # Calculate anomaly score (if ML available)
-            if self.anomaly_detector:
+            # Calculate anomaly score (if ML available and trained)
+            if self.anomaly_detector and self.anomaly_detector.is_fitted:
                 try:
                     anomaly_result = self.anomaly_detector.detect_anomaly_ensemble(
                         pid, syscall_list, {}
@@ -159,7 +179,10 @@ class SimpleSecurityAgent:
                     if anomaly_result.is_anomaly:
                         self.stats['anomalies'] += 1
                 except Exception:
-                    pass  # ML may not be trained yet
+                    pass  # ML detection failed
+            else:
+                # ML not trained yet - set to 0.00
+                proc['anomaly_score'] = 0.0
             
             # Update high risk count
             threshold = self.config.get('risk_threshold', 30.0)
