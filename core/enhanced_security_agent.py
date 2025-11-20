@@ -1845,16 +1845,15 @@ class EnhancedSecurityAgent:
    🔴 50+:   High risk - investigate immediately
         """
         
-        # Combine everything - Rich will handle table rendering
-        from rich.console import Console
-        from io import StringIO
+        # Combine everything - Use Group to combine table and stats panel
+        # This avoids StringIO which can hang
+        from rich.console import Group
         
-        # Increase console width to prevent table wrapping (~70 chars for table + borders)
-        string_console = Console(file=StringIO(), force_terminal=True, width=150, legacy_windows=False)
-        string_console.print(table, overflow="ignore")
-        table_str = string_console.file.getvalue()
+        # Create stats panel
+        stats_panel = Panel(stats_panel_content, title="📊 Statistics", border_style="blue")
         
-        content = f"\n{table_str}\n\n{stats_panel_content}"
+        # Group table and stats together
+        content = Group(table, stats_panel)
         
         return Panel(content, title="🛡️ Enhanced Linux Security Agent - Real-time Monitoring", 
                     border_style="green", padding=(0, 1))
@@ -2449,20 +2448,56 @@ def main():
             try:
                 print("Creating dashboard view...")
                 try:
-                    if args.tui:
-                        view = agent._create_tui_table()
+                    # Add timeout protection for dashboard creation
+                    import signal
+                    
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError("Dashboard creation timed out after 5 seconds")
+                    
+                    # Set 5 second timeout
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(5)
+                    
+                    try:
+                        if args.tui:
+                            print("Creating TUI table...")
+                            view = agent._create_tui_table()
+                            print("TUI table created, initializing Live...")
+                            live = Live(view, refresh_per_second=2, screen=False)
+                        else:
+                            print("Creating dashboard panel...")
+                            view = agent._create_dashboard()
+                            print("Dashboard panel created, initializing Live...")
+                            live = Live(view, refresh_per_second=2, screen=False)
+                        signal.alarm(0)  # Cancel timeout
+                        print("Starting live dashboard...")
+                        live.start()
+                        print("✅ Dashboard started! Press Ctrl+C to exit.")
+                    except TimeoutError as e:
+                        signal.alarm(0)
+                        print(f"❌ Dashboard creation timed out: {e}")
+                        print("This might indicate a deadlock. Trying to continue anyway...")
+                        # Create a simple fallback view
+                        from rich.panel import Panel
+                        from rich.text import Text
+                        view = Panel(Text("Dashboard loading... (if stuck, press Ctrl+C)", style="yellow"))
                         live = Live(view, refresh_per_second=2, screen=False)
-                    else:
-                        view = agent._create_dashboard()
-                        live = Live(view, refresh_per_second=2, screen=False)
-                    print("Starting live dashboard...")
-                    live.start()
-                    print("✅ Dashboard started! Press Ctrl+C to exit.")
+                        live.start()
+                    finally:
+                        signal.alarm(0)  # Always cancel timeout
                 except Exception as e:
                     print(f"❌ Failed to create dashboard: {e}")
                     import traceback
                     traceback.print_exc()
-                    raise
+                    # Don't raise - try to continue with a simple view
+                    try:
+                        from rich.panel import Panel
+                        from rich.text import Text
+                        view = Panel(Text(f"Dashboard error: {e}\nPress Ctrl+C to exit.", style="red"))
+                        live = Live(view, refresh_per_second=2, screen=False)
+                        live.start()
+                    except:
+                        raise
                 
                 while agent.running and not exit_requested.is_set():
                     elapsed = time.time() - start_time
