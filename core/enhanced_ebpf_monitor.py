@@ -182,35 +182,36 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             logger.info("Loading eBPF program...")
             # Suppress compiler warnings during compilation (they're harmless macro redefinitions)
             # BCC defines these macros on command line, causing warnings we can't avoid
-            import contextlib
-            import io
+            import os
             import sys
+            import tempfile
             
-            # Create a filter that only shows errors, not warnings
-            class WarningFilter:
-                def __init__(self, original_stderr):
-                    self.original_stderr = original_stderr
-                    self.buffer = []
-                
-                def write(self, text):
-                    # Only show errors, filter out macro redefinition warnings
-                    if 'error:' in text.lower() or 'fatal' in text.lower():
-                        self.original_stderr.write(text)
-                    elif 'warning:' not in text.lower() or '__HAVE_BUILTIN_BSWAP' not in text:
-                        # Show non-warning messages or warnings not about BSWAP
-                        pass  # Suppress BSWAP warnings
-                    # Otherwise suppress the warning
-                
-                def flush(self):
-                    self.original_stderr.flush()
+            # Use os.dup2 to redirect stderr at the file descriptor level
+            # This catches ALL output including from subprocesses
+            devnull_fd = os.open(os.devnull, os.O_WRONLY)
+            old_stderr_fd = os.dup(sys.stderr.fileno())
             
-            # Temporarily redirect stderr to filter
-            old_stderr = sys.stderr
-            sys.stderr = WarningFilter(old_stderr)
             try:
+                # Redirect stderr to /dev/null
+                os.dup2(devnull_fd, sys.stderr.fileno())
+                
+                # Load BPF program (warnings will go to /dev/null)
                 bpf = BPF(text=ebpf_code)
+                
+            except Exception as e:
+                # Restore stderr before logging the error
+                os.dup2(old_stderr_fd, sys.stderr.fileno())
+                os.close(devnull_fd)
+                os.close(old_stderr_fd)
+                raise e
             finally:
-                sys.stderr = old_stderr
+                # Always restore stderr
+                try:
+                    os.dup2(old_stderr_fd, sys.stderr.fileno())
+                    os.close(devnull_fd)
+                    os.close(old_stderr_fd)
+                except:
+                    pass  # Ignore errors during cleanup
             
             logger.info("eBPF program loaded successfully")
             
