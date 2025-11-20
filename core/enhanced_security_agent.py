@@ -1841,9 +1841,19 @@ class EnhancedSecurityAgent:
 🎯 eBPF capturing syscalls | ML analyzing patterns | Dashboard updating...
 💡 Risk: 🟢 0-30 Normal | 🟡 30-50 Suspicious | 🔴 50+ High Risk"""
             
-            # Simple Panel with table and text - avoid Group which might hang
+            # Use Rich's rendering to properly display table
+            from rich.console import Group
             from rich.text import Text
-            content = f"{table}\n\n{stats_text}"
+            
+            # Create a simple text panel for stats
+            stats_panel = Panel(stats_text, border_style="blue", padding=(0, 1))
+            
+            # Group table and stats - this should render properly
+            try:
+                content = Group(table, stats_panel)
+            except Exception:
+                # Fallback: just use table if Group fails
+                content = table
             
             return Panel(content, title="🛡️ Enhanced Linux Security Agent", 
                         border_style="green", padding=(0, 1))
