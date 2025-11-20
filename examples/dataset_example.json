@@ -1,0 +1,35 @@
+[
+  {
+    "syscalls": ["open", "read", "close", "stat", "getdents", "readlink"],
+    "process_info": {
+      "cpu_percent": 2.5,
+      "memory_percent": 0.8,
+      "num_threads": 1
+    }
+  },
+  {
+    "syscalls": ["socket", "connect", "send", "recv", "poll", "close"],
+    "process_info": {
+      "cpu_percent": 1.2,
+      "memory_percent": 1.5,
+      "num_threads": 3
+    }
+  },
+  {
+    "syscalls": ["fork", "execve", "wait", "read", "write", "close"],
+    "process_info": {
+      "cpu_percent": 0.5,
+      "memory_percent": 0.3,
+      "num_threads": 1
+    }
+  },
+  {
+    "syscalls": ["open", "mmap", "read", "write", "munmap", "close"],
+    "process_info": {
+      "cpu_percent": 3.1,
+      "memory_percent": 2.1,
+      "num_threads": 2
+    }
+  }
+]
+
