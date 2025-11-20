@@ -31,20 +31,20 @@ chmod +x deploy_with_expect.sh
 # From your Mac terminal
 cd /Users/likithashankar/linux_security_agent
 scp -r ./ agent@192.168.64.4:~/linux_security_agent/
-# Password: rrot
+# Password: root
 ```
 
 #### Step 2: Install dependencies on VM
 
 ```bash
 ssh agent@192.168.64.4
-# Password: rrot
+# Password: root
 
 # Once connected, run:
 sudo apt-get update
 sudo apt-get install -y python3 python3-pip python3-dev build-essential git curl
 sudo apt-get install -y bpfcc-tools python3-bpfcc linux-headers-$(uname -r)
-# Password: rrot (for sudo)
+# Password: root (for sudo)
 ```
 
 #### Step 3: Install Python packages
@@ -67,7 +67,7 @@ python3 -c "from core.enhanced_security_agent import EnhancedSecurityAgent; prin
 ```bash
 # On VM
 sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
-# Password: rrot (for sudo)
+# Password: root (for sudo)
 ```
 
 ## 🎯 One-Line Commands (Copy-Paste)
@@ -76,22 +76,22 @@ sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
 
 ```bash
 # Install sshpass first, then:
-sshpass -p 'rrot' ssh agent@192.168.64.4 "sudo apt-get update && sudo apt-get install -y python3 python3-pip python3-dev build-essential bpfcc-tools python3-bpfcc linux-headers-\$(uname -r)" && \
-sshpass -p 'rrot' scp -r ./ agent@192.168.64.4:~/linux_security_agent/ && \
-sshpass -p 'rrot' ssh agent@192.168.64.4 "cd ~/linux_security_agent && pip3 install --user -r requirements.txt"
+sshpass -p 'root' ssh agent@192.168.64.4 "sudo apt-get update && sudo apt-get install -y python3 python3-pip python3-dev build-essential bpfcc-tools python3-bpfcc linux-headers-\$(uname -r)" && \
+sshpass -p 'root' scp -r ./ agent@192.168.64.4:~/linux_security_agent/ && \
+sshpass -p 'root' ssh agent@192.168.64.4 "cd ~/linux_security_agent && pip3 install --user -r requirements.txt"
 ```
 
 ### Run Agent
 
 ```bash
-sshpass -p 'rrot' ssh -t agent@192.168.64.4 "cd ~/linux_security_agent && sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30"
+sshpass -p 'root' ssh -t agent@192.168.64.4 "cd ~/linux_security_agent && sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30"
 ```
 
 ## 📝 Quick Reference
 
 - **VM IP:** 192.168.64.4
 - **User:** agent
-- **Password:** rrot
+- **Password:** root
 - **Project Path:** ~/linux_security_agent
 
 ## 🔧 Troubleshooting
