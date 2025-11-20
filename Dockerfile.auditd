@@ -22,8 +22,8 @@ RUN pip3 install -r requirements.txt
 # Create auditd directories
 RUN mkdir -p /var/log/audit /etc/audit
 
-# Copy auditd config (if exists)
-COPY config/auditd.conf /etc/audit/auditd.conf 2>/dev/null || true
+# Copy auditd config (if it exists - Docker will fail if file doesn't exist, so we'll skip it)
+# We'll handle this in the entrypoint script instead
 
 # Set entrypoint script
 COPY docker-entrypoint.sh /docker-entrypoint.sh
