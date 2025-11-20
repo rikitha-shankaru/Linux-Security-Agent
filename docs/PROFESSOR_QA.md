@@ -102,24 +102,57 @@ Goal: trigger detection without harming the host.
 - Avoid destructive operations: no real `mount`, `chroot`, `reboot`, filesystem changes outside `/tmp`, or credential modifications.
 - Keep tests short-lived and resource-bounded; clean up temp files.
 
-### Benign-but-suspicious patterns to trigger anomalies
-- Rapid bursts of file operations in `/tmp` (open/read/write/close loops with small files).
-- Brief CPU spikes and process churn (spawn/exec short helpers, then exit).
-- Localhost socket open/close cycles (e.g., connect to a closed port and handle errors).
-- Attempt to `ptrace` your own PID (expect `EPERM`), then continue; this raises the high-risk syscall ratio without impact.
-- Repeated unusual syscall bigrams (e.g., failed `setuid` attempts followed by network calls).
+### Attack Simulation Script (NEW)
+
+**Use the provided script**: `scripts/simulate_attacks.py`
+
+This script safely simulates 6 attack patterns:
+1. **Privilege Escalation** - Attempts setuid, setgid, execve (safe - will fail)
+2. **High-Frequency Attack** - Rapid syscall bursts (DoS pattern)
+3. **Suspicious File Patterns** - Bursty file I/O in `/tmp`
+4. **Process Churn** - Rapid fork/exec patterns
+5. **Network Scanning** - Multiple socket connections (localhost only)
+6. **Ptrace Attempts** - Process tracing attempts (safe - will fail)
+
+**Usage**:
+```bash
+# Terminal 1: Run agent
+sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
+
+# Terminal 2: Run attacks
+python3 scripts/simulate_attacks.py
+```
+
+**Expected Results**:
+- Risk scores spike to 50-100
+- ML anomaly detection flags attacks
+- Dashboard shows high-risk processes
+- Clear explanations provided
+
+### Training with Public Datasets
+
+**Supported**: The system can train with publicly available datasets!
+
+**Format**: JSON with `samples` array containing `syscall` sequences and `process_info`
+
+**Usage**:
+```bash
+# Train from JSON file
+python3 scripts/train_with_dataset.py --file dataset.json
+
+# Train from URL
+python3 scripts/train_with_dataset.py --url https://example.com/dataset.json
+
+# Train from directory
+python3 scripts/train_with_dataset.py --directory ./datasets/
+```
+
+**Code**: `core/enhanced_anomaly_detector.py` - `load_training_data_from_file()`, `load_training_data_from_url()`
 
 ### Existing demos and integration
-- `demo/normal_behavior.py` and `demo/suspicious_behavior.py` provide side-by-side scenarios.
-- `demo/run_demo.py` and `scripts/run_demo.sh` orchestrate full runs.
-- You can add a new “safe malware simulator” that:
-  - Performs 200–500 temp file ops in `/tmp`.
-  - Executes short-lived subprocesses in a loop.
-  - Opens/closes a localhost socket a few times.
-  - Attempts `ptrace` on self and ignores the error.
-  - Exits after ~5–15 seconds.
-
-Run the agent alongside this script to show anomaly scores and explanations produced by `EnhancedAnomalyDetector` in `core/enhanced_anomaly_detector.py`.
+- `scripts/simulate_attacks.py` - **NEW**: Comprehensive attack simulation
+- `tests/test_integration_full.py` - Integration tests with attack patterns
+- `scripts/train_with_dataset.py` - **NEW**: Train with public datasets
 
 ---
 
