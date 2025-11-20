@@ -157,17 +157,20 @@ def simulate_process_churn():
     processes = []
     for i in range(100):
         # Each process does file I/O to generate more syscalls
-        proc = subprocess.Popen(
-            [sys.executable, '-c', f'''
+        # Fix: Use string formatting that works correctly
+        script_code = f'''
 import os
 import time
 # Generate syscalls
 for j in range(10):
-    with open(f"/tmp/churn_{i}_{j}.tmp", "w") as f:
+    filename = "/tmp/churn_{i}_" + str(j) + ".tmp"
+    with open(filename, "w") as f:
         f.write("test")
-    os.remove(f"/tmp/churn_{i}_{j}.tmp")
+    os.remove(filename)
 time.sleep(0.01)
-'''],
+'''
+        proc = subprocess.Popen(
+            [sys.executable, '-c', script_code],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )

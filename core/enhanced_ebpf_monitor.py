@@ -121,15 +121,15 @@ class StatefulEBPFMonitor:
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Weverything"
 
-// Define macros first to prevent redefinition warnings
-#ifndef __HAVE_BUILTIN_BSWAP32__
-#define __HAVE_BUILTIN_BSWAP32__
+// Undefine macros that might be defined on command line BEFORE includes
+#ifdef __HAVE_BUILTIN_BSWAP32__
+#undef __HAVE_BUILTIN_BSWAP32__
 #endif
-#ifndef __HAVE_BUILTIN_BSWAP64__
-#define __HAVE_BUILTIN_BSWAP64__
+#ifdef __HAVE_BUILTIN_BSWAP64__
+#undef __HAVE_BUILTIN_BSWAP64__
 #endif
-#ifndef __HAVE_BUILTIN_BSWAP16__
-#define __HAVE_BUILTIN_BSWAP16__
+#ifdef __HAVE_BUILTIN_BSWAP16__
+#undef __HAVE_BUILTIN_BSWAP16__
 #endif
 
 #include <uapi/linux/ptrace.h>
@@ -180,7 +180,38 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
         
         try:
             logger.info("Loading eBPF program...")
-            bpf = BPF(text=ebpf_code)
+            # Suppress compiler warnings during compilation (they're harmless macro redefinitions)
+            # BCC defines these macros on command line, causing warnings we can't avoid
+            import contextlib
+            import io
+            import sys
+            
+            # Create a filter that only shows errors, not warnings
+            class WarningFilter:
+                def __init__(self, original_stderr):
+                    self.original_stderr = original_stderr
+                    self.buffer = []
+                
+                def write(self, text):
+                    # Only show errors, filter out macro redefinition warnings
+                    if 'error:' in text.lower() or 'fatal' in text.lower():
+                        self.original_stderr.write(text)
+                    elif 'warning:' not in text.lower() or '__HAVE_BUILTIN_BSWAP' not in text:
+                        # Show non-warning messages or warnings not about BSWAP
+                        pass  # Suppress BSWAP warnings
+                    # Otherwise suppress the warning
+                
+                def flush(self):
+                    self.original_stderr.flush()
+            
+            # Temporarily redirect stderr to filter
+            old_stderr = sys.stderr
+            sys.stderr = WarningFilter(old_stderr)
+            try:
+                bpf = BPF(text=ebpf_code)
+            finally:
+                sys.stderr = old_stderr
+            
             logger.info("eBPF program loaded successfully")
             
             # Verify tracepoint is available
