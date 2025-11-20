@@ -5,16 +5,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.auditd
-    privileged: true
+    container_name: security-agent
+    privileged: true  # Needed for auditd
     volumes:
-      - /var/log/audit:/var/log/audit:ro  # Read audit logs
+      # Mount audit logs (read-only from host if auditd runs on host)
+      - /var/log/audit:/var/log/audit:rw
+      # Mount proc and sys for process info
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
+      # Mount config if exists
       - ./config:/app/config:ro
     environment:
       - PYTHONUNBUFFERED=1
       - COLLECTOR=auditd
-    command: ["--collector", "auditd", "--dashboard", "--threshold", "30"]
+    # Override command if needed
+    command: ["--collector", "auditd", "--train-models", "--dashboard", "--threshold", "30"]
     restart: unless-stopped
-    network_mode: "host"  # May need host network for auditd
-
+    # Use host network for better auditd integration
+    network_mode: "host"
+    # Keep container running
+    stdin_open: true
+    tty: true

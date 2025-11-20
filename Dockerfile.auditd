@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     auditd \
     procps \
     net-tools \
+    sudo \
+    systemd \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project files
@@ -17,6 +19,15 @@ WORKDIR /app
 # Install Python dependencies
 RUN pip3 install -r requirements.txt
 
-# Set entrypoint
-ENTRYPOINT ["python3", "core/enhanced_security_agent.py"]
+# Create auditd directories
+RUN mkdir -p /var/log/audit /etc/audit
 
+# Copy auditd config (if exists)
+COPY config/auditd.conf /etc/audit/auditd.conf 2>/dev/null || true
+
+# Set entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["--collector", "auditd", "--dashboard", "--threshold", "30"]
