@@ -1769,94 +1769,88 @@ class EnhancedSecurityAgent:
     
     def _create_dashboard(self) -> Panel:
         """Create detailed real-time monitoring dashboard"""
-        
-        # Main processes table - fixed widths to prevent wrapping
-        table = Table(
-            title="🖥️ Live Process Monitoring", 
-            box=box.ROUNDED, 
-            show_header=True, 
-            header_style="bold",
-            padding=(0, 1)
-        )
-        # Compact column widths for narrow terminals
-        table.add_column("PID", style="cyan", no_wrap=True, width=6, justify="right", overflow="ignore")
-        table.add_column("Proc", style="magenta", width=14, no_wrap=True, overflow="ellipsis")
-        table.add_column("Risk", justify="right", style="yellow", width=7, no_wrap=True, overflow="ignore")
-        table.add_column("Anom", justify="center", style="yellow", width=4, no_wrap=True, overflow="ignore")
-        table.add_column("Sysc", justify="right", style="green", width=7, no_wrap=True, overflow="ignore")
-        table.add_column("CPU", justify="right", style="cyan", width=5, no_wrap=True, overflow="ignore")
-        
-        # Add processes sorted by risk score - THREAD SAFE: create snapshot under lock
-        with self.processes_lock:
-            # Create snapshot to avoid holding lock during expensive operations
-            processes_snapshot = {
-                pid: dict(proc) for pid, proc in self.processes.items()
-            }
-        
-        # Sort outside the lock (safe because we have a snapshot)
-        sorted_processes = sorted(
-            processes_snapshot.items(),
-            key=lambda x: x[1].get('risk_score', 0) or 0,
-            reverse=True
-        )[:10]  # Show top 10
-        
-        if sorted_processes:
-            for pid, proc in sorted_processes:
-                pid_str, proc_name, risk_display, anomaly_display, syscall_display, cpu_display = \
-                    self._format_process_row(pid, proc)
-                table.add_row(pid_str, proc_name, risk_display, anomaly_display, syscall_display, cpu_display)
-        else:
-            table.add_row("Waiting for syscall events...", "", "", "", "", "", style="dim")
-        
-        # Stats panel with explanations
-        stats_panel_content = f"""
-📊 **Statistics**
+        try:
+            # Main processes table - fixed widths to prevent wrapping
+            table = Table(
+                title="🖥️ Live Process Monitoring", 
+                box=box.ROUNDED, 
+                show_header=True, 
+                header_style="bold",
+                padding=(0, 1)
+            )
+            # Compact column widths for narrow terminals
+            table.add_column("PID", style="cyan", no_wrap=True, width=6, justify="right", overflow="ignore")
+            table.add_column("Proc", style="magenta", width=14, no_wrap=True, overflow="ellipsis")
+            table.add_column("Risk", justify="right", style="yellow", width=7, no_wrap=True, overflow="ignore")
+            table.add_column("Anom", justify="center", style="yellow", width=4, no_wrap=True, overflow="ignore")
+            table.add_column("Sysc", justify="right", style="green", width=7, no_wrap=True, overflow="ignore")
+            table.add_column("CPU", justify="right", style="cyan", width=5, no_wrap=True, overflow="ignore")
+            
+            # Add processes sorted by risk score - THREAD SAFE: create snapshot under lock
+            # Use timeout to avoid deadlock
+            processes_snapshot = {}
+            try:
+                # Try to acquire lock with timeout (non-blocking check)
+                if self.processes_lock.acquire(timeout=0.1):
+                    try:
+                        # Create snapshot to avoid holding lock during expensive operations
+                        processes_snapshot = {
+                            pid: dict(proc) for pid, proc in self.processes.items()
+                        }
+                    finally:
+                        self.processes_lock.release()
+                else:
+                    # Lock timeout - use empty snapshot
+                    self.logger.debug("Could not acquire processes_lock for dashboard")
+            except Exception as e:
+                self.logger.debug(f"Error acquiring lock: {e}")
+            
+            # Sort outside the lock (safe because we have a snapshot)
+            sorted_processes = sorted(
+                processes_snapshot.items(),
+                key=lambda x: x[1].get('risk_score', 0) or 0,
+                reverse=True
+            )[:10]  # Show top 10
+            
+            if sorted_processes:
+                for pid, proc in sorted_processes:
+                    try:
+                        pid_str, proc_name, risk_display, anomaly_display, syscall_display, cpu_display = \
+                            self._format_process_row(pid, proc)
+                        table.add_row(pid_str, proc_name, risk_display, anomaly_display, syscall_display, cpu_display)
+                    except Exception as e:
+                        self.logger.debug(f"Error formatting row for PID {pid}: {e}")
+                        continue
+            else:
+                table.add_row("Waiting for syscall events...", "", "", "", "", "", style="dim")
+            
+            # Get stats safely (read-only, no lock needed for reading)
+            try:
+                total_processes = self.stats.get('total_processes', 0)
+                high_risk = self.stats.get('high_risk_processes', 0)
+                anomalies = self.stats.get('anomalies_detected', 0)
+                policy_violations = self.stats.get('policy_violations', 0)
+            except Exception:
+                total_processes = high_risk = anomalies = policy_violations = 0
+            
+            # Stats panel with explanations - simplified to avoid rendering issues
+            stats_text = f"""📊 Statistics
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔍 Processes Monitored: {self.stats['total_processes']}
-   → Total unique processes captured by eBPF
-
-⚠️  High Risk Processes: {self.stats['high_risk_processes']}  
-   → Processes that crossed risk threshold (score ≥ 50)
-   → Count shows how many processes became high-risk, not current count
-   → Current high-risk processes shown in table above (🔴 indicator)
-
-🚨 Anomalies Detected: {self.stats['anomalies_detected']}
-   → Processes that crossed anomaly threshold (score ≥ 0.5)
-   → Current anomaly scores stored per-process in table above
-   → ML ensemble (Isolation Forest + One-Class SVM) analyzes patterns
-   → Note: Same process can trigger multiple times if behavior changes
-
-🔒 Policy Violations: {self.stats['policy_violations']}
-   → Container security policy violations (currently 0)
-
+🔍 Processes: {total_processes} | ⚠️ High Risk: {high_risk} | 🚨 Anomalies: {anomalies} | 🔒 Violations: {policy_violations}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🎯 **What's Happening:**
-• eBPF is capturing system calls from running processes
-• ML models are analyzing behavior patterns in real-time
-• Risk scores combine syscall analysis + behavioral baselining
-• Anomaly detection uses ensemble of 3 ML algorithms
-• Dashboard updates every second
-
-💡 **Risk Score Meaning:**
-   🟢 0-30:  Normal system activity
-   🟡 30-50: Potentially suspicious
-   🔴 50+:   High risk - investigate immediately
-        """
-        
-        # Combine everything - Use Group to combine table and stats panel
-        # This avoids StringIO which can hang
-        from rich.console import Group
-        
-        # Create stats panel
-        stats_panel = Panel(stats_panel_content, title="📊 Statistics", border_style="blue")
-        
-        # Group table and stats together
-        content = Group(table, stats_panel)
-        
-        return Panel(content, title="🛡️ Enhanced Linux Security Agent - Real-time Monitoring", 
-                    border_style="green", padding=(0, 1))
+🎯 eBPF capturing syscalls | ML analyzing patterns | Dashboard updating...
+💡 Risk: 🟢 0-30 Normal | 🟡 30-50 Suspicious | 🔴 50+ High Risk"""
+            
+            # Simple Panel with table and text - avoid Group which might hang
+            from rich.text import Text
+            content = f"{table}\n\n{stats_text}"
+            
+            return Panel(content, title="🛡️ Enhanced Linux Security Agent", 
+                        border_style="green", padding=(0, 1))
+        except Exception as e:
+            # Fallback simple dashboard
+            self.logger.error(f"Error creating dashboard: {e}")
+            return Panel("Dashboard error - see logs", title="Error", border_style="red")
 
     def _create_tui_table(self) -> Table:
         """Create compact table-only TUI (PID | Proc | Risk | Anom | Sysc | CPU)"""
