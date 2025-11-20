@@ -3,7 +3,7 @@
 Real-time system call monitoring and threat detection agent for Linux. Uses eBPF to capture syscalls from the kernel and ML to detect anomalies.
 
 **Status:** Functional Prototype - Research/Academic Project  
-**Classification:** Not Production Ready - See [PROJECT_STATUS.md](PROJECT_STATUS.md) for details
+**Classification:** Not Production Ready - See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for details
 
 **Recent fixes:**
 - Now captures actual syscall names (333 mapped) instead of just counting
@@ -305,7 +305,7 @@ Linux-Security-Agent/
 - **Scalability**: Limited testing - needs validation at scale
 - **Accuracy**: No validation metrics available - accuracy claims unverified
 
-See [GAP_ANALYSIS.md](GAP_ANALYSIS.md) for detailed limitations and [PROJECT_STATUS.md](PROJECT_STATUS.md) for honest assessment.
+See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for detailed limitations and [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for honest assessment.
 
 ## 🚀 Getting Started
 
@@ -325,7 +325,7 @@ For detailed docs, see `docs/INSTALL.md`, `docs/USAGE.md`, and `docs/DEMO_GUIDE.
 - Research paper implementations
 
 **Not suitable for production use without significant additional work.**  
-See [PROJECT_STATUS.md](PROJECT_STATUS.md) and [GAP_ANALYSIS.md](GAP_ANALYSIS.md) for details.
+See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) and [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for details.
 
 **Suggested repo topics:** linux-security, ebpf, anomaly-detection, container-security, machine-learning, research, prototype, academic-project
 
