@@ -2449,7 +2449,7 @@ def main():
                 print("Creating dashboard view...")
                 try:
                     # Add timeout protection for dashboard creation
-                    import signal
+                    # Note: signal is already imported at top of file
                     
                     def timeout_handler(signum, frame):
                         raise TimeoutError("Dashboard creation timed out after 5 seconds")
