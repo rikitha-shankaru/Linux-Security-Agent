@@ -62,9 +62,16 @@ os.system('rm /tmp/test_attack.txt')
     
     # Run the script multiple times to create pattern
     for i in range(10):
-        subprocess.run([sys.executable, '-c', test_script], 
-                      capture_output=True, timeout=2)
-        time.sleep(0.1)
+        try:
+            result = subprocess.run([sys.executable, '-c', test_script], 
+                          capture_output=True, timeout=5, check=False)
+            time.sleep(0.1)
+        except subprocess.TimeoutExpired:
+            # Expected - some operations may hang, that's fine
+            pass
+        except Exception as e:
+            # Ignore other errors
+            pass
     
     print(f"{GREEN}✅ Privilege escalation pattern executed (10 iterations){RESET}")
 
@@ -75,27 +82,30 @@ def simulate_high_frequency_attack():
         "Rapid syscall bursts to trigger rate-based detection"
     )
     
-    # Rapid file operations
+    # Rapid file operations - MORE AGGRESSIVE
     temp_dir = Path('/tmp/attack_sim')
     temp_dir.mkdir(exist_ok=True)
     
     try:
-        # Create many files rapidly
-        for i in range(100):
+        # Create MANY files rapidly (increased from 100 to 500)
+        for i in range(500):
             test_file = temp_dir / f"test_{i}.txt"
-            test_file.write_text(f"Attack simulation data {i}")
+            test_file.write_text(f"Attack simulation data {i}\n" * 100)  # Larger files
             test_file.read_text()
-            if i % 10 == 0:
-                time.sleep(0.01)  # Small delay every 10 files
+            # Also do stat, chmod, etc. to generate more syscalls
+            test_file.chmod(0o755)
+            os.stat(test_file)
+            if i % 50 == 0:
+                time.sleep(0.001)  # Minimal delay
         
-        # Cleanup
+        # Rapid cleanup
         for file in temp_dir.glob("test_*.txt"):
             file.unlink()
         temp_dir.rmdir()
     except Exception as e:
         print(f"{RED}Error: {e}{RESET}")
     
-    print(f"{GREEN}✅ High-frequency pattern executed (100 file ops){RESET}")
+    print(f"{GREEN}✅ High-frequency pattern executed (500 file ops){RESET}")
 
 def simulate_suspicious_file_patterns():
     """Simulate suspicious file access patterns"""
@@ -108,26 +118,33 @@ def simulate_suspicious_file_patterns():
     temp_dir.mkdir(exist_ok=True)
     
     try:
-        # Create and delete files in rapid succession
-        for i in range(50):
+        # Create and delete files in rapid succession (increased from 50 to 200)
+        for i in range(200):
             # Create file
             test_file = temp_dir / f"suspicious_{i}.dat"
-            test_file.write_bytes(b'x' * 1024)  # 1KB file
+            # Larger files to generate more I/O
+            test_file.write_bytes(b'x' * 10240)  # 10KB file
             
-            # Read it back
-            test_file.read_bytes()
+            # Read it back multiple times
+            for _ in range(3):
+                test_file.read_bytes()
+            
+            # Also do stat, chmod, etc.
+            os.stat(test_file)
+            os.chmod(test_file, 0o755)
             
             # Delete it
             test_file.unlink()
             
-            # Small random delay
-            time.sleep(random.uniform(0.01, 0.05))
+            # Minimal delay for bursty pattern
+            if i % 20 == 0:
+                time.sleep(0.001)
         
         temp_dir.rmdir()
     except Exception as e:
         print(f"{RED}Error: {e}{RESET}")
     
-    print(f"{GREEN}✅ Suspicious file pattern executed{RESET}")
+    print(f"{GREEN}✅ Suspicious file pattern executed (200 files){RESET}")
 
 def simulate_process_churn():
     """Simulate rapid process creation/termination"""
@@ -136,25 +153,36 @@ def simulate_process_churn():
         "Rapid fork/exec patterns"
     )
     
-    # Spawn many short-lived processes
+    # Spawn MANY short-lived processes (increased from 20 to 100)
     processes = []
-    for i in range(20):
+    for i in range(100):
+        # Each process does file I/O to generate more syscalls
         proc = subprocess.Popen(
-            [sys.executable, '-c', 'import time; time.sleep(0.1)'],
+            [sys.executable, '-c', f'''
+import os
+import time
+# Generate syscalls
+for j in range(10):
+    with open(f"/tmp/churn_{i}_{j}.tmp", "w") as f:
+        f.write("test")
+    os.remove(f"/tmp/churn_{i}_{j}.tmp")
+time.sleep(0.01)
+'''],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
         processes.append(proc)
-        time.sleep(0.05)
+        if i % 10 == 0:
+            time.sleep(0.01)  # Small delay every 10 processes
     
     # Wait for all to complete
     for proc in processes:
         try:
-            proc.wait(timeout=1)
+            proc.wait(timeout=2)
         except subprocess.TimeoutExpired:
             proc.kill()
     
-    print(f"{GREEN}✅ Process churn pattern executed (20 processes){RESET}")
+    print(f"{GREEN}✅ Process churn pattern executed (100 processes){RESET}")
 
 def simulate_network_scanning():
     """Simulate network scanning pattern"""

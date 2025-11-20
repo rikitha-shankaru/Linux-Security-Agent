@@ -85,6 +85,13 @@ class SimpleSecurityAgent:
         if ML_AVAILABLE:
             try:
                 self.anomaly_detector = EnhancedAnomalyDetector(config)
+                # Try to load pre-trained models
+                try:
+                    self.anomaly_detector._load_models()
+                    if self.anomaly_detector.is_fitted:
+                        logger.info("✅ Loaded pre-trained ML models")
+                except Exception:
+                    logger.info("ℹ️ No pre-trained models found - train with --train-models")
             except Exception as e:
                 logger.warning(f"ML detector not available: {e}")
     
@@ -170,18 +177,42 @@ class SimpleSecurityAgent:
             proc['risk_score'] = risk_score
             
             # Calculate anomaly score (if ML available and trained)
-            if self.anomaly_detector and self.anomaly_detector.is_fitted:
-                try:
-                    anomaly_result = self.anomaly_detector.detect_anomaly_ensemble(
-                        pid, syscall_list, {}
-                    )
-                    proc['anomaly_score'] = anomaly_result.anomaly_score
-                    if anomaly_result.is_anomaly:
-                        self.stats['anomalies'] += 1
-                except Exception:
-                    pass  # ML detection failed
+            if self.anomaly_detector:
+                # Try to load models if not fitted
+                if not self.anomaly_detector.is_fitted:
+                    try:
+                        self.anomaly_detector._load_models()
+                    except Exception:
+                        pass  # Models not available
+                
+                if self.anomaly_detector.is_fitted:
+                    try:
+                        # Get process info for ML
+                        process_info = {}
+                        try:
+                            p = psutil.Process(pid)
+                            process_info = {
+                                'cpu_percent': p.cpu_percent(interval=0.1) if p.is_running() else 0.0,
+                                'memory_percent': p.memory_percent() if p.is_running() else 0.0,
+                                'num_threads': p.num_threads() if p.is_running() else 0
+                            }
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            pass
+                        
+                        # CORRECT function signature: (syscalls, process_info, pid)
+                        anomaly_result = self.anomaly_detector.detect_anomaly_ensemble(
+                            syscall_list, process_info, pid
+                        )
+                        proc['anomaly_score'] = abs(anomaly_result.anomaly_score)  # Use absolute value
+                        if anomaly_result.is_anomaly:
+                            self.stats['anomalies'] += 1
+                    except Exception as e:
+                        logger.debug(f"ML detection failed for PID {pid}: {e}")
+                        proc['anomaly_score'] = 0.0
+                else:
+                    # ML not trained yet - set to 0.00
+                    proc['anomaly_score'] = 0.0
             else:
-                # ML not trained yet - set to 0.00
                 proc['anomaly_score'] = 0.0
             
             # Update high risk count
