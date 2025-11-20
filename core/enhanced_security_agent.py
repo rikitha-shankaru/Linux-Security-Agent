@@ -126,6 +126,25 @@ try:
 except ImportError:
     AUDITD_AVAILABLE = False
 
+# Import new response and threat intelligence modules
+try:
+    try:
+        from core.response_handler import ResponseHandler, ResponseAction
+        from core.threat_intelligence import ThreatIntelligence, IOCFeed
+        RESPONSE_HANDLER_AVAILABLE = True
+        THREAT_INTEL_AVAILABLE = True
+    except ImportError:
+        from response_handler import ResponseHandler, ResponseAction
+        from threat_intelligence import ThreatIntelligence, IOCFeed
+        RESPONSE_HANDLER_AVAILABLE = True
+        THREAT_INTEL_AVAILABLE = True
+except ImportError as e:
+    RESPONSE_HANDLER_AVAILABLE = False
+    THREAT_INTEL_AVAILABLE = False
+    ResponseHandler = None
+    ThreatIntelligence = None
+    logger.debug(f"Response handler and threat intelligence not available: {e}")
+
 # Import existing components
 # ActionHandler is optional and in legacy/, so it's disabled
 ACTION_HANDLER_AVAILABLE = False
@@ -355,6 +374,8 @@ class EnhancedSecurityAgent:
         self.container_security_monitor = None
         self.enhanced_risk_scorer = None
         self.action_handler = None
+        self.response_handler = None
+        self.threat_intelligence = None
         
         # Process tracking
         self.processes = {}  # pid -> process info
@@ -480,7 +501,25 @@ class EnhancedSecurityAgent:
                 self.console.print(f"⚠️ Container security monitor disabled: {e}", style="yellow")
                 self.container_security_monitor = None
         
-        # Initialize action handler
+        # Initialize threat intelligence
+        if THREAT_INTEL_AVAILABLE:
+            try:
+                self.threat_intelligence = ThreatIntelligence()
+                self.console.print("✅ Threat intelligence initialized", style="green")
+            except Exception as e:
+                self.console.print(f"❌ Threat intelligence failed: {e}", style="red")
+                self.threat_intelligence = None
+        
+        # Initialize response handler
+        if RESPONSE_HANDLER_AVAILABLE:
+            try:
+                self.response_handler = ResponseHandler(self.config)
+                self.console.print("✅ Response handler initialized", style="green")
+            except Exception as e:
+                self.console.print(f"❌ Response handler failed: {e}", style="red")
+                self.response_handler = None
+        
+        # Initialize action handler (legacy - disabled)
         if ACTION_HANDLER_AVAILABLE:
             try:
                 self.action_handler = ActionHandler(self.config)
@@ -1336,6 +1375,15 @@ class EnhancedSecurityAgent:
             pid, syscalls, process_info, anomaly_score, container_id
         )
         
+        # Add threat intelligence boost if available
+        if self.threat_intelligence and process_info:
+            try:
+                threat_boost = self.threat_intelligence.get_risk_boost(syscalls, process_info)
+                risk_score += threat_boost
+                risk_score = min(100.0, risk_score)  # Cap at 100
+            except Exception as e:
+                self.logger.debug(f"Threat intelligence boost failed: {e}")
+        
         # Update cache
         with self._risk_score_cache_lock:
             self._risk_score_cache[pid] = (risk_score, current_time)
@@ -1521,8 +1569,43 @@ class EnhancedSecurityAgent:
                     'anomaly_score': process_snapshot.get('anomaly_score', 0.0)
                 })
             
-            # Take action if needed
-            if self.action_handler:
+            # Take action if needed (use new response handler, fallback to legacy)
+            action_taken = None
+            if self.response_handler:
+                try:
+                    with self.processes_lock:
+                        if pid in self.processes:
+                            process = self.processes[pid]
+                            # Build reason string
+                            reason_parts = []
+                            if process.get('risk_score', 0) >= self.config.get('risk_threshold', 50.0):
+                                reason_parts.append(f"High risk score: {process['risk_score']:.1f}")
+                            if anomaly_result and anomaly_result.is_anomaly:
+                                reason_parts.append(f"Anomaly detected: {anomaly_result.anomaly_score:.2f}")
+                            if self.threat_intelligence:
+                                # Check for IOC matches
+                                ioc_matches = self.threat_intelligence.check_ioc(process_snapshot)
+                                if ioc_matches:
+                                    reason_parts.append(f"IOC match: {ioc_matches[0].get('type', 'unknown')}")
+                                # Check for ATT&CK techniques
+                                technique_matches = self.threat_intelligence.match_attack_technique(
+                                    syscalls_snapshot, pid
+                                )
+                                if technique_matches:
+                                    reason_parts.append(f"ATT&CK: {technique_matches[0][1]['name']}")
+                            
+                            reason = "; ".join(reason_parts) if reason_parts else "Risk threshold exceeded"
+                            
+                            action_taken = self.response_handler.take_action(
+                                pid, process['name'], process['risk_score'], 
+                                process.get('anomaly_score', 0.0), reason
+                            )
+                            if action_taken:
+                                with self.stats_lock:
+                                    self.stats['actions_taken'] += 1
+                except Exception as e:
+                    self.logger.error(f"Response handler error: {e}")
+            elif self.action_handler:  # Legacy fallback
                 try:
                     with self.processes_lock:
                         if pid in self.processes:
