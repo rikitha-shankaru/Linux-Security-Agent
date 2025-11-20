@@ -182,36 +182,50 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
             logger.info("Loading eBPF program...")
             # Suppress compiler warnings during compilation (they're harmless macro redefinitions)
             # BCC defines these macros on command line, causing warnings we can't avoid
+            # We use os.dup2 to redirect stderr at file descriptor level to catch subprocess output
             import os
             import sys
-            import tempfile
+            import subprocess
             
-            # Use os.dup2 to redirect stderr at the file descriptor level
-            # This catches ALL output including from subprocesses
-            devnull_fd = os.open(os.devnull, os.O_WRONLY)
+            # Save original stderr
             old_stderr_fd = os.dup(sys.stderr.fileno())
             
+            # Create a pipe to capture stderr so we can filter it
+            read_fd, write_fd = os.pipe()
+            
             try:
-                # Redirect stderr to /dev/null
-                os.dup2(devnull_fd, sys.stderr.fileno())
+                # Redirect stderr to our pipe
+                os.dup2(write_fd, sys.stderr.fileno())
+                os.close(write_fd)
                 
-                # Load BPF program (warnings will go to /dev/null)
-                bpf = BPF(text=ebpf_code)
+                # Load BPF program in a subprocess context to catch all output
+                # But actually, BPF() does the compilation internally, so we need to
+                # redirect at the process level. Let's use a simpler approach:
+                # Redirect stderr to /dev/null temporarily
+                devnull = open(os.devnull, 'w')
+                old_stderr = sys.stderr
+                sys.stderr = devnull
+                
+                try:
+                    bpf = BPF(text=ebpf_code)
+                finally:
+                    # Restore stderr
+                    sys.stderr.close()
+                    sys.stderr = old_stderr
+                    devnull.close()
                 
             except Exception as e:
-                # Restore stderr before logging the error
+                # Restore stderr before re-raising
                 os.dup2(old_stderr_fd, sys.stderr.fileno())
-                os.close(devnull_fd)
-                os.close(old_stderr_fd)
                 raise e
             finally:
-                # Always restore stderr
+                # Always restore stderr file descriptor
                 try:
                     os.dup2(old_stderr_fd, sys.stderr.fileno())
-                    os.close(devnull_fd)
                     os.close(old_stderr_fd)
+                    os.close(read_fd)
                 except:
-                    pass  # Ignore errors during cleanup
+                    pass
             
             logger.info("eBPF program loaded successfully")
             
