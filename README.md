@@ -212,25 +212,18 @@ This implements ideas from recent research papers:
 - "U-SCAD: Unsupervised System Call-Driven Anomaly Detection" (2024) - ML detection
 - "Cross Container Attacks" (2023) - Container security
 
-### What I Actually Implemented
+### What's Implemented
 
-After fixing bugs, the system now:
-- Captures real syscalls from kernel via eBPF (333 mapped)
-- Trains ML on actual system behavior 
-- Thread-safe with proper locking
+The system includes:
+- Real-time syscall capture from kernel via eBPF (333 syscalls mapped) with auditd fallback
+- ML anomaly detection trained on actual system behavior (Isolation Forest, One-Class SVM, DBSCAN)
+- Modular architecture with collector factory pattern
+- Thread-safe process tracking with proper locking
 - Automatic memory cleanup
-- Container detection for Docker/K8s
-- Risk scoring from real syscall patterns
-- Anomaly detection using real ML models
-
-### Recent Fixes
-
-I fixed 5 critical bugs:
-1. eBPF capture - now gets actual syscall names
-2. ML training - uses real data, not random
-3. Memory management - automatic cleanup
-4. Thread safety - reduced locks significantly  
-5. Container detection - improved reliability
+- Container detection for Docker/Kubernetes
+- Risk scoring from real syscall patterns with ML anomaly integration
+- Real-time dashboard with process monitoring
+- Attack simulation scripts for testing
 
 See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for detailed status and [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for known limitations.
 
