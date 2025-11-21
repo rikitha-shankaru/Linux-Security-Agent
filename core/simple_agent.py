@@ -235,13 +235,15 @@ class SimpleSecurityAgent:
     def create_dashboard(self) -> Panel:
         """Create dashboard view"""
         with self.processes_lock:
-            # Create table
+            # Create table with more informative columns
             table = Table(title="🛡️ Security Agent - Live Monitoring", show_header=True)
-            table.add_column("PID", style="cyan")
-            table.add_column("Process", style="green")
-            table.add_column("Risk", style="yellow")
-            table.add_column("Anomaly", style="magenta")
-            table.add_column("Syscalls", style="blue")
+            table.add_column("PID", style="cyan", width=6)
+            table.add_column("Process", style="green", width=18)
+            table.add_column("Risk", style="yellow", width=7, justify="right")
+            table.add_column("Anomaly", style="magenta", width=8, justify="right")
+            table.add_column("Syscalls", style="blue", width=8, justify="right")
+            table.add_column("Recent Syscalls", style="cyan", width=20)
+            table.add_column("Last Update", style="dim", width=8, justify="right")
             
             # Sort by risk score, but also show recently active processes
             current_time = time.time()
@@ -265,22 +267,48 @@ class SimpleSecurityAgent:
                     is_active = time_since_update < 5.0  # Active if updated in last 5 seconds
                     
                     # Highlight recently active processes
-                    process_name = proc['name'][:30]
+                    process_name = proc['name'][:18]
                     if not is_active and time_since_update < 30:
                         process_name = f"{process_name} (recent)"
                     
+                    # Get recent syscalls (last 5 unique syscalls)
+                    syscalls_list = list(proc['syscalls'])
+                    if syscalls_list:
+                        # Get unique recent syscalls (last 5-8)
+                        recent_syscalls = list(dict.fromkeys(syscalls_list[-8:]))[-5:]
+                        recent_str = ", ".join(recent_syscalls)
+                        if len(recent_str) > 18:
+                            recent_str = recent_str[:15] + "..."
+                    else:
+                        recent_str = "---"
+                    
+                    # Format last update time
+                    if time_since_update < 60:
+                        last_update_str = f"{int(time_since_update)}s"
+                    elif time_since_update < 3600:
+                        last_update_str = f"{int(time_since_update/60)}m"
+                    else:
+                        last_update_str = f"{int(time_since_update/3600)}h"
+                    
+                    # Add status indicator
+                    status_indicator = "🟢" if is_active else "⚪" if time_since_update < 30 else "⚫"
+                    
                     table.add_row(
                         str(pid),
-                        process_name,
+                        f"{status_indicator} {process_name}",
                         f"[{risk_style}]{risk:.1f}[/]",
                         f"{proc['anomaly_score']:.2f}",
-                        str(len(proc['syscalls']))
+                        str(len(proc['syscalls'])),
+                        recent_str,
+                        last_update_str
                     )
             else:
                 # Show info panel when no data yet
                 table.add_row(
                     "---",
                     "Waiting for syscalls...",
+                    "---",
+                    "---",
                     "---",
                     "---",
                     "---"
