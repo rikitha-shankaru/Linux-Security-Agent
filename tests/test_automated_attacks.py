@@ -279,13 +279,14 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with proper alignment - use fixed width columns
+        # Print result with proper alignment - fixed width columns
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
         print(f"   Status:         {status}")
         if executed:
             print(f"   Risk Score:     {risk_score:>6.2f}")
             print(f"   Anomaly Score:  {anomaly_score:>6.2f}")
-            print(f"   Execution Time: {execution_time:>6.2f}s")
+            print(f"   Execution Time:  {execution_time:>6.2f}s")
+        print()  # Blank line for spacing
         sys.stdout.flush()
         
         return result
@@ -300,7 +301,8 @@ class TestAutomatedAttacks(unittest.TestCase):
         )
         # Allow test to pass even if attack times out (it still generates syscalls)
         if not result.executed:
-            self.skipTest(f"Attack execution failed: {result.error}")
+            raise unittest.SkipTest(f"Attack execution failed: {result.error}")
+        # Don't use self.assertTrue - it prints unittest output
     
     def test_high_frequency_attack(self):
         """Test high-frequency attack detection"""
@@ -310,7 +312,8 @@ class TestAutomatedAttacks(unittest.TestCase):
             "DoS",
             AttackSimulator.high_frequency_attack
         )
-        self.assertTrue(result.executed, "Attack should execute")
+        if not result.executed:
+            raise AssertionError("Attack should execute")
     
     def test_process_churn(self):
         """Test process churn detection"""
@@ -320,7 +323,8 @@ class TestAutomatedAttacks(unittest.TestCase):
             "T1055",
             AttackSimulator.process_churn
         )
-        self.assertTrue(result.executed, "Attack should execute")
+        if not result.executed:
+            raise AssertionError("Attack should execute")
     
     def test_suspicious_file_patterns(self):
         """Test suspicious file pattern detection"""
@@ -330,7 +334,8 @@ class TestAutomatedAttacks(unittest.TestCase):
             "T1070",
             AttackSimulator.suspicious_file_patterns
         )
-        self.assertTrue(result.executed, "Attack should execute")
+        if not result.executed:
+            raise AssertionError("Attack should execute")
     
     def test_ptrace_attempts(self):
         """Test ptrace attempt detection"""
@@ -383,9 +388,12 @@ class AutomatedAttackTestRunner:
         print("The agent will run in the background while attacks are executed.\n")
         sys.stdout.flush()
         
-        # Run tests directly without unittest's verbose output
+        # Run tests directly - completely bypass unittest output
         test_instance = TestAutomatedAttacks()
-        test_instance.setUp()
+        
+        # Suppress all unittest output by redirecting stdout/stderr
+        import io
+        from contextlib import redirect_stdout, redirect_stderr
         
         test_methods = [
             ('Privilege Escalation', test_instance.test_privilege_escalation),
@@ -401,8 +409,20 @@ class AutomatedAttackTestRunner:
         test_details = []
         
         for test_name, test_method in test_methods:
+            # Redirect unittest's internal output to devnull
+            old_stdout = sys.stdout
+            old_stderr = sys.stderr
+            
             try:
-                test_method()
+                # Only redirect during test execution, not our print statements
+                test_instance.setUp()
+                
+                # Capture any unittest output
+                with open(os.devnull, 'w') as devnull:
+                    # Temporarily redirect only unittest's internal streams
+                    # But keep our stdout for our formatted output
+                    test_method()
+                
                 tests_run += 1
             except unittest.SkipTest:
                 tests_run += 1
@@ -422,6 +442,8 @@ class AutomatedAttackTestRunner:
                     'error': str(e)
                 })
             finally:
+                sys.stdout = old_stdout
+                sys.stderr = old_stderr
                 try:
                     test_instance.tearDown()
                 except:
