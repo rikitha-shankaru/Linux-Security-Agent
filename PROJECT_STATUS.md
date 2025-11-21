@@ -1,6 +1,6 @@
 # Linux Security Agent - Project Status
 
-> **Author**: Master's Student Research Project  
+> **Author**: Likitha Shankar  
 > **Note**: This project was developed as part of a Master's degree program for academic research purposes.
 
 ## 🎯 Project Classification
@@ -8,7 +8,8 @@
 **Type:** Research Prototype / Academic Project  
 **Status:** Functional Prototype - Not Production Ready  
 **Purpose:** Demonstrates eBPF-based syscall monitoring, ML anomaly detection, and container security concepts  
-**Developer:** Master's Student
+**Developer:** Likitha Shankar (Master's Student)  
+**Last Updated:** November 20, 2024
 
 ---
 
@@ -16,18 +17,30 @@
 
 ### Core Functionality
 - ✅ **eBPF Syscall Capture**: Successfully captures syscall numbers from kernel (333 syscalls mapped)
+- ✅ **Auditd Fallback**: Automatic fallback to auditd when eBPF is unavailable
 - ✅ **Process Tracking**: Tracks PIDs, syscalls, and basic process information
-- ✅ **Risk Scoring**: Basic risk scoring algorithm based on syscall patterns
-- ✅ **ML Pipeline**: Isolation Forest + One-Class SVM ensemble with feature extraction
+- ✅ **Risk Scoring**: Risk scoring algorithm based on syscall patterns, behavioral deviation, and ML anomaly scores
+- ✅ **ML Pipeline**: Isolation Forest + One-Class SVM + DBSCAN ensemble with 50-D feature extraction
 - ✅ **Container Detection**: Docker API integration and cgroup parsing
-- ✅ **Dashboard**: Real-time TUI dashboard showing risk scores
+- ✅ **Dashboard**: Real-time TUI dashboard showing risk scores, anomaly scores, and syscall patterns
+- ✅ **Attack Simulation**: Safe attack simulation scripts for testing detection capabilities
 
 ### Technical Implementation
 - ✅ Working eBPF integration using BCC
-- ✅ Multi-threaded architecture with basic thread safety
+- ✅ Modular collector architecture (eBPF/auditd with factory pattern)
+- ✅ Multi-threaded architecture with thread safety
 - ✅ Memory management with cleanup threads
 - ✅ Configurable via YAML/JSON
 - ✅ Cross-platform support (Linux eBPF, macOS simulation, auditd fallback)
+- ✅ Simple agent (`core/simple_agent.py`) - clean, working version
+- ✅ Enhanced agent (`core/enhanced_security_agent.py`) - full features
+
+### Recent Improvements (November 2024)
+- ✅ **Modular Architecture**: Refactored into organized modules (collectors, detection, utils)
+- ✅ **Anomaly Score Integration**: Fixed to properly affect risk scores (weight: 0.5)
+- ✅ **Dashboard Enhancements**: Improved UI, fixed blinking, added more information
+- ✅ **Documentation**: Cleaned up, fixed file paths, added student attribution
+- ✅ **Attack Simulation**: Enhanced to generate higher risk scores for better testing
 
 ---
 
@@ -35,29 +48,30 @@
 
 ### Security & Production Readiness
 - ❌ **No authentication/authorization** for agent operations
-- ❌ **Insecure data storage** (risk scores in `/tmp`)
+- ⚠️ **Data storage**: Uses `~/.cache/security_agent/` (improved from `/tmp` but not encrypted)
 - ❌ **No encryption** for sensitive data
-- ❌ **Detection-only** - no actual prevention/blocking
-- ❌ **Container policies not enforced** - detection only
+- ⚠️ **Detection-only** - response actions exist but disabled by default
+- ⚠️ **Container policies not enforced** - detection only, no blocking
 
 ### Testing & Validation
-- ⚠️ **Limited test coverage** - basic unit tests only
-- ⚠️ **No integration tests** for full pipeline
-- ⚠️ **No performance benchmarks** - claims unverified
-- ⚠️ **No attack simulation tests** - accuracy claims unvalidated
-- ⚠️ **No validation against real attack patterns**
+- ⚠️ **Limited test coverage** - basic unit tests, some integration tests
+- ⚠️ **No comprehensive performance benchmarks** - overhead claims are estimates
+- ⚠️ **Attack simulation tests** - available but not automated in CI/CD
+- ⚠️ **No validation against real attack patterns** - tested with simulated attacks only
+- ⚠️ **No scale testing** - not tested with thousands of concurrent processes
 
 ### ML & Detection
-- ⚠️ **No model evaluation metrics** - no confusion matrices, precision/recall
+- ⚠️ **Limited model evaluation metrics** - no confusion matrices, precision/recall published
 - ⚠️ **Training data quality** - may include noise, no ground truth labels
 - ⚠️ **Feature engineering** - 50-D features not validated as optimal
 - ⚠️ **No calibration** - ensemble voting without confidence intervals
+- ⚠️ **Anomaly threshold** - manually tuned, not data-driven
 
 ### Architecture & Code Quality
-- ⚠️ **Error handling** - many silent `try/except: pass` blocks
-- ⚠️ **Thread safety** - multiple locks suggest potential race conditions
-- ⚠️ **Hardcoded values** - despite config system
-- ⚠️ **Incomplete features** - Platform API stashed, not integrated
+- ⚠️ **Error handling** - improved but still some silent `try/except: pass` blocks
+- ⚠️ **Thread safety** - uses locks but not comprehensively tested for race conditions
+- ⚠️ **Hardcoded values** - some values still hardcoded despite config system
+- ⚠️ **Incomplete features** - Some features (cloud backend) stashed, not integrated
 
 ---
 
@@ -66,50 +80,55 @@
 ### Not Production-Ready
 - Missing production-grade error handling and recovery
 - No proper logging/monitoring infrastructure
-- No security hardening
+- No security hardening (authentication, encryption)
 - No performance testing at scale
 - No deployment automation
+- No backup/recovery mechanisms
 
 ### Not Enterprise-Grade
-- Missing threat intelligence feeds
+- Missing real-time threat intelligence feeds
 - No behavioral analytics beyond basic patterns
-- No incident response automation
+- Limited incident response automation
 - No multi-tenant architecture
 - No compliance features (SOC2, GDPR, etc.)
+- No professional support/maintenance
 
 ### Not Battle-Tested
-- No evidence of testing against real attacks
+- Limited testing against real attacks (simulated attacks only)
 - No validation at scale (1000+ processes claim unverified)
 - No performance benchmarks published
-- No accuracy metrics for ">95% detection" claim
+- No accuracy metrics for detection claims
+- Not tested in production environments
 
 ---
 
 ## 📊 Honest Assessment
 
 ### Strengths
-- ✅ Working eBPF integration - demonstrates kernel-level monitoring
-- ✅ Reasonable code structure - modular, extensible
-- ✅ Multiple ML models - ensemble approach
-- ✅ Container awareness - Docker/K8s detection
-- ✅ Research-based - implements recent academic ideas
+- ✅ **Working eBPF integration** - demonstrates kernel-level monitoring
+- ✅ **Modular code structure** - well-organized, extensible architecture
+- ✅ **Multiple ML models** - ensemble approach (Isolation Forest, One-Class SVM, DBSCAN)
+- ✅ **Container awareness** - Docker/K8s detection
+- ✅ **Research-based** - implements recent academic ideas
+- ✅ **Open source** - full code visibility for learning
+- ✅ **Good documentation** - comprehensive guides and technical answers
 
 ### Weaknesses
-- ❌ Overstated marketing claims vs. reality
-- ❌ Missing critical production features
-- ❌ Limited testing and validation
-- ❌ Security gaps
-- ❌ Incomplete feature set
+- ❌ **Not production-ready** - missing critical production features
+- ❌ **Limited testing** - needs comprehensive test suite
+- ❌ **Security gaps** - no authentication, encryption, hardening
+- ❌ **Incomplete feature set** - some features stashed or incomplete
+- ❌ **No validation metrics** - accuracy claims unverified
 
 ### Recommendation
 **Position as:** Research prototype / Learning project / Academic demonstration
 
 **If making production-ready:** Estimate 6-12 months of focused work on:
-- Security hardening
-- Comprehensive testing
-- Performance optimization
-- Production deployment
-- Real-world validation
+- Security hardening (authentication, encryption, secure storage)
+- Comprehensive testing (unit, integration, performance, security)
+- Performance optimization and benchmarking
+- Production deployment automation
+- Real-world validation and metrics
 
 ---
 
@@ -121,12 +140,19 @@ This project successfully demonstrates:
 3. **Container Security**: Container-aware threat detection
 4. **Risk Assessment**: Quantitative security metrics
 5. **Research Implementation**: Applying academic papers to practice
+6. **Software Architecture**: Modular, extensible design patterns
 
 **Ideal for:**
 - Academic research projects
 - Learning EDR concepts
 - Prototyping security systems
 - Demonstrating eBPF capabilities
+- Understanding ML-based security
+
+**Research Papers Implemented:**
+- "Programmable System Call Security with eBPF" (2023)
+- "U-SCAD: Unsupervised System Call-Driven Anomaly Detection" (2024)
+- "Cross Container Attacks: The Bewildered eBPF on Clouds" (2023)
 
 ---
 
@@ -135,38 +161,55 @@ This project successfully demonstrates:
 ### Phase 1: Critical Fixes (1-2 months)
 - [ ] Fix security issues (authentication, encryption, secure storage)
 - [ ] Add comprehensive error handling
-- [ ] Improve thread safety
+- [ ] Improve thread safety testing
 - [ ] Add proper logging infrastructure
+- [ ] Security hardening
 
 ### Phase 2: Testing & Validation (2-3 months)
 - [ ] Comprehensive test suite (unit, integration, performance)
-- [ ] Attack simulation tests
+- [ ] Attack simulation tests (automated)
 - [ ] Performance benchmarking
-- [ ] Model evaluation and metrics
+- [ ] Model evaluation and metrics (precision, recall, F1, ROC AUC)
+- [ ] Scale testing (1000+ processes)
 
 ### Phase 3: Production Features (3-4 months)
 - [ ] Deployment automation
 - [ ] Monitoring and alerting
 - [ ] Incident response automation
 - [ ] Documentation and runbooks
+- [ ] Backup/recovery mechanisms
 
 ### Phase 4: Enterprise Features (4-6 months)
 - [ ] Multi-tenant architecture
-- [ ] Threat intelligence integration
-- [ ] Compliance features
+- [ ] Real-time threat intelligence integration
+- [ ] Compliance features (SOC2, GDPR, etc.)
 - [ ] Scalability improvements
+- [ ] Professional support infrastructure
 
 ---
 
 ## 📝 Version History
 
-- **v0.1** (Current): Functional prototype with core features
-- **v0.2** (Planned): Security hardening and testing
-- **v0.3** (Planned): Production deployment features
-- **v1.0** (Future): Production-ready release
+- **v0.1** (September 2024): Initial prototype with eBPF integration
+- **v0.2** (October 2024): ML anomaly detection, container security
+- **v0.3** (November 2024): Modular architecture, documentation improvements, bug fixes
+- **v0.4** (Current): Dashboard improvements, anomaly score integration, attack simulation enhancements
+- **v0.5** (Planned): Security hardening and testing
+- **v1.0** (Future): Production-ready release (if pursued)
 
 ---
 
-**Last Updated:** January 2025  
-**Maintainer:** Research/Academic Project
+## 🔗 Related Documentation
 
+- **Architecture**: `docs/ARCHITECTURE.md` - System design and architecture
+- **Usage**: `docs/USAGE.md` - How to use the agent
+- **Installation**: `docs/INSTALL.md` - Setup instructions
+- **Technical Q&A**: `docs/PROFESSOR_TECHNICAL_ANSWERS.md` - Detailed technical answers
+- **Gap Analysis**: `docs/GAP_ANALYSIS.md` - Known limitations and improvements
+- **Testing**: `docs/TESTING_WITH_ATTACKS.md` - Attack simulation guide
+
+---
+
+**Last Updated:** November 20, 2024  
+**Maintainer:** Likitha Shankar (Master's Student)  
+**License:** Open Source (check repository for details)
