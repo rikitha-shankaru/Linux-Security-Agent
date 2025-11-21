@@ -1,6 +1,6 @@
 # Linux Security Agent
 
-> **Author**: Master's Student Research Project  
+> **Author**: Likitha Shankar  
 > **Purpose**: Academic research project demonstrating eBPF-based syscall monitoring and ML anomaly detection
 
 Real-time system call monitoring and threat detection agent for Linux. Uses eBPF to capture syscalls from the kernel and ML to detect anomalies. This project was developed as part of a Master's degree program to explore kernel-level security monitoring and machine learning-based threat detection.
@@ -51,7 +51,7 @@ Implements ideas from recent research:
 ## Installation
 
 ```bash
-git clone https://github.com/rikitha-shankaru/Linux-Security-Agent.git
+git clone https://github.com/likitha-shankar/Linux-Security-Agent.git
 cd Linux-Security-Agent
 
 # Create virtual environment
@@ -117,13 +117,13 @@ sudo python3 core/simple_agent.py --collector ebpf --threshold 30
 sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
 ```
 
-### Collector selection (auditd default, eBPF fallback)
+### Collector selection (eBPF default, auditd fallback)
 ```bash
-# Auditd (default, most reliable)
-sudo python3 core/enhanced_security_agent.py --collector auditd --dashboard
-
-# eBPF (if available)
+# eBPF (default, recommended if available)
 sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard
+
+# Auditd (fallback, most reliable if eBPF unavailable)
+sudo python3 core/enhanced_security_agent.py --collector auditd --dashboard
 ```
 
 ### With training
@@ -155,7 +155,7 @@ sudo python3 core/enhanced_security_agent.py --tui --timeout 60
 Place a YAML (or JSON) config at `config/config.yml` (auto-loaded) or pass via `--config path/to/file`. Example:
 ```yaml
 risk_threshold: 50.0
-anomaly_weight: 0.3
+anomaly_weight: 0.5
 decay_factor: 0.95
 decay_interval: 60
 collector: ebpf
@@ -232,7 +232,7 @@ I fixed 5 critical bugs:
 4. Thread safety - reduced locks significantly  
 5. Container detection - improved reliability
 
-See `FIXES_PROGRESS.md` for details.
+See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for detailed status and [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for known limitations.
 
 ## Requirements
 
@@ -317,7 +317,7 @@ See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for detailed limitations and [d
 1. **Install**: `pip install -r requirements.txt`
 2. **Test**: `python3 run_tests.py`
 3. **Demo**: `python3 demo/run_demo.py`
-4. **Monitor**: `python3 security_agent_mac.py --dashboard --timeout 30`
+4. **Monitor**: `sudo python3 core/simple_agent.py --collector ebpf --dashboard --threshold 30`
 
 For detailed docs, see `docs/INSTALL.md`, `docs/USAGE.md`, and `docs/DEMO_GUIDE.md`.
 
