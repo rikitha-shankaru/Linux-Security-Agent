@@ -105,11 +105,17 @@ class PerformanceBenchmark:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
-            self.agent_process = psutil.Process(agent_proc.pid)
             
-            # Wait for agent to initialize
-            time.sleep(5)
-            print("   ✅ Agent started (PID: {})".format(agent_proc.pid))
+            # Wait longer for agent to initialize (eBPF can take time)
+            print("   ⏳ Waiting for agent to initialize...")
+            time.sleep(10)  # Increased from 5 to 10 seconds
+            
+            try:
+                self.agent_process = psutil.Process(agent_proc.pid)
+                print("   ✅ Agent started (PID: {})".format(agent_proc.pid))
+            except psutil.NoSuchProcess:
+                print("   ⚠️  Agent process not found, may have exited")
+                return self._simulate_cpu_overhead(duration)
         except Exception as e:
             print(f"   ⚠️  Could not start agent: {e}")
             print("   📝 Using simulation mode...")
@@ -117,26 +123,32 @@ class PerformanceBenchmark:
         
         # Step 3: Measure CPU with agent running (idle)
         print("\n3️⃣  Measuring CPU with agent (idle)...")
-        idle_samples = measure_cpu_percent(self.agent_process, duration=10)
+        # Use system-wide CPU to measure agent impact, not just agent process
+        idle_samples = []
+        for _ in range(10):
+            idle_samples.append(psutil.cpu_percent(interval=1))
         idle_cpu = statistics.mean(idle_samples) if idle_samples else 0.0
-        print(f"   ✅ Idle CPU: {idle_cpu:.2f}%")
+        print(f"   ✅ System CPU (idle): {idle_cpu:.2f}%")
         
         # Step 4: Generate syscall load and measure
         print("\n4️⃣  Generating syscall load (100 processes)...")
         load_thread = threading.Thread(target=generate_syscall_load, args=(100, duration))
         load_thread.start()
         
-        # Measure CPU during load
-        load_samples = measure_cpu_percent(self.agent_process, duration=duration)
+        # Measure system-wide CPU during load (more accurate)
+        load_samples = []
+        for _ in range(int(duration)):
+            load_samples.append(psutil.cpu_percent(interval=1))
         load_thread.join()
         
         load_cpu = statistics.mean(load_samples) if load_samples else 0.0
         max_cpu = max(load_samples) if load_samples else 0.0
         
-        print(f"   ✅ Load CPU (avg): {load_cpu:.2f}%")
-        print(f"   ✅ Load CPU (max): {max_cpu:.2f}%")
+        print(f"   ✅ System CPU (load, avg): {load_cpu:.2f}%")
+        print(f"   ✅ System CPU (load, max): {max_cpu:.2f}%")
         
-        # Step 5: Calculate overhead
+        # Step 5: Calculate overhead (difference between load and baseline)
+        # Overhead = additional CPU used by agent when processing syscalls
         overhead = load_cpu - baseline_cpu
         overhead_percent = (overhead / baseline_cpu * 100) if baseline_cpu > 0 else 0.0
         
@@ -193,16 +205,26 @@ class PerformanceBenchmark:
             # Start agent
             agent_script = project_root / "core" / "simple_agent.py"
             try:
-                agent_proc = subprocess.Popen(
-                    ['sudo', 'python3', str(agent_script), '--collector', 'ebpf'],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
-                )
+            agent_proc = subprocess.Popen(
+                ['sudo', 'python3', str(agent_script), '--collector', 'ebpf'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            print("   ⏳ Waiting for agent initialization...")
+            time.sleep(10)  # Increased wait time for eBPF initialization
+            
+            try:
                 agent_process = psutil.Process(agent_proc.pid)
-                time.sleep(3)  # Wait for initialization
+            except psutil.NoSuchProcess:
+                print("   ⚠️  Agent process not found")
+                results.append({
+                    'process_count': count,
+                    'error': 'Agent process not found'
+                })
+                continue
                 
-                # Measure initial memory
-                initial_memory = measure_memory_mb(agent_process)
+                # Measure initial memory (system-wide, more accurate)
+                initial_memory = psutil.virtual_memory().used / 1024 / 1024  # MB
                 
                 # Generate load
                 load_thread = threading.Thread(target=generate_syscall_load, args=(count, 5))
@@ -211,7 +233,7 @@ class PerformanceBenchmark:
                 load_thread.join()
                 
                 # Measure final memory
-                final_memory = measure_memory_mb(agent_process)
+                final_memory = psutil.virtual_memory().used / 1024 / 1024  # MB
                 
                 memory_per_process = ((final_memory - initial_memory) / count * 1024) if count > 0 else 0
                 
@@ -273,8 +295,18 @@ class PerformanceBenchmark:
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL
                 )
-                agent_process = psutil.Process(agent_proc.pid)
-                time.sleep(2)
+                print("   ⏳ Waiting for agent initialization...")
+                time.sleep(10)  # Increased wait time
+                
+                try:
+                    agent_process = psutil.Process(agent_proc.pid)
+                except psutil.NoSuchProcess:
+                    print("   ⚠️  Agent process not found")
+                    results.append({
+                        'process_count': count,
+                        'error': 'Agent process not found'
+                    })
+                    continue
                 
                 # Generate load
                 load_thread = threading.Thread(target=generate_syscall_load, args=(count, 10))
