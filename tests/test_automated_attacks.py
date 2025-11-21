@@ -49,33 +49,35 @@ class AttackSimulator:
     def privilege_escalation():
         """Simulate privilege escalation attack"""
         import subprocess
-        # Simplified and faster version
+        # Much simpler and faster - just generate the high-risk syscalls
         test_script = """
 import os
-import subprocess
-# Reduced iterations for faster execution
-for i in range(10):
-    try:
-        subprocess.run(['/bin/echo', 'test'], capture_output=True, timeout=0.5)
-        subprocess.run(['/bin/cat', '/etc/passwd'], capture_output=True, timeout=0.5)
-    except:
-        pass
+# Generate chmod/chown syscalls directly (faster than subprocess)
 test_file = '/tmp/priv_test.txt'
 with open(test_file, 'w') as f:
     f.write('test')
 try:
-    os.chmod(test_file, 0o777)
-    os.chown(test_file, 0, 0)
+    os.chmod(test_file, 0o777)  # chmod syscall
 except:
     pass
+try:
+    os.chown(test_file, 0, 0)  # chown syscall (will fail but generates syscall)
+except:
+    pass
+# Generate a few execve-like operations
+for i in range(5):
+    try:
+        subprocess.run(['/bin/echo', 'test'], capture_output=True, timeout=0.1)
+    except:
+        pass
 try:
     os.remove(test_file)
 except:
     pass
 """
-        # Increased timeout to 15 seconds
+        # Run with shorter timeout - should complete in <5 seconds
         subprocess.run([sys.executable, '-c', test_script], 
-                      capture_output=True, timeout=15)
+                      capture_output=True, timeout=8)
     
     @staticmethod
     def high_frequency_attack():
@@ -237,7 +239,7 @@ class TestAutomatedAttacks(unittest.TestCase):
         except subprocess.TimeoutExpired as e:
             executed = False
             error = f"Attack timed out: {e}"
-            print(f"   ⚠️  Attack execution timeout: {e}")
+            print(f"   ⚠️  Attack execution timeout")
         except Exception as e:
             executed = False
             error = str(e)
@@ -271,13 +273,13 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result
+        # Print result with proper alignment
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        print(f"   {status}")
+        print(f"   Status:        {status}")
         if executed:
-            print(f"   Risk Score: {risk_score:.2f}")
-            print(f"   Anomaly Score: {anomaly_score:.2f}")
-            print(f"   Execution Time: {execution_time:.2f}s")
+            print(f"   Risk Score:    {risk_score:>6.2f}")
+            print(f"   Anomaly Score: {anomaly_score:>6.2f}")
+            print(f"   Execution Time:{execution_time:>6.2f}s")
         
         return result
     
@@ -367,9 +369,9 @@ class AutomatedAttackTestRunner:
     
     def run_all_tests(self) -> Dict[str, Any]:
         """Run all attack tests and generate report"""
-        print("="*70)
+        print(f"{'='*70}")
         print("🧪 AUTOMATED ATTACK DETECTION TEST SUITE")
-        print("="*70)
+        print(f"{'='*70}")
         print("\nThis will test the agent's ability to detect various attack patterns.")
         print("The agent will run in the background while attacks are executed.\n")
         

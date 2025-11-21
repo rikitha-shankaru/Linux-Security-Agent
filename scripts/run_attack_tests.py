@@ -19,15 +19,16 @@ from tests.test_automated_attacks import AutomatedAttackTestRunner
 
 def main():
     """Main entry point"""
+    print(f"{'='*70}")
     print("🚀 Starting Automated Attack Test Suite")
-    print("="*70)
+    print(f"{'='*70}")
     print("\nThis will:")
     print("  1. Start the security agent in the background")
     print("  2. Execute various attack patterns")
     print("  3. Verify agent detection")
     print("  4. Generate comprehensive test report")
     print("\n⚠️  Note: Requires sudo for eBPF collector")
-    print("="*70)
+    print(f"{'='*70}\n")
     
     # Check if running as root
     if os.geteuid() != 0:
@@ -39,17 +40,17 @@ def main():
     runner = AutomatedAttackTestRunner()
     report = runner.run_all_tests()
     
-    # Print final summary
-    print("\n" + "="*70)
+    # Print final summary with proper alignment
+    print(f"\n{'='*70}")
     print("✅ AUTOMATED ATTACK TESTS COMPLETE")
-    print("="*70)
+    print(f"{'='*70}")
     print(f"\n📊 Results:")
-    print(f"  Tests Run: {report['tests_run']}")
-    print(f"  Failures: {report['failures']}")
-    print(f"  Errors: {report['errors']}")
-    print(f"  Success: {'✅ YES' if report['success'] else '❌ NO'}")
+    print(f"  Tests Run:  {report['tests_run']:>3}")
+    print(f"  Failures:   {report['failures']:>3}")
+    print(f"  Errors:     {report['errors']:>3}")
+    print(f"  Success:    {'✅ YES' if report['success'] else '❌ NO'}")
     print(f"\n💾 Full report: attack_test_report.json")
-    print("="*70)
+    print(f"{'='*70}")
     
     return 0 if report['success'] else 1
 
