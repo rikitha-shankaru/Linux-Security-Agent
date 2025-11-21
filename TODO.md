@@ -198,5 +198,3 @@ These items have been completed and don't need to be tracked:
 
 ---
 
-**Note**: This is a research prototype. Many items are acceptable for academic demonstration. Focus should be on demonstrating concepts (eBPF, ML anomaly detection, container security) rather than production-grade features.
-
