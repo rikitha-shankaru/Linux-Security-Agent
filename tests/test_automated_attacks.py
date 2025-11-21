@@ -235,6 +235,9 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         # Execute attack
         start_time = time.time()
+        executed = False
+        error = None
+        
         try:
             attack_func()
             executed = True
@@ -242,13 +245,9 @@ class TestAutomatedAttacks(unittest.TestCase):
         except subprocess.TimeoutExpired as e:
             executed = False
             error = f"Attack timed out: {e}"
-            print(f"   ⚠️  Attack execution timeout")
-            sys.stdout.flush()
         except Exception as e:
             executed = False
             error = str(e)
-            print(f"   ⚠️  Attack execution error: {e}")
-            sys.stdout.flush()
         
         execution_time = time.time() - start_time
         
@@ -279,7 +278,11 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with proper alignment - fixed width columns (18 chars for labels)
+        # Print result with proper alignment - fixed width columns
+        # Show error first if any
+        if error:
+            print(f"   ⚠️  Attack execution timeout")
+        
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
         print(f"   {'Status:':<18} {status}")
         if executed:
