@@ -118,7 +118,7 @@ This script will:
 linux_security_agent/
 ├── core/
 │   ├── simple_agent.py            # Simple working agent (RECOMMENDED)
-│   ├── enhanced_core/enhanced_security_agent.py # Full-featured agent with all features
+│   ├── enhanced_security_agent.py # Full-featured agent with all features
 │   ├── enhanced_ebpf_monitor.py  # Enhanced eBPF monitoring
 │   ├── enhanced_anomaly_detector.py # ML-based anomaly detection
 │   ├── container_security_monitor.py # Container security
@@ -176,7 +176,7 @@ docker run --rm -it \
 sudo python3 core/simple_agent.py --collector ebpf --dashboard --threshold 30
 
 # Enhanced Agent (Full Features)
-sudo python3 core/enhanced_core/enhanced_security_agent.py --dashboard --threshold 30
+sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
 
 Options:
   --collector TYPE        Collector: ebpf or auditd (default: ebpf)
@@ -190,7 +190,7 @@ Options:
 **Advanced Options:**
 ```bash
 # Enhanced Agent with Training
-sudo python3 core/enhanced_core/enhanced_security_agent.py \
+sudo python3 core/enhanced_security_agent.py \
     --train-models \
     --dashboard \
     --threshold 40

@@ -22,13 +22,13 @@ sudo python3 core/simple_agent.py --collector ebpf --dashboard --threshold 30
 **Linux (Enhanced Agent - Full Features):**
 ```bash
 # Run with dashboard
-sudo python3 core/enhanced_core/simple_agent.py --dashboard --threshold 30
+sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
 
 # Run with specific collector
-sudo python3 core/enhanced_core/simple_agent.py --collector ebpf --dashboard
+sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard
 
 # Run with JSON output
-sudo python3 core/enhanced_core/simple_agent.py --output json --timeout 60
+sudo python3 core/enhanced_security_agent.py --output json --timeout 60
 ```
 
 ### Advanced Usage
@@ -36,13 +36,13 @@ sudo python3 core/enhanced_core/simple_agent.py --output json --timeout 60
 **Training Models:**
 ```bash
 # Train models on real system data
-sudo python3 core/enhanced_core/simple_agent.py --train-models
+sudo python3 core/enhanced_security_agent.py --train-models
 
 # Train and append to existing feature store
-sudo python3 core/enhanced_core/simple_agent.py --train-models --append
+sudo python3 core/enhanced_security_agent.py --train-models --append
 
 # Train then run dashboard
-sudo python3 core/enhanced_core/simple_agent.py --train-models --dashboard
+sudo python3 core/enhanced_security_agent.py --train-models --dashboard
 ```
 
 **With Attack Testing:**
@@ -64,7 +64,7 @@ python3 scripts/simulate_attacks.py
 | `--threshold` | Risk score threshold for alerts | 50.0 |
 | `--dashboard` | Display real-time dashboard | False |
 
-### Enhanced Agent (`core/enhanced_core/simple_agent.py`)
+### Enhanced Agent (`core/enhanced_security_agent.py`)
 
 | Option | Description | Default |
 |--------|-------------|---------|
