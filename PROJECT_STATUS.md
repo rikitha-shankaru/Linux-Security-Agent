@@ -8,7 +8,7 @@
 **Type:** Research Prototype / Academic Project  
 **Status:** Functional Prototype - Not Production Ready  
 **Purpose:** Demonstrates eBPF-based syscall monitoring, ML anomaly detection, and container security concepts  
-**Developer:** Likitha Shankar (Master's Student)  
+**Developer:** Likitha Shankar  
 **Last Updated:** November 20, 2024
 
 ---
@@ -48,7 +48,7 @@
 
 ### Security & Production Readiness
 - ❌ **No authentication/authorization** for agent operations
-- ⚠️ **Data storage**: Uses `~/.cache/security_agent/` (improved from `/tmp` but not encrypted)
+- ⚠️ **Data storage**: Uses `~/.cache/security_agent/` with secure permissions (improved from `/tmp` but not encrypted)
 - ❌ **No encryption** for sensitive data
 - ⚠️ **Detection-only** - response actions exist but disabled by default
 - ⚠️ **Container policies not enforced** - detection only, no blocking
@@ -102,7 +102,7 @@
 
 ---
 
-## 📊 Honest Assessment
+## 📊 Current Assessment
 
 ### Strengths
 - ✅ **Working eBPF integration** - demonstrates kernel-level monitoring
@@ -211,5 +211,5 @@ This project successfully demonstrates:
 ---
 
 **Last Updated:** November 20, 2024  
-**Maintainer:** Likitha Shankar (Master's Student)  
-**License:** Open Source (check repository for details)
+**Maintainer:** Likitha Shankar 
+**License:** Open Source (https://github.com/likitha-shankar/Linux-Security-Agent.git)
