@@ -83,8 +83,9 @@ class PerformanceBenchmark:
     
     def benchmark_cpu_overhead(self, duration: int = 60) -> Dict[str, Any]:
         """Measure CPU overhead of running agent"""
-        print(f"\n📊 Benchmarking CPU Overhead ({duration} seconds)...")
-        print("=" * 70)
+        print(f"\n{'='*70}")
+        print(f"📊 Benchmarking CPU Overhead ({duration} seconds)")
+        print(f"{'='*70}")
         
         # Step 1: Measure baseline CPU (system without agent)
         print("\n1️⃣  Measuring baseline CPU (without agent)...")
@@ -194,24 +195,31 @@ class PerformanceBenchmark:
     
     def benchmark_memory_usage(self, process_counts: List[int] = [100, 500, 1000]) -> Dict[str, Any]:
         """Measure memory usage with varying process counts"""
-        print(f"\n💾 Benchmarking Memory Usage...")
-        print("=" * 70)
+        print(f"\n{'='*70}")
+        print(f"💾 Benchmarking Memory Usage")
+        print(f"{'='*70}")
         
         results = []
         
         for count in process_counts:
             print(f"\n📊 Testing with {count} processes...")
+            sys.stdout.flush()  # Force output
             
             # Start agent
             agent_script = project_root / "core" / "simple_agent.py"
             try:
+                print(f"   → Starting agent...", end='', flush=True)
                 agent_proc = subprocess.Popen(
                     ['sudo', 'python3', str(agent_script), '--collector', 'ebpf'],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL
                 )
-                print("   ⏳ Waiting for agent initialization...")
-                time.sleep(10)  # Increased wait time for eBPF initialization
+                print(" done")
+                print("   ⏳ Waiting for agent initialization (10s)...", end='', flush=True)
+                for i in range(10):
+                    time.sleep(1)
+                    print(".", end='', flush=True)
+                print(" done")
                 
                 try:
                     agent_process = psutil.Process(agent_proc.pid)
@@ -276,8 +284,9 @@ class PerformanceBenchmark:
     
     def benchmark_scalability(self, max_processes: int = 1000) -> Dict[str, Any]:
         """Test scalability with increasing process counts"""
-        print(f"\n📈 Benchmarking Scalability (up to {max_processes} processes)...")
-        print("=" * 70)
+        print(f"\n{'='*70}")
+        print(f"📈 Benchmarking Scalability (up to {max_processes} processes)")
+        print(f"{'='*70}")
         
         test_points = [100, 250, 500, 750, 1000] if max_processes >= 1000 else [50, 100, 250, 500]
         results = []
@@ -295,8 +304,11 @@ class PerformanceBenchmark:
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL
                 )
-                print("   ⏳ Waiting for agent initialization...")
-                time.sleep(10)  # Increased wait time
+                print("   ⏳ Waiting for agent initialization (10s)...", end='', flush=True)
+                for i in range(10):
+                    time.sleep(1)
+                    print(".", end='', flush=True)
+                print(" done")
                 
                 try:
                     agent_process = psutil.Process(agent_proc.pid)
@@ -355,13 +367,14 @@ class PerformanceBenchmark:
     
     def run_all_benchmarks(self) -> Dict[str, Any]:
         """Run all performance benchmarks"""
+        print(f"\n{'='*70}")
         print("🚀 Performance Benchmark Suite")
-        print("=" * 70)
+        print(f"{'='*70}")
         print("This will measure:")
         print("  1. CPU overhead (<5% target)")
         print("  2. Memory usage per process")
         print("  3. Scalability (1000+ processes)")
-        print("=" * 70)
+        print(f"{'='*70}\n")
         
         results = {
             'timestamp': time.time(),
