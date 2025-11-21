@@ -23,6 +23,7 @@ sys.path.insert(0, str(project_root))
 try:
     from core.simple_agent import SimpleSecurityAgent
     IMPORTS_AVAILABLE = True
+    IMPORT_ERROR = None
 except ImportError as e:
     IMPORTS_AVAILABLE = False
     IMPORT_ERROR = str(e)
@@ -160,7 +161,7 @@ for j in range(20):
             pass
 
 
-@unittest.skipIf(not IMPORTS_AVAILABLE, f"Imports not available: {IMPORT_ERROR}")
+@unittest.skipIf(not IMPORTS_AVAILABLE, f"Imports not available: {IMPORT_ERROR or 'Unknown error'}")
 class TestAutomatedAttacks(unittest.TestCase):
     """Automated attack detection tests"""
     
