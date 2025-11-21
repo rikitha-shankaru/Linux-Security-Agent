@@ -205,23 +205,23 @@ class PerformanceBenchmark:
             # Start agent
             agent_script = project_root / "core" / "simple_agent.py"
             try:
-            agent_proc = subprocess.Popen(
-                ['sudo', 'python3', str(agent_script), '--collector', 'ebpf'],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-            print("   ⏳ Waiting for agent initialization...")
-            time.sleep(10)  # Increased wait time for eBPF initialization
-            
-            try:
-                agent_process = psutil.Process(agent_proc.pid)
-            except psutil.NoSuchProcess:
-                print("   ⚠️  Agent process not found")
-                results.append({
-                    'process_count': count,
-                    'error': 'Agent process not found'
-                })
-                continue
+                agent_proc = subprocess.Popen(
+                    ['sudo', 'python3', str(agent_script), '--collector', 'ebpf'],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+                print("   ⏳ Waiting for agent initialization...")
+                time.sleep(10)  # Increased wait time for eBPF initialization
+                
+                try:
+                    agent_process = psutil.Process(agent_proc.pid)
+                except psutil.NoSuchProcess:
+                    print("   ⚠️  Agent process not found")
+                    results.append({
+                        'process_count': count,
+                        'error': 'Agent process not found'
+                    })
+                    continue
                 
                 # Measure initial memory (system-wide, more accurate)
                 initial_memory = psutil.virtual_memory().used / 1024 / 1024  # MB
