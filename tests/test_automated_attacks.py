@@ -275,11 +275,11 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         # Print result with proper alignment
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        print(f"   Status:        {status}")
+        print(f"   Status:         {status}")
         if executed:
             print(f"   Risk Score:    {risk_score:>6.2f}")
             print(f"   Anomaly Score: {anomaly_score:>6.2f}")
-            print(f"   Execution Time:{execution_time:>6.2f}s")
+            print(f"   Execution Time: {execution_time:>6.2f}s")
         
         return result
     

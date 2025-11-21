@@ -45,7 +45,7 @@ def main():
     print("✅ AUTOMATED ATTACK TESTS COMPLETE")
     print(f"{'='*70}")
     print(f"\n📊 Results:")
-    print(f"  Tests Run:  {report['tests_run']:>3}")
+    print(f"  Tests Run:   {report['tests_run']:>3}")
     print(f"  Failures:   {report['failures']:>3}")
     print(f"  Errors:     {report['errors']:>3}")
     print(f"  Success:    {'✅ YES' if report['success'] else '❌ NO'}")
