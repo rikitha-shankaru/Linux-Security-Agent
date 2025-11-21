@@ -81,6 +81,9 @@ class SimpleSecurityAgent:
             'total_syscalls': 0
         }
         
+        # Cache info panel to prevent re-creation (reduces blinking)
+        self._info_panel_cache = None
+        
         # Initialize ML if available
         if ML_AVAILABLE:
             try:
@@ -288,10 +291,12 @@ class SimpleSecurityAgent:
             return Panel(content, title=stats_text, border_style="green")
     
     def _create_info_panel(self) -> Panel:
-        """Create info panel explaining risk and anomaly scores"""
-        threshold = self.config.get('risk_threshold', 30.0)
-        
-        info_text = f"""
+        """Create info panel explaining risk and anomaly scores (cached)"""
+        # Cache the panel since it doesn't change (reduces blinking)
+        if self._info_panel_cache is None:
+            threshold = self.config.get('risk_threshold', 30.0)
+            
+            info_text = f"""
 [bold cyan]📊 Score Guide:[/bold cyan]
 
 [bold]Risk Score (0-100):[/bold]
@@ -312,8 +317,10 @@ class SimpleSecurityAgent:
 
 [bold]Current Threshold:[/bold] {threshold:.1f} (configurable with --threshold)
 """
+            
+            self._info_panel_cache = Panel(info_text.strip(), title="ℹ️  Score Information", border_style="blue")
         
-        return Panel(info_text.strip(), title="ℹ️  Score Information", border_style="blue")
+        return self._info_panel_cache
     
     def run_dashboard(self):
         """Run with dashboard"""
@@ -326,9 +333,13 @@ class SimpleSecurityAgent:
             return
         
         try:
-            with Live(self.create_dashboard(), refresh_per_second=2, screen=False) as live:
+            # Use screen=True for better rendering and reduce refresh rate to minimize blinking
+            # refresh_per_second=2 means update every 0.5 seconds (less frequent = less blinking)
+            with Live(self.create_dashboard(), refresh_per_second=2, screen=True, transient=False) as live:
                 while self.running:
+                    # Update dashboard - create_dashboard() is called here
                     live.update(self.create_dashboard())
+                    # Sleep matches refresh rate to avoid unnecessary updates
                     time.sleep(0.5)
         except KeyboardInterrupt:
             pass
