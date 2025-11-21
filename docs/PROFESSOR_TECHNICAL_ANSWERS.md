@@ -161,7 +161,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
 - **Maximum**: 10,000 samples in-memory, 200,000 in feature store
 - **Current**: Successfully collects 500+ real samples during training
 
-**Code Location**: `core/enhanced_security_agent.py` - `_train_anomaly_models()` method
+**Code Location**: `core/enhanced_security_agent.py` - `_train_anomaly_models()` method  
+**Note**: Training can also be done via `core/simple_agent.py` using the enhanced agent's training functionality.
 
 #### **Feature Extraction**
 
