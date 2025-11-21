@@ -134,24 +134,35 @@ class PerformanceBenchmark:
         agent_script = project_root / "core" / "simple_agent.py"
         
         try:
-            agent_proc = subprocess.Popen(
+            self.agent_proc = subprocess.Popen(
                 ['sudo', 'python3', str(agent_script), '--collector', 'ebpf', '--threshold', '30'],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
             
+            if self.agent_proc is None or self.agent_proc.pid is None:
+                print("   ⚠️  Agent process failed to start")
+                return self._simulate_cpu_overhead(duration)
+            
             # Wait longer for agent to initialize (eBPF can take time)
             print("   ⏳ Waiting for agent to initialize (10s)...", end='', flush=True)
             for i in range(10):
+                if not self.running:
+                    break
                 time.sleep(1)
                 print(".", end='', flush=True)
             print(" done")
             
+            # Check if process is still running
+            if self.agent_proc.poll() is not None:
+                print(f"   ⚠️  Agent process exited early (code: {self.agent_proc.returncode})")
+                return self._simulate_cpu_overhead(duration)
+            
             try:
-                self.agent_process = psutil.Process(agent_proc.pid)
+                self.agent_process = psutil.Process(self.agent_proc.pid)
                 print("   ✅ Agent started (PID: {})".format(self.agent_proc.pid))
-            except psutil.NoSuchProcess:
-                print("   ⚠️  Agent process not found, may have exited")
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                print(f"   ⚠️  Agent process not accessible: {e}")
                 return self._simulate_cpu_overhead(duration)
         except Exception as e:
             print(f"   ⚠️  Could not start agent: {e}")
