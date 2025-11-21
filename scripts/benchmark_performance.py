@@ -108,8 +108,11 @@ class PerformanceBenchmark:
             )
             
             # Wait longer for agent to initialize (eBPF can take time)
-            print("   ⏳ Waiting for agent to initialize...")
-            time.sleep(10)  # Increased from 5 to 10 seconds
+            print("   ⏳ Waiting for agent to initialize (10s)...", end='', flush=True)
+            for i in range(10):
+                time.sleep(1)
+                print(".", end='', flush=True)
+            print(" done")
             
             try:
                 self.agent_process = psutil.Process(agent_proc.pid)
@@ -153,11 +156,17 @@ class PerformanceBenchmark:
         overhead = load_cpu - baseline_cpu
         overhead_percent = (overhead / baseline_cpu * 100) if baseline_cpu > 0 else 0.0
         
-        print(f"\n📈 Results:")
-        print(f"   Baseline CPU:     {baseline_cpu:.2f}%")
-        print(f"   Agent CPU (idle): {idle_cpu:.2f}%")
-        print(f"   Agent CPU (load): {load_cpu:.2f}%")
-        print(f"   CPU Overhead:     {overhead:.2f}% ({overhead_percent:.1f}% increase)")
+        print(f"\n{'─'*70}")
+        print(f"📈 CPU Overhead Results:")
+        print(f"{'─'*70}")
+        print(f"   Baseline CPU:     {baseline_cpu:>6.2f}%")
+        print(f"   Agent CPU (idle): {idle_cpu:>6.2f}%")
+        print(f"   Agent CPU (load): {load_cpu:>6.2f}%")
+        print(f"   CPU Overhead:     {overhead:>6.2f}% ({overhead_percent:>5.1f}% increase)")
+        if overhead < 5.0:
+            print(f"   ✅ Meets target (<5% overhead)")
+        else:
+            print(f"   ⚠️  Exceeds target (≥5% overhead)")
         
         # Cleanup
         try:
