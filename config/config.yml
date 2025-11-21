@@ -1,5 +1,5 @@
 risk_threshold: 50.0
-anomaly_weight: 0.3
+anomaly_weight: 0.5  # Increased from 0.3 to 0.5 (50%) for better anomaly impact
 decay_factor: 0.95
 decay_interval: 60
 collector: ebpf

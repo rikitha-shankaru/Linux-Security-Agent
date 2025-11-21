@@ -34,46 +34,58 @@ def simulate_privilege_escalation():
     """Simulate privilege escalation attack pattern"""
     print_attack(
         "Privilege Escalation",
-        "Attempts setuid, setgid, execve patterns (safe - will fail)"
+        "Attempts setuid, setgid, execve patterns with high-risk syscalls"
     )
     
-    # Create a test script that attempts privilege operations
+    # Create a test script that generates high-risk syscalls
+    # Use ctypes to call syscalls directly (safe in VM)
     test_script = """
 import os
 import sys
+import ctypes
+import subprocess
 
-# Attempt setuid (will fail - safe)
+# Generate execve syscalls (high risk: 5 points each)
+for i in range(20):
+    subprocess.run(['/bin/echo', 'test'], capture_output=True, timeout=1)
+    subprocess.run(['/bin/cat', '/etc/passwd'], capture_output=True, timeout=1)
+
+# Generate chmod/chown syscalls (medium risk: 3 points each)
+test_file = '/tmp/priv_test.txt'
+with open(test_file, 'w') as f:
+    f.write('test')
 try:
-    os.setuid(0)  # Will fail unless root
-except PermissionError:
+    os.chmod(test_file, 0o777)  # chmod syscall
+    os.chown(test_file, 0, 0)  # chown syscall (will fail but generates syscall)
+except:
     pass
 
-# Attempt setgid (will fail - safe)
+# Generate mount/unmount attempts (medium risk: 4 points)
 try:
-    os.setgid(0)  # Will fail unless root
-except PermissionError:
+    # Try to remount /tmp (will fail but generates mount syscall)
+    os.system('mount -o remount /tmp 2>/dev/null')
+except:
     pass
 
-# Execute commands (normal execve pattern)
-os.system('echo "test" > /tmp/test_attack.txt')
-os.system('cat /tmp/test_attack.txt')
-os.system('rm /tmp/test_attack.txt')
+# Cleanup
+try:
+    os.remove(test_file)
+except:
+    pass
 """
     
     # Run the script multiple times to create pattern
     for i in range(10):
         try:
             result = subprocess.run([sys.executable, '-c', test_script], 
-                          capture_output=True, timeout=5, check=False)
-            time.sleep(0.1)
+                          capture_output=True, timeout=10, check=False)
+            time.sleep(0.2)  # Slightly longer delay
         except subprocess.TimeoutExpired:
-            # Expected - some operations may hang, that's fine
             pass
         except Exception as e:
-            # Ignore other errors
             pass
     
-    print(f"{GREEN}✅ Privilege escalation pattern executed (10 iterations){RESET}")
+    print(f"{GREEN}✅ Privilege escalation pattern executed (10 iterations, high-risk syscalls){RESET}")
 
 def simulate_high_frequency_attack():
     """Simulate high-frequency attack (DoS pattern)"""
@@ -227,31 +239,55 @@ def simulate_network_scanning():
     print(f"{GREEN}✅ Network scanning pattern executed (20 ports){RESET}")
 
 def simulate_ptrace_attempts():
-    """Simulate ptrace attempts (safe - will fail)"""
+    """Simulate ptrace attempts with actual ptrace syscalls"""
     print_attack(
         "Ptrace Attempts",
-        "Attempts to ptrace other processes (safe - will fail)"
+        "Attempts to ptrace other processes (generates ptrace syscalls)"
     )
     
-    # Try to ptrace our own process (will fail - safe)
+    # Use strace or gdb to generate ptrace syscalls (safe in VM)
     try:
-        # This would require ptrace syscall - simulate by attempting
-        # In real attack, this would be: ptrace(PTRACE_ATTACH, target_pid)
-        # We simulate by just creating the pattern
-        for i in range(5):
-            # Create a child process
+        # Create child processes and use tools that call ptrace
+        for i in range(10):
+            # Use strace to trace a simple command (generates ptrace syscalls)
             child = subprocess.Popen(
-                [sys.executable, '-c', 'import time; time.sleep(0.5)'],
+                ['strace', '-e', 'trace=open,read,write', 'echo', 'test'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=2
+            )
+            try:
+                child.wait(timeout=2)
+            except:
+                child.kill()
+            
+            # Alternative: use gdb (also generates ptrace)
+            try:
+                gdb_cmd = subprocess.Popen(
+                    ['gdb', '--batch', '--ex', 'run', '--ex', 'quit', '/bin/echo', 'test'],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=2
+                )
+                gdb_cmd.wait(timeout=2)
+            except:
+                pass
+            
+            time.sleep(0.1)
+    except FileNotFoundError:
+        # If strace/gdb not available, create many fork/execve patterns
+        # These still generate high-risk syscalls
+        for i in range(20):
+            proc = subprocess.Popen(
+                [sys.executable, '-c', 'import os; os.system("echo test")'],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
-            time.sleep(0.1)
-            child.terminate()
-            child.wait()
+            proc.wait(timeout=1)
     except Exception as e:
         pass
     
-    print(f"{GREEN}✅ Ptrace pattern simulated{RESET}")
+    print(f"{GREEN}✅ Ptrace pattern simulated (high-risk syscalls generated){RESET}")
 
 def run_all_attacks():
     """Run all attack simulations"""
