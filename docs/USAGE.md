@@ -1,87 +1,80 @@
 # Linux Security Agent - Usage Guide
 
+> **Author**: Master's Student Research Project  
+> **Note**: This is a research prototype developed for academic purposes.
+
 ## Quick Start
 
 ### Basic Usage
 
-**Linux:**
+**Linux (Simple Agent - Recommended):**
 ```bash
-# Run with default settings (console output)
-sudo python3 security_agent.py
+# Run with auditd collector (most reliable)
+sudo python3 core/simple_agent.py --collector auditd --threshold 30
+
+# Run with eBPF collector
+sudo python3 core/simple_agent.py --collector ebpf --threshold 30
 
 # Run with dashboard
-sudo python3 security_agent.py --dashboard
-
-# Run with custom risk threshold
-sudo python3 security_agent.py --threshold 30
-
-# Run with JSON output
-sudo python3 security_agent.py --output json
+sudo python3 core/simple_agent.py --collector ebpf --dashboard --threshold 30
 ```
 
-**macOS:**
+**Linux (Enhanced Agent - Full Features):**
 ```bash
-# Run with default settings (console output)
-python3 security_agent_mac.py
-
 # Run with dashboard
-python3 security_agent_mac.py --dashboard
+sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
 
-# Run with custom risk threshold
-python3 security_agent_mac.py --threshold 30
-
-# Run with timeout (auto-stop after 30 seconds)
-python3 security_agent_mac.py --dashboard --timeout 30
+# Run with specific collector
+sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard
 
 # Run with JSON output
-python3 security_agent_mac.py --output json
+sudo python3 core/enhanced_security_agent.py --output json --timeout 60
 ```
 
 ### Advanced Usage
 
-**Linux:**
+**Training Models:**
 ```bash
-# Enable anomaly detection
-sudo python3 security_agent.py --anomaly-detection
+# Train models on real system data
+sudo python3 core/enhanced_security_agent.py --train-models
 
-# Enable all features with custom settings
-sudo python3 security_agent.py \
-    --dashboard \
-    --anomaly-detection \
-    --threshold 40 \
-    --action-log /var/log/security_agent.log
+# Train and append to existing feature store
+sudo python3 core/enhanced_security_agent.py --train-models --append
 
-# Enable kill actions (DANGEROUS - use with caution)
-sudo python3 security_agent.py --enable-kill --threshold 80
+# Train then run dashboard
+sudo python3 core/enhanced_security_agent.py --train-models --dashboard
 ```
 
-**macOS:**
+**With Attack Testing:**
 ```bash
-# Enable anomaly detection
-python3 security_agent_mac.py --anomaly-detection
+# Terminal 1: Start agent
+sudo python3 core/simple_agent.py --collector ebpf --dashboard --threshold 30
 
-# Run with timeout and custom settings
-python3 security_agent_mac.py \
-    --dashboard \
-    --threshold 40 \
-    --timeout 60
-
-# JSON output with timeout
-python3 security_agent_mac.py --output json --timeout 30
+# Terminal 2: Run attack simulation
+python3 scripts/simulate_attacks.py
 ```
 
 ## Command Line Options
 
-| Option | Description | Default | Platform |
-|--------|-------------|---------|----------|
-| `--threshold` | Risk score threshold for alerts | 50.0 | Both |
-| `--output` | Output format (console/json) | console | Both |
-| `--dashboard` | Display real-time dashboard | False | Both |
-| `--timeout` | Run for specified seconds then exit (0 = run indefinitely) | 0 | macOS only |
-| `--use-ebpf` | Use eBPF monitoring | True | Linux only |
-| `--anomaly-detection` | Enable ML anomaly detection | False | Both |
-| `--enable-kill` | Enable kill actions (DANGEROUS) | False | Linux only |
-| `--action-log` | Log file for actions | /var/log/security_agent.log | Linux only |
+### Simple Agent (`core/simple_agent.py`)
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--collector` | Collector type: `ebpf` or `auditd` | `ebpf` |
+| `--threshold` | Risk score threshold for alerts | 50.0 |
+| `--dashboard` | Display real-time dashboard | False |
+
+### Enhanced Agent (`core/enhanced_security_agent.py`)
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--collector` | Collector type: `ebpf` or `auditd` | `ebpf` |
+| `--threshold` | Risk score threshold for alerts | 50.0 |
+| `--dashboard` | Display real-time dashboard | False |
+| `--output` | Output format: `console` or `json` | `console` |
+| `--timeout` | Run for specified seconds then exit (0 = indefinitely) | 0 |
+| `--train-models` | Train ML models on system data | False |
+| `--append` | Append to existing feature store when training | False |
 
 ## Risk Scoring System
 

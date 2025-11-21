@@ -1,6 +1,9 @@
 # Linux Security Agent
 
-Real-time system call monitoring and threat detection agent for Linux. Uses eBPF to capture syscalls from the kernel and ML to detect anomalies.
+> **Author**: Master's Student Research Project  
+> **Purpose**: Academic research project demonstrating eBPF-based syscall monitoring and ML anomaly detection
+
+Real-time system call monitoring and threat detection agent for Linux. Uses eBPF to capture syscalls from the kernel and ML to detect anomalies. This project was developed as part of a Master's degree program to explore kernel-level security monitoring and machine learning-based threat detection.
 
 **Status:** Functional Prototype - Research/Academic Project  
 **Classification:** Not Production Ready - See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for details

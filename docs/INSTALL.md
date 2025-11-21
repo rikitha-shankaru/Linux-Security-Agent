@@ -1,5 +1,8 @@
 # Linux Security Agent - Installation Guide
 
+> **Author**: Master's Student Research Project  
+> **Note**: This installation guide was prepared for a Master's research project.
+
 ## System Requirements
 
 ### Operating System

@@ -1,8 +1,11 @@
 # 🏗️ Linux Security Agent - Architecture Documentation
 
+> **Author**: Likitha Shankar
+> **Status**: Research Prototype / Academic Project - Not Production Ready
+
 ## 📋 **Project Overview**
 
-This is a **production-ready EDR (Endpoint Detection and Response) system** comparable to enterprise solutions like CrowdStrike Falcon. The system provides real-time system call monitoring, threat detection, and automated response capabilities across Linux and macOS platforms.
+This is a **research prototype** implementing EDR (Endpoint Detection and Response) concepts for academic purposes. The system demonstrates real-time system call monitoring, threat detection, and automated response capabilities across Linux platforms. This project was developed as part of a Master's degree program to explore eBPF-based security monitoring and ML-based anomaly detection.
 
 ---
 

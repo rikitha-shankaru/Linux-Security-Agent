@@ -1,5 +1,8 @@
 # Technical Answers for Professor - Linux Security Agent
 
+> **Author**: Master's Student Research Project  
+> **Note**: This document was prepared by a Master's student to answer technical questions about the Linux Security Agent implementation developed as part of academic research.
+
 This document provides detailed answers to technical questions about the Linux Security Agent implementation.
 
 ---

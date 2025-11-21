@@ -1,7 +1,10 @@
-# 🛡️ Linux Security Agent Documentation
+# 🛡️ Linux Security Agent - Demo Guide
 
-Updated: September 2024
-Version: Production-Ready EDR v1.0.0
+> **Author**: Master's Student Research Project  
+> **Note**: This demo guide was prepared for a Master's research project demonstrating eBPF-based security monitoring.
+
+Updated: November 2024
+Version: Research Prototype v1.0.0
 
 ---
 

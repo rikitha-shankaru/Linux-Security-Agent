@@ -1,10 +1,14 @@
 # Linux Security Agent - Project Status
 
+> **Author**: Master's Student Research Project  
+> **Note**: This project was developed as part of a Master's degree program for academic research purposes.
+
 ## 🎯 Project Classification
 
 **Type:** Research Prototype / Academic Project  
 **Status:** Functional Prototype - Not Production Ready  
-**Purpose:** Demonstrates eBPF-based syscall monitoring, ML anomaly detection, and container security concepts
+**Purpose:** Demonstrates eBPF-based syscall monitoring, ML anomaly detection, and container security concepts  
+**Developer:** Master's Student
 
 ---
 
