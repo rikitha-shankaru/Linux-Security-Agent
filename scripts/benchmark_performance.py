@@ -171,9 +171,12 @@ class PerformanceBenchmark:
         # Cleanup
         try:
             agent_proc.terminate()
-            agent_proc.wait(timeout=5)
-        except:
+            agent_proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
             agent_proc.kill()
+            agent_proc.wait()
+        except Exception:
+            pass
         
         return {
             'baseline_cpu_percent': baseline_cpu,
