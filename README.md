@@ -184,6 +184,8 @@ python3 run_tests.py
 
 ![Security Agent Dashboard](dashboard_demo.png)
 
+> **Note**: To add your dashboard screenshot, save it as `dashboard_demo.png` in the repository root directory.
+
 **Live Monitoring Dashboard** showing:
 - Real-time process monitoring with risk and anomaly scores
 - Score information panel explaining risk (0-100) and anomaly (0-100) thresholds
