@@ -159,10 +159,10 @@ class PerformanceBenchmark:
         print(f"\n{'─'*70}")
         print(f"📈 CPU Overhead Results:")
         print(f"{'─'*70}")
-        print(f"   Baseline CPU:     {baseline_cpu:>6.2f}%")
-        print(f"   Agent CPU (idle): {idle_cpu:>6.2f}%")
-        print(f"   Agent CPU (load): {load_cpu:>6.2f}%")
-        print(f"   CPU Overhead:     {overhead:>6.2f}% ({overhead_percent:>5.1f}% increase)")
+        print(f"   Baseline CPU (system idle): {baseline_cpu:>6.2f}%")
+        print(f"   Agent CPU (idle):           {idle_cpu:>6.2f}%")
+        print(f"   Agent CPU (under load):    {load_cpu:>6.2f}%")
+        print(f"   CPU Overhead:               {overhead:>6.2f}%")
         if overhead < 5.0:
             print(f"   ✅ Meets target (<5% overhead)")
         else:
@@ -269,7 +269,7 @@ class PerformanceBenchmark:
                 
                 # Cleanup
                 agent_proc.terminate()
-                agent_proc.wait(timeout=5)
+                agent_proc.wait(timeout=10)
                 time.sleep(2)
                 
             except Exception as e:
@@ -354,7 +354,7 @@ class PerformanceBenchmark:
                 
                 # Cleanup
                 agent_proc.terminate()
-                agent_proc.wait(timeout=5)
+                agent_proc.wait(timeout=10)
                 time.sleep(2)
                 
             except Exception as e:
