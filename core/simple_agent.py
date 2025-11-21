@@ -238,11 +238,11 @@ class SimpleSecurityAgent:
             # Create table with more informative columns
             table = Table(title="🛡️ Security Agent - Live Monitoring", show_header=True)
             table.add_column("PID", style="cyan", width=6)
-            table.add_column("Process", style="green", width=18)
-            table.add_column("Risk", style="yellow", width=7, justify="right")
-            table.add_column("Anomaly", style="magenta", width=8, justify="right")
-            table.add_column("Syscalls", style="blue", width=8, justify="right")
-            table.add_column("Recent Syscalls", style="cyan", width=20)
+            table.add_column("Process", style="green", width=16)
+            table.add_column("Risk", style="yellow", width=6, justify="right")
+            table.add_column("Anomaly", style="magenta", width=7, justify="right")
+            table.add_column("Syscalls", style="blue", width=7, justify="right")
+            table.add_column("Recent Syscalls", style="cyan", width=35)  # Increased from 20 to 35
             table.add_column("Last Update", style="dim", width=8, justify="right")
             
             # Sort by risk score, but also show recently active processes
@@ -271,14 +271,15 @@ class SimpleSecurityAgent:
                     if not is_active and time_since_update < 30:
                         process_name = f"{process_name} (recent)"
                     
-                    # Get recent syscalls (last 5 unique syscalls)
+                    # Get recent syscalls (last 8-10 unique syscalls for better visibility)
                     syscalls_list = list(proc['syscalls'])
                     if syscalls_list:
-                        # Get unique recent syscalls (last 5-8)
-                        recent_syscalls = list(dict.fromkeys(syscalls_list[-8:]))[-5:]
+                        # Get unique recent syscalls (last 12-15, then take up to 10)
+                        recent_syscalls = list(dict.fromkeys(syscalls_list[-15:]))[-10:]
                         recent_str = ", ".join(recent_syscalls)
-                        if len(recent_str) > 18:
-                            recent_str = recent_str[:15] + "..."
+                        # Allow up to 33 characters (35 width - 2 padding)
+                        if len(recent_str) > 33:
+                            recent_str = recent_str[:30] + "..."
                     else:
                         recent_str = "---"
                     
