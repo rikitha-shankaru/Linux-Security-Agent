@@ -151,7 +151,8 @@ class SimpleSecurityAgent:
                 
                 self.processes[pid] = {
                     'name': process_name,
-                    'syscalls': deque(maxlen=100),
+                    'syscalls': deque(maxlen=100),  # Last 100 for analysis
+                    'total_syscalls': 0,  # Actual total count
                     'risk_score': 0.0,
                     'anomaly_score': 0.0,
                     'last_update': time.time()
@@ -171,6 +172,7 @@ class SimpleSecurityAgent:
             
             proc = self.processes[pid]
             proc['syscalls'].append(syscall)
+            proc['total_syscalls'] += 1  # Increment actual total count
             proc['last_update'] = time.time()
             self.stats['total_syscalls'] += 1
             
@@ -299,7 +301,7 @@ class SimpleSecurityAgent:
                         f"{status_indicator} {process_name}",
                         f"[{risk_style}]{risk:.1f}[/]",
                         f"{proc['anomaly_score']:.2f}",
-                        str(len(proc['syscalls'])),
+                        str(proc.get('total_syscalls', len(proc['syscalls']))),  # Show actual total
                         recent_str,
                         last_update_str
                     )
