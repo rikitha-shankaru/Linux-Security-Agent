@@ -223,9 +223,12 @@ class TestAutomatedAttacks(unittest.TestCase):
     def run_attack_test(self, attack_name: str, attack_type: str, 
                        attack_func) -> AttackTestResult:
         """Run a single attack test"""
+        # Clear any previous output
+        sys.stdout.flush()
         print(f"\n{'='*70}")
         print(f"🔴 Testing Attack: {attack_name}")
         print(f"{'='*70}")
+        sys.stdout.flush()
         
         # Get stats before attack
         stats_before = self.get_agent_stats()
@@ -240,15 +243,18 @@ class TestAutomatedAttacks(unittest.TestCase):
             executed = False
             error = f"Attack timed out: {e}"
             print(f"   ⚠️  Attack execution timeout")
+            sys.stdout.flush()
         except Exception as e:
             executed = False
             error = str(e)
             print(f"   ⚠️  Attack execution error: {e}")
+            sys.stdout.flush()
         
         execution_time = time.time() - start_time
         
         # Wait for agent to process
         print(f"   ⏳ Waiting for agent to process attack (5s)...")
+        sys.stdout.flush()
         time.sleep(5)
         
         # Get stats after attack
@@ -273,7 +279,7 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with proper alignment - fixed width columns
+        # Print result with proper alignment - use fixed width columns
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
         print(f"   Status:         {status}")
         if executed:
@@ -295,7 +301,6 @@ class TestAutomatedAttacks(unittest.TestCase):
         # Allow test to pass even if attack times out (it still generates syscalls)
         if not result.executed:
             self.skipTest(f"Attack execution failed: {result.error}")
-        # Note: Detection verification would need agent integration
     
     def test_high_frequency_attack(self):
         """Test high-frequency attack detection"""
@@ -306,8 +311,6 @@ class TestAutomatedAttacks(unittest.TestCase):
             AttackSimulator.high_frequency_attack
         )
         self.assertTrue(result.executed, "Attack should execute")
-        # Suppress unittest's default output
-        self.assertTrue(True)
     
     def test_process_churn(self):
         """Test process churn detection"""
@@ -318,8 +321,6 @@ class TestAutomatedAttacks(unittest.TestCase):
             AttackSimulator.process_churn
         )
         self.assertTrue(result.executed, "Attack should execute")
-        # Suppress unittest's default output
-        self.assertTrue(True)
     
     def test_suspicious_file_patterns(self):
         """Test suspicious file pattern detection"""
@@ -330,8 +331,6 @@ class TestAutomatedAttacks(unittest.TestCase):
             AttackSimulator.suspicious_file_patterns
         )
         self.assertTrue(result.executed, "Attack should execute")
-        # Suppress unittest's default output
-        self.assertTrue(True)
     
     def test_ptrace_attempts(self):
         """Test ptrace attempt detection"""
@@ -343,8 +342,6 @@ class TestAutomatedAttacks(unittest.TestCase):
         )
         # Ptrace might not always execute (depends on system)
         # So we don't assert execution
-        # Suppress unittest's default output
-        self.assertTrue(True)
     
     def generate_test_report(self) -> Dict[str, Any]:
         """Generate comprehensive test report"""
@@ -371,13 +368,13 @@ class TestAutomatedAttacks(unittest.TestCase):
 
 
 class AutomatedAttackTestRunner:
-    """Main test runner for automated attack tests"""
+    """Main test runner for automated attack tests - custom output formatting"""
     
     def __init__(self):
         self.results: List[AttackTestResult] = []
     
     def run_all_tests(self) -> Dict[str, Any]:
-        """Run all attack tests and generate report"""
+        """Run all attack tests and generate report - with clean formatting"""
         sys.stdout.flush()
         print(f"{'='*70}")
         print("🧪 AUTOMATED ATTACK DETECTION TEST SUITE")
@@ -386,50 +383,79 @@ class AutomatedAttackTestRunner:
         print("The agent will run in the background while attacks are executed.\n")
         sys.stdout.flush()
         
-        # Create test suite
-        loader = unittest.TestLoader()
-        suite = loader.loadTestsFromTestCase(TestAutomatedAttacks)
+        # Run tests directly without unittest's verbose output
+        test_instance = TestAutomatedAttacks()
+        test_instance.setUp()
         
-        # Run tests with verbosity=0 to suppress unittest's output completely
-        # Redirect all unittest output to devnull so it doesn't interfere
-        import io
-        from contextlib import redirect_stdout, redirect_stderr
+        test_methods = [
+            ('Privilege Escalation', test_instance.test_privilege_escalation),
+            ('High-Frequency Attack', test_instance.test_high_frequency_attack),
+            ('Process Churn', test_instance.test_process_churn),
+            ('Ptrace Attempts', test_instance.test_ptrace_attempts),
+            ('Suspicious File Patterns', test_instance.test_suspicious_file_patterns),
+        ]
         
-        # Suppress unittest's output completely
-        with open(os.devnull, 'w') as devnull:
-            with redirect_stdout(devnull), redirect_stderr(devnull):
-                runner = unittest.TextTestRunner(verbosity=0, stream=devnull)
-                result = runner.run(suite)
+        tests_run = 0
+        failures = 0
+        errors = 0
+        test_details = []
         
-        # Generate report
+        for test_name, test_method in test_methods:
+            try:
+                test_method()
+                tests_run += 1
+            except unittest.SkipTest:
+                tests_run += 1
+                # Skipped tests are OK
+            except AssertionError as e:
+                tests_run += 1
+                failures += 1
+                test_details.append({
+                    'test': test_name,
+                    'error': str(e)
+                })
+            except Exception as e:
+                tests_run += 1
+                errors += 1
+                test_details.append({
+                    'test': test_name,
+                    'error': str(e)
+                })
+            finally:
+                try:
+                    test_instance.tearDown()
+                except:
+                    pass
+        
+        success = (failures == 0 and errors == 0)
+        
+        # Generate report with clean formatting
+        sys.stdout.flush()
         print(f"\n{'='*70}")
         print("📊 TEST SUMMARY")
         print(f"{'='*70}")
-        print(f"  Tests run:  {result.testsRun:>3}")
-        print(f"  Failures:   {len(result.failures):>3}")
-        print(f"  Errors:     {len(result.errors):>3}")
-        print(f"  Success:    {'✅ YES' if result.wasSuccessful() else '❌ NO'}")
+        print(f"  Tests run:   {tests_run:>3}")
+        print(f"  Failures:    {failures:>3}")
+        print(f"  Errors:      {errors:>3}")
+        print(f"  Success:    {'✅ YES' if success else '❌ NO'}")
+        sys.stdout.flush()
         
         # Save report
         report_path = project_root / "attack_test_report.json"
         report_data = {
             'timestamp': time.time(),
-            'tests_run': result.testsRun,
-            'failures': len(result.failures),
-            'errors': len(result.errors),
-            'success': result.wasSuccessful(),
-            'test_details': [
-                {
-                    'test': str(f[0]),
-                    'error': f[1]
-                } for f in result.failures + result.errors
-            ]
+            'tests_run': tests_run,
+            'failures': failures,
+            'errors': errors,
+            'success': success,
+            'test_details': test_details
         }
         
         with open(report_path, 'w') as f:
             json.dump(report_data, f, indent=2)
         
         print(f"\n💾 Test report saved to: {report_path}")
+        sys.stdout.flush()
         
         return report_data
 
@@ -438,4 +464,3 @@ if __name__ == '__main__':
     runner = AutomatedAttackTestRunner()
     report = runner.run_all_tests()
     sys.exit(0 if report['success'] else 1)
-
