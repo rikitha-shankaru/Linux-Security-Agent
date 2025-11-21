@@ -278,7 +278,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
 
 #### **How Scores Are Set**
 
-**Base Risk Scores** (defined in `core/enhanced_security_agent.py`):
+**Base Risk Scores** (defined in `core/detection/risk_scorer.py`):
 
 ```python
 default_base = {
@@ -325,7 +325,7 @@ default_base = {
 - Normal operations (read, write) get low scores
 - Configurable via `config.yml` or command-line
 
-**Code Location**: `core/enhanced_security_agent.py` lines 124-143
+**Code Location**: `core/detection/risk_scorer.py` - `__init__()` method (lines 18-44)
 
 ---
 
@@ -442,7 +442,8 @@ All critical bugs have been fixed:
 - ✅ **50-dimensional** feature vectors
 - ✅ **3-model ensemble** (Isolation Forest, One-Class SVM, DBSCAN)
 - ✅ **Incremental training** fully implemented
-- ✅ **45 syscalls** explicitly scored, default=2 for others
+- ✅ **43 syscalls** explicitly scored, default=2 for others
+- ✅ **Anomaly weight**: 0.5 (50% contribution to risk score, configurable)
 
 ### **Bug Status**
 - ✅ **No critical bugs**
@@ -451,5 +452,5 @@ All critical bugs have been fixed:
 
 ---
 
-**Last Updated**: November 2, 2025
+**Last Updated**: November 20, 2024
 
