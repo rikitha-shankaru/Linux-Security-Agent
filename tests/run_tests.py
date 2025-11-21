@@ -332,6 +332,21 @@ def run_demo_test():
     except FileNotFoundError:
         print("✗ Demo scripts not found")
 
+def run_attack_tests():
+    """Run automated attack detection tests"""
+    print("\n=== Automated Attack Tests ===")
+    try:
+        from tests.test_automated_attacks import AutomatedAttackTestRunner
+        runner = AutomatedAttackTestRunner()
+        report = runner.run_all_tests()
+        return report['success']
+    except ImportError as e:
+        print(f"⚠️  Attack tests not available: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Attack tests failed: {e}")
+        return False
+
 def main():
     """Main test function"""
     print("Linux Security Agent - Test Suite")
