@@ -384,13 +384,13 @@ class AutomatedAttackTestRunner:
         result = runner.run(suite)
         
         # Generate report
-        print("\n" + "="*70)
+        print(f"\n{'='*70}")
         print("📊 TEST SUMMARY")
-        print("="*70)
-        print(f"Tests run: {result.testsRun}")
-        print(f"Failures: {len(result.failures)}")
-        print(f"Errors: {len(result.errors)}")
-        print(f"Success: {result.wasSuccessful()}")
+        print(f"{'='*70}")
+        print(f"  Tests run:  {result.testsRun:>3}")
+        print(f"  Failures:   {len(result.failures):>3}")
+        print(f"  Errors:     {len(result.errors):>3}")
+        print(f"  Success:    {'✅ YES' if result.wasSuccessful() else '❌ NO'}")
         
         # Save report
         report_path = project_root / "attack_test_report.json"
