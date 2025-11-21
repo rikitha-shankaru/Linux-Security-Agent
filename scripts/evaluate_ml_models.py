@@ -114,11 +114,10 @@ def evaluate_models(detector: EnhancedAnomalyDetector,
     )
     
     # Generate ROC curve data
-    roc_data = evaluator.generate_roc_curve(
+    roc_data = evaluator.calculate_roc_curve(
         normal_samples,
         anomalous_samples,
-        threshold_range=(0.0, 100.0),
-        step=5.0
+        num_thresholds=50
     )
     
     # Calculate AUC (simplified - using trapezoidal rule)
