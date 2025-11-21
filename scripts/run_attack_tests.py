@@ -19,6 +19,26 @@ from tests.test_automated_attacks import AutomatedAttackTestRunner
 
 def main():
     """Main entry point"""
+    # Check if running as root, if not, re-run with sudo
+    if os.geteuid() != 0:
+        print(f"{'='*70}")
+        print("🚀 Starting Automated Attack Test Suite")
+        print(f"{'='*70}")
+        print("\nThis will:")
+        print("  1. Start the security agent in the background")
+        print("  2. Execute various attack patterns")
+        print("  3. Verify agent detection")
+        print("  4. Generate comprehensive test report")
+        print("\n⚠️  Note: Requires sudo for eBPF collector")
+        print("   You will be prompted for your password...")
+        print(f"{'='*70}\n")
+        
+        # Re-run with sudo (will prompt for password)
+        script_path = os.path.abspath(__file__)
+        os.execvp('sudo', ['sudo', sys.executable, script_path])
+        return  # Should never reach here
+    
+    # Now running as root - continue with actual work
     print(f"{'='*70}")
     print("🚀 Starting Automated Attack Test Suite")
     print(f"{'='*70}")
@@ -29,12 +49,6 @@ def main():
     print("  4. Generate comprehensive test report")
     print("\n⚠️  Note: Requires sudo for eBPF collector")
     print(f"{'='*70}\n")
-    
-    # Check if running as root
-    if os.geteuid() != 0:
-        print("\n❌ Error: This script requires root privileges (sudo)")
-        print("   Please run: sudo python3 scripts/run_attack_tests.py")
-        sys.exit(1)
     
     # Run tests
     runner = AutomatedAttackTestRunner()
