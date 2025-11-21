@@ -273,13 +273,14 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with proper alignment
+        # Print result with proper alignment - fixed width columns
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
         print(f"   Status:         {status}")
         if executed:
-            print(f"   Risk Score:    {risk_score:>6.2f}")
-            print(f"   Anomaly Score: {anomaly_score:>6.2f}")
+            print(f"   Risk Score:     {risk_score:>6.2f}")
+            print(f"   Anomaly Score:  {anomaly_score:>6.2f}")
             print(f"   Execution Time: {execution_time:>6.2f}s")
+        sys.stdout.flush()
         
         return result
     
@@ -389,12 +390,16 @@ class AutomatedAttackTestRunner:
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromTestCase(TestAutomatedAttacks)
         
-        # Run tests with verbosity=0 to suppress unittest's output
-        # We'll handle all output ourselves
+        # Run tests with verbosity=0 to suppress unittest's output completely
+        # Redirect all unittest output to devnull so it doesn't interfere
         import io
-        test_output = io.StringIO()
-        runner = unittest.TextTestRunner(verbosity=0, stream=test_output, buffer=True)
-        result = runner.run(suite)
+        from contextlib import redirect_stdout, redirect_stderr
+        
+        # Suppress unittest's output completely
+        with open(os.devnull, 'w') as devnull:
+            with redirect_stdout(devnull), redirect_stderr(devnull):
+                runner = unittest.TextTestRunner(verbosity=0, stream=devnull)
+                result = runner.run(suite)
         
         # Generate report
         print(f"\n{'='*70}")
