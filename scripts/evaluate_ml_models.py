@@ -168,7 +168,18 @@ def evaluate_models(detector: EnhancedAnomalyDetector,
     all_scores = normal_scores + anomalous_scores
     min_score = min(all_scores)
     max_score = max(all_scores)
-    roc_thresholds = np.linspace(min_score, max_score, 30)  # Reduced from 50
+    
+    # Use unique thresholds from actual scores for more accurate ROC
+    unique_thresholds = sorted(set(normal_scores + anomalous_scores), reverse=True)
+    if len(unique_thresholds) > 50:
+        # Sample if too many
+        indices = np.linspace(0, len(unique_thresholds)-1, 50, dtype=int)
+        roc_thresholds = [unique_thresholds[i] for i in indices]
+    else:
+        roc_thresholds = unique_thresholds
+    
+    # Add boundary points
+    roc_thresholds = [max_score + 1] + roc_thresholds + [min_score - 1]
     
     tpr = []
     fpr = []
@@ -184,8 +195,25 @@ def evaluate_models(detector: EnhancedAnomalyDetector,
         tpr.append(tpr_val)
         fpr.append(fpr_val)
     
-    # Calculate AUC using trapezoidal rule
-    auc = np.trapz(tpr, fpr)
+    # Sort by FPR for proper ROC curve (ascending FPR)
+    fpr_array = np.array(fpr)
+    tpr_array = np.array(tpr)
+    sort_indices = np.argsort(fpr_array)
+    fpr_sorted = fpr_array[sort_indices]
+    tpr_sorted = tpr_array[sort_indices]
+    
+    # Ensure we start at (0,0) and end at (1,1)
+    if fpr_sorted[0] > 0:
+        fpr_sorted = np.concatenate([[0.0], fpr_sorted])
+        tpr_sorted = np.concatenate([[0.0], tpr_sorted])
+    if fpr_sorted[-1] < 1.0:
+        fpr_sorted = np.concatenate([fpr_sorted, [1.0]])
+        tpr_sorted = np.concatenate([tpr_sorted, [1.0]])
+    
+    # Calculate AUC using trapezoidal rule (integrate TPR with respect to FPR)
+    auc = np.trapz(tpr_sorted, fpr_sorted)
+    auc = max(0.0, min(1.0, auc))  # Clamp to [0, 1]
+    
     print(f"   ✅ ROC AUC: {auc:.4f}")
     
     optimal = {
@@ -194,9 +222,9 @@ def evaluate_models(detector: EnhancedAnomalyDetector,
     }
     
     roc_data = {
-        'true_positive_rates': tpr,
-        'false_positive_rates': fpr,
-        'thresholds': roc_thresholds.tolist(),
+        'true_positive_rates': tpr_sorted.tolist(),
+        'false_positive_rates': fpr_sorted.tolist(),
+        'thresholds': roc_thresholds,
         'auc': float(auc)
     }
     
