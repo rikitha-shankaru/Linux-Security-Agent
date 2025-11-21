@@ -12,6 +12,7 @@ import subprocess
 import threading
 import json
 import statistics
+import signal
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
@@ -80,6 +81,31 @@ class PerformanceBenchmark:
     def __init__(self):
         self.results = {}
         self.agent_process: Optional[psutil.Process] = None
+        self.agent_proc: Optional[subprocess.Popen] = None
+        self.running = True
+        
+        # Setup signal handler for Ctrl+C
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+    
+    def _signal_handler(self, signum, frame):
+        """Handle Ctrl+C gracefully"""
+        print("\n\n⚠️  Interrupt received. Cleaning up...")
+        self.running = False
+        self._cleanup_agent()
+        sys.exit(1)
+    
+    def _cleanup_agent(self):
+        """Clean up agent process"""
+        if self.agent_proc:
+            try:
+                self.agent_proc.terminate()
+                self.agent_proc.wait(timeout=5)
+            except:
+                try:
+                    self.agent_proc.kill()
+                except:
+                    pass
     
     def benchmark_cpu_overhead(self, duration: int = 60) -> Dict[str, Any]:
         """Measure CPU overhead of running agent"""
@@ -116,7 +142,7 @@ class PerformanceBenchmark:
             
             try:
                 self.agent_process = psutil.Process(agent_proc.pid)
-                print("   ✅ Agent started (PID: {})".format(agent_proc.pid))
+                print("   ✅ Agent started (PID: {})".format(self.agent_proc.pid))
             except psutil.NoSuchProcess:
                 print("   ⚠️  Agent process not found, may have exited")
                 return self._simulate_cpu_overhead(duration)
@@ -157,26 +183,20 @@ class PerformanceBenchmark:
         overhead_percent = (overhead / baseline_cpu * 100) if baseline_cpu > 0 else 0.0
         
         print(f"\n{'─'*70}")
-        print(f"📈 CPU Overhead Results:")
+        print("📈 CPU Overhead Results")
         print(f"{'─'*70}")
-        print(f"   Baseline CPU (system idle): {baseline_cpu:>6.2f}%")
-        print(f"   Agent CPU (idle):           {idle_cpu:>6.2f}%")
-        print(f"   Agent CPU (under load):    {load_cpu:>6.2f}%")
-        print(f"   CPU Overhead:               {overhead:>6.2f}%")
+        print(f"  Baseline CPU (system idle):  {baseline_cpu:>6.2f}%")
+        print(f"  Agent CPU (idle):             {idle_cpu:>6.2f}%")
+        print(f"  Agent CPU (under load):      {load_cpu:>6.2f}%")
+        print(f"  CPU Overhead:                 {overhead:>6.2f}%")
+        print(f"{'─'*70}")
         if overhead < 5.0:
-            print(f"   ✅ Meets target (<5% overhead)")
+            print("  ✅ Meets target (<5% overhead)")
         else:
-            print(f"   ⚠️  Exceeds target (≥5% overhead)")
+            print("  ⚠️  Exceeds target (≥5% overhead)")
         
         # Cleanup
-        try:
-            agent_proc.terminate()
-            agent_proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            agent_proc.kill()
-            agent_proc.wait()
-        except Exception:
-            pass
+        self._cleanup_agent()
         
         return {
             'baseline_cpu_percent': baseline_cpu,
@@ -214,13 +234,15 @@ class PerformanceBenchmark:
         results = []
         
         for count in process_counts:
+            if not self.running:
+                break
             print(f"\n📊 Testing with {count} processes...")
             sys.stdout.flush()  # Force output
             
             # Start agent
             agent_script = project_root / "core" / "simple_agent.py"
             try:
-                print(f"   → Starting agent...", end='', flush=True)
+                print("   → Starting agent...", end='', flush=True)
                 agent_proc = subprocess.Popen(
                     ['sudo', 'python3', str(agent_script), '--collector', 'ebpf'],
                     stdout=subprocess.DEVNULL,
@@ -402,27 +424,27 @@ class PerformanceBenchmark:
     
     def print_summary(self, results: Dict[str, Any]):
         """Print benchmark summary"""
-        print("\n" + "=" * 70)
+        print(f"\n{'='*70}")
         print("📊 PERFORMANCE BENCHMARK SUMMARY")
-        print("=" * 70)
+        print(f"{'='*70}")
         
         # CPU Overhead
         cpu = results.get('cpu_overhead', {})
         print(f"\n💻 CPU Overhead:")
-        print(f"   Baseline:     {cpu.get('baseline_cpu_percent', 0):.2f}%")
-        print(f"   Agent (load):  {cpu.get('load_cpu_percent', 0):.2f}%")
-        print(f"   Overhead:      {cpu.get('cpu_overhead_percent', 0):.2f}%")
+        print(f"  Baseline:        {cpu.get('baseline_cpu_percent', 0):>6.2f}%")
+        print(f"  Agent (load):    {cpu.get('load_cpu_percent', 0):>6.2f}%")
+        print(f"  Overhead:        {cpu.get('cpu_overhead_percent', 0):>6.2f}%")
         if cpu.get('meets_target'):
-            print(f"   ✅ Meets target (<5% overhead)")
+            print("  ✅ Meets target (<5% overhead)")
         else:
-            print(f"   ⚠️  Exceeds target (≥5% overhead)")
+            print("  ⚠️  Exceeds target (≥5% overhead)")
         
         # Memory Usage
         memory = results.get('memory_usage', {})
         summary = memory.get('summary', {})
         print(f"\n💾 Memory Usage:")
-        print(f"   Max processes tested: {summary.get('max_processes_tested', 0)}")
-        print(f"   Avg per process: {summary.get('avg_memory_per_process_kb', 0):.2f} KB")
+        print(f"  Max processes tested: {summary.get('max_processes_tested', 0)}")
+        print(f"  Avg per process:      {summary.get('avg_memory_per_process_kb', 0):>8.2f} KB")
         
         # Scalability
         scale = results.get('scalability', {})
@@ -430,14 +452,14 @@ class PerformanceBenchmark:
         scale_tests = scale.get('scalability_tests', [])
         if scale_tests:
             max_test = max(scale_tests, key=lambda x: x.get('process_count', 0))
-            print(f"   Max processes: {max_test.get('process_count', 0)}")
-            print(f"   CPU at max:    {max_test.get('avg_cpu_percent', 0):.2f}%")
+            print(f"  Max processes: {max_test.get('process_count', 0)}")
+            print(f"  CPU at max:    {max_test.get('avg_cpu_percent', 0):>6.2f}%")
             if scale.get('all_tests_passed'):
-                print(f"   ✅ Handles 1000+ processes")
+                print("  ✅ Handles 1000+ processes")
             else:
-                print(f"   ⚠️  Some tests failed")
+                print("  ⚠️  Some tests failed")
         
-        print("\n" + "=" * 70)
+        print(f"\n{'='*70}")
     
     def save_results(self, results: Dict[str, Any], output_file: str = "performance_benchmark_report.json"):
         """Save benchmark results to JSON"""
