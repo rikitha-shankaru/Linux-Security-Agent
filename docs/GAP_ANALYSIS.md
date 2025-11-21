@@ -1,194 +1,226 @@
 # Gap Analysis - Priority Issues to Address
 
-## 🔴 Critical Priority (Fix Immediately)
+> **Author**: Likitha Shankar  
+> **Note**: This document tracks known limitations and improvement opportunities for this research prototype.  
+> **Last Updated**: November 20, 2024
 
-### 1. Security Vulnerabilities
-**Issue:** Risk scores stored in `/tmp` without encryption
-- **Location:** `core/enhanced_security_agent.py:385`
-- **Risk:** High - Data exposure, no access control
-- **Fix:** Use secure directory (`~/.cache/security_agent/` or configurable), add file permissions
-- **Effort:** 2-4 hours
-
-**Issue:** No authentication/authorization
-- **Location:** All components
-- **Risk:** High - Anyone can access/modify agent
-- **Fix:** Add API keys, HMAC signatures, or local socket permissions
-- **Effort:** 1-2 weeks
-
-**Issue:** Silent error handling
-- **Location:** Multiple files - many `try/except: pass`
-- **Risk:** Medium - Errors hidden, debugging difficult
-- **Fix:** Proper logging, error reporting, graceful degradation
-- **Effort:** 1 week
-
-### 2. Data Integrity
-**Issue:** No validation of ML model outputs
-- **Location:** `core/enhanced_anomaly_detector.py`
-- **Risk:** Medium - False positives/negatives not tracked
-- **Fix:** Add evaluation metrics, confusion matrices, validation sets
-- **Effort:** 1 week
-
-**Issue:** Training data quality unknown
-- **Location:** Training pipeline
-- **Risk:** Medium - Models may learn noise
-- **Fix:** Add data validation, outlier detection, ground truth labels
-- **Effort:** 1-2 weeks
-
-### 3. Thread Safety
-**Issue:** Multiple locks suggest race conditions
-- **Location:** `core/enhanced_security_agent.py`, `core/container_security_monitor.py`
-- **Risk:** Medium - Data corruption, crashes
-- **Fix:** Audit all shared state, reduce lock contention, use lock-free structures where possible
-- **Effort:** 1-2 weeks
+This document identifies gaps between the current research prototype and a production-ready EDR system. Many issues have been addressed since the initial analysis.
 
 ---
 
-## 🟡 High Priority (Fix Soon)
+## ✅ Recently Fixed Issues
 
-### 4. Testing Coverage
-**Issue:** Limited test coverage
-- **Current:** Basic unit tests only
-- **Missing:** Integration tests, performance tests, attack simulations
-- **Fix:** 
-  - Add integration tests for full pipeline
-  - Add performance benchmarks
-  - Add attack simulation tests
-  - Add model evaluation tests
-- **Effort:** 2-3 weeks
+### Security Improvements
+- ✅ **Risk scores storage**: Fixed - Now uses `~/.cache/security_agent/` with secure permissions (0o700) instead of `/tmp`
+- ✅ **Memory management**: Fixed - Automatic cleanup using `deque(maxlen=50)` to prevent unbounded growth
+- ✅ **Error handling**: Improved - Replaced many bare `except:` with specific exception handling and logging
+- ✅ **Documentation accuracy**: Fixed - All docs updated to reflect "Research Prototype" status, not "Production-Ready"
 
-### 5. Error Handling
-**Issue:** Many silent failures
-- **Location:** Throughout codebase
-- **Examples:** 
-  - `core/enhanced_ebpf_monitor.py:256` - silent exception handling
-  - `core/collector_auditd.py:85` - callback errors ignored
-- **Fix:** Proper logging, error aggregation, user notifications
-- **Effort:** 1 week
+### Architecture Improvements
+- ✅ **Modular architecture**: Fixed - Refactored into organized modules (`collectors/`, `detection/`, `utils/`)
+- ✅ **Collector factory pattern**: Implemented - Centralized collector selection with automatic fallback
+- ✅ **Anomaly score integration**: Fixed - Anomaly scores now properly affect risk scores (weight: 0.5)
 
-### 6. Configuration Management
-**Issue:** Hardcoded values despite config system
-- **Location:** Multiple files
-- **Examples:**
-  - `MAX_VALID_PID = 2147483647` - should be configurable
-  - `STALE_PROCESS_TIMEOUT = 300` - should be in config
-- **Fix:** Move all magic numbers to config with defaults
+### Testing & Validation
+- ✅ **Attack simulation scripts**: Added - `scripts/simulate_attacks.py` for safe testing
+- ✅ **Dashboard improvements**: Enhanced - Better UI, fixed blinking, added status indicators
+
+---
+
+## 🔴 Critical Priority (For Production Readiness)
+
+### 1. Security & Authentication
+**Issue:** No authentication/authorization for agent operations
+- **Location:** All components
+- **Risk:** High - Anyone can access/modify agent
+- **Current Status:** Not implemented (acceptable for research prototype)
+- **Fix:** Add API keys, HMAC signatures, or local socket permissions
+- **Effort:** 1-2 weeks
+- **Priority for Research:** Low (not needed for academic demonstration)
+
+**Issue:** No encryption for sensitive data
+- **Location:** Data storage (`~/.cache/security_agent/`)
+- **Risk:** Medium - Data readable if system compromised
+- **Current Status:** Files stored with secure permissions (0o700) but not encrypted
+- **Fix:** Add encryption for risk scores, training data, model files
 - **Effort:** 3-5 days
+- **Priority for Research:** Low
 
-### 7. Performance Validation
+### 2. Testing & Validation
+**Issue:** Limited test coverage
+- **Current:** Basic unit tests exist, some integration tests
+- **Missing:** Comprehensive integration tests, automated attack simulation tests, performance benchmarks
+- **Fix:** 
+  - Expand integration tests for full pipeline
+  - Add automated attack simulation test suite
+  - Add performance benchmark suite
+  - Add model evaluation metrics (precision, recall, F1)
+- **Effort:** 2-3 weeks
+- **Priority for Research:** Medium (would strengthen academic presentation)
+
 **Issue:** Performance claims unverified
-- **Claims:** "<5% CPU overhead", ">95% accuracy", "1000+ processes"
-- **Reality:** No benchmarks published
+- **Claims:** "<5% CPU overhead", "handles 1000+ processes"
+- **Reality:** No published benchmarks
 - **Fix:** 
   - Add performance profiling
   - Create benchmark suite
   - Document actual performance metrics
 - **Effort:** 1-2 weeks
+- **Priority for Research:** Medium
+
+### 3. ML Model Validation
+**Issue:** No comprehensive model evaluation metrics
+- **Missing:** Precision, recall, F1, confusion matrices, ROC AUC
+- **Current:** Models work but accuracy not quantified
+- **Fix:** Add evaluation framework, validation sets, metrics reporting
+- **Effort:** 1 week
+- **Priority for Research:** Medium (would strengthen ML claims)
+
+**Issue:** Training data quality validation
+- **Current:** Models train on collected data, but no quality checks
+- **Risk:** Models may learn noise or biased patterns
+- **Fix:** Add data validation, outlier detection, ground truth labels (if available)
+- **Effort:** 1-2 weeks
+- **Priority for Research:** Low
+
+---
+
+## 🟡 High Priority (Enhancements)
+
+### 4. Error Handling & Logging
+**Issue:** Some areas still have silent error handling
+- **Location:** Various files - some `try/except: pass` remain
+- **Current Status:** Improved but not comprehensive
+- **Fix:** Replace remaining silent exceptions with proper logging
+- **Effort:** 3-5 days
+- **Priority for Research:** Low
+
+### 5. Configuration Management
+**Issue:** Some hardcoded values remain
+- **Location:** Multiple files
+- **Examples:**
+  - `MAX_VALID_PID = 2147483647` - could be configurable
+  - `STALE_PROCESS_TIMEOUT = 300` - could be in config
+- **Fix:** Move remaining magic numbers to config with sensible defaults
+- **Effort:** 2-3 days
+- **Priority for Research:** Low
+
+### 6. Thread Safety Validation
+**Issue:** Thread safety not comprehensively tested
+- **Location:** Multiple files with locks (`processes_lock`, etc.)
+- **Current Status:** Uses locks but not stress-tested for race conditions
+- **Fix:** Add thread safety tests, stress testing, audit shared state
+- **Effort:** 1 week
+- **Priority for Research:** Low
 
 ---
 
 ## 🟢 Medium Priority (Nice to Have)
 
-### 8. ML Model Improvements
-**Issue:** No model evaluation metrics
-- **Missing:** Precision, recall, F1, confusion matrices
-- **Fix:** Add evaluation framework, validation sets, metrics reporting
-- **Effort:** 1 week
-
-**Issue:** Feature engineering not validated
-- **Current:** 50-D features, not validated as optimal
+### 7. ML Model Improvements
+**Issue:** Feature engineering not validated as optimal
+- **Current:** 50-D features, not validated as best choice
 - **Fix:** Feature importance analysis, dimensionality reduction validation
 - **Effort:** 1-2 weeks
+- **Priority for Research:** Low
 
-### 9. Documentation
-**Issue:** Claims don't match reality
-- **Examples:** "Production-ready", "Comparable to CrowdStrike"
-- **Fix:** Update all documentation to reflect actual status
-- **Effort:** 2-3 days
+**Issue:** Model calibration
+- **Current:** Ensemble voting without confidence intervals
+- **Fix:** Add calibration, confidence intervals, threshold optimization
+- **Effort:** 3-5 days
+- **Priority for Research:** Low
 
-**Issue:** Missing architecture diagrams
-- **Fix:** Add detailed architecture documentation, data flow diagrams
+### 8. Documentation Enhancements
+**Issue:** Missing detailed architecture diagrams
+- **Current:** Architecture documented in text
+- **Fix:** Add visual architecture diagrams, data flow diagrams
 - **Effort:** 1 week
+- **Priority for Research:** Low (nice to have for presentation)
 
-### 10. Platform API Integration
+### 9. Platform API Integration
 **Issue:** Platform API stashed, not integrated
 - **Location:** `_platform-api-stash/`
+- **Current Status:** Stashed code exists but not integrated
 - **Fix:** Integrate or remove, document decision
 - **Effort:** 1-2 weeks (if integrating)
+- **Priority for Research:** Low (not needed for core functionality)
 
 ---
 
-## 📋 Detailed Issue List
+## 📋 Summary Table
 
 ### Security Issues
-| Issue | Severity | Location | Effort | Status |
-|-------|----------|----------|--------|--------|
-| Risk scores in `/tmp` | High | `enhanced_security_agent.py:385` | 2-4h | 🔴 |
-| No authentication | High | All components | 1-2w | 🔴 |
-| Silent error handling | Medium | Multiple | 1w | 🔴 |
-| No encryption | Medium | Data storage | 3-5d | 🟡 |
-| Container policies not enforced | Medium | `container_security_monitor.py` | 1w | 🟡 |
+| Issue | Severity | Status | Effort | Research Priority |
+|-------|----------|--------|--------|-------------------|
+| No authentication | High | ⚠️ Not implemented | 1-2w | Low |
+| No encryption | Medium | ⚠️ Partial (secure perms) | 3-5d | Low |
+| Container policies not enforced | Medium | ⚠️ Detection only | 1w | Low |
 
 ### Testing Issues
-| Issue | Severity | Location | Effort | Status |
-|-------|----------|----------|--------|--------|
-| Limited unit tests | Medium | `tests/` | 1w | 🟡 |
-| No integration tests | High | Missing | 1-2w | 🟡 |
-| No performance tests | Medium | Missing | 1w | 🟡 |
-| No attack simulations | High | Missing | 1-2w | 🟡 |
-| No model evaluation | Medium | ML pipeline | 1w | 🟡 |
+| Issue | Severity | Status | Effort | Research Priority |
+|-------|----------|--------|--------|-------------------|
+| Limited test coverage | Medium | ⚠️ Basic tests exist | 1-2w | Medium |
+| No performance benchmarks | Medium | ⚠️ Not published | 1w | Medium |
+| No automated attack tests | High | ⚠️ Scripts exist, not automated | 1w | Medium |
+| No model evaluation metrics | High | ⚠️ Models work, no metrics | 1w | Medium |
 
 ### Code Quality Issues
-| Issue | Severity | Location | Effort | Status |
-|-------|----------|----------|--------|--------|
-| Thread safety concerns | Medium | Multiple | 1-2w | 🔴 |
-| Hardcoded values | Low | Multiple | 3-5d | 🟡 |
-| Error handling gaps | Medium | Multiple | 1w | 🔴 |
-| Memory leak potential | Low | Process tracking | 3-5d | 🟡 |
+| Issue | Severity | Status | Effort | Research Priority |
+|-------|----------|--------|--------|-------------------|
+| Some silent error handling | Medium | ⚠️ Improved but incomplete | 3-5d | Low |
+| Some hardcoded values | Low | ⚠️ Most in config | 2-3d | Low |
+| Thread safety not stress-tested | Medium | ⚠️ Uses locks, not tested | 1w | Low |
 
 ### ML/Detection Issues
-| Issue | Severity | Location | Effort | Status |
-|-------|----------|----------|--------|--------|
-| No evaluation metrics | High | `enhanced_anomaly_detector.py` | 1w | 🟡 |
-| Training data quality | Medium | Training pipeline | 1-2w | 🟡 |
-| Feature validation | Medium | Feature extraction | 1-2w | 🟢 |
-| Model calibration | Low | Ensemble voting | 3-5d | 🟢 |
+| Issue | Severity | Status | Effort | Research Priority |
+|-------|----------|--------|--------|-------------------|
+| No evaluation metrics | High | ⚠️ Models work, no metrics | 1w | Medium |
+| Training data quality | Medium | ⚠️ No validation | 1-2w | Low |
+| Feature validation | Medium | ⚠️ 50-D not validated | 1-2w | Low |
+| Model calibration | Low | ⚠️ Basic ensemble | 3-5d | Low |
 
 ---
 
-## 🎯 Recommended Fix Order
+## 🎯 Recommended Priority for Research Project
 
-### Week 1-2: Critical Security
-1. Fix `/tmp` storage issue
-2. Add proper error handling and logging
-3. Add basic authentication/authorization
+### For Academic Presentation (High Priority)
+1. **Model Evaluation Metrics** (1 week) - Strengthen ML claims
+2. **Performance Benchmarks** (1 week) - Validate performance claims
+3. **Automated Attack Tests** (1 week) - Demonstrate detection capabilities
 
-### Week 3-4: Testing Foundation
-1. Add integration tests
-2. Add performance benchmarks
-3. Add attack simulation tests
-
-### Week 5-6: Code Quality
-1. Fix thread safety issues
-2. Move hardcoded values to config
-3. Improve error handling throughout
-
-### Week 7-8: ML Validation
-1. Add model evaluation metrics
-2. Validate training data quality
-3. Add feature importance analysis
+### For Production Readiness (If Pursued)
+1. **Authentication/Authorization** (1-2 weeks)
+2. **Comprehensive Testing** (2-3 weeks)
+3. **Encryption** (3-5 days)
+4. **Thread Safety Validation** (1 week)
 
 ---
 
-## 📊 Progress Tracking
+## 📊 Current Status Summary
 
-**Total Issues Identified:** 20+  
-**Critical Issues:** 5  
-**High Priority:** 5  
-**Medium Priority:** 10+
+**Total Issues Identified:** 15+  
+**Critical Issues (for production):** 3  
+**High Priority (enhancements):** 3  
+**Medium Priority (nice to have):** 9+
 
-**Estimated Total Effort:** 8-12 weeks for all fixes
+**For Research Prototype:**
+- ✅ Core functionality works
+- ✅ Security basics addressed (secure storage, permissions)
+- ✅ Architecture is modular and maintainable
+- ⚠️ Testing and validation could be stronger
+- ⚠️ ML metrics would strengthen academic presentation
+
+**Estimated Effort for Production Readiness:** 6-8 weeks  
+**Estimated Effort for Research Enhancement:** 2-3 weeks (metrics, benchmarks, tests)
 
 ---
 
-**Last Updated:** January 2025
+## 🔗 Related Documentation
 
+- **Project Status**: `PROJECT_STATUS.md` - Current state and classification
+- **Architecture**: `docs/ARCHITECTURE.md` - System design
+- **Technical Answers**: `docs/PROFESSOR_TECHNICAL_ANSWERS.md` - Detailed technical Q&A
+
+---
+
+**Note**: This is a research prototype. Many "gaps" are acceptable for academic demonstration purposes. The focus should be on demonstrating concepts (eBPF, ML anomaly detection, container security) rather than production-grade features.
