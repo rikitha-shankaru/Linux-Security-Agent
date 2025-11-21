@@ -101,13 +101,13 @@ Optional (time-permitting): streaming detector (e.g., River Half‑Space Trees) 
 Examples
 ```bash
 # eBPF with dashboard
-sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard --threshold 30
+sudo python3 core/enhanced_core/enhanced_security_agent.py --collector ebpf --dashboard --threshold 30
 
 # Auditd fallback with TUI
-sudo python3 core/enhanced_security_agent.py --collector auditd --tui --timeout 300
+sudo python3 core/enhanced_core/enhanced_security_agent.py --collector auditd --tui --timeout 300
 
 # Train and append to previous feature store
-python3 core/enhanced_security_agent.py --train-models --append
+python3 core/enhanced_core/enhanced_security_agent.py --train-models --append
 ```
 
 ---
@@ -157,7 +157,7 @@ Why this is better here
 
 ### **🔧 Main Agent and Collectors**
 
-#### **`core/enhanced_security_agent.py`** – Main agent
+#### **`core/enhanced_core/enhanced_security_agent.py`** – Main agent
 - Orchestrates collection, scoring, ML, outputs (dashboard/TUI/JSON).
 - Handles process state, configuration, thresholds.
 
@@ -267,12 +267,12 @@ Dashboard/TUI/List/JSON → optional actions (warn/freeze/kill; if enabled)
 
 ### **Linux (Production)**
 ```bash
-sudo python3 security_agent.py --dashboard --anomaly-detection --threshold 30
+sudo python3 core/enhanced_security_agent.py --dashboard --anomaly-detection --threshold 30
 ```
 
 ### **macOS (Development)**
 ```bash
-python3 security_agent_mac.py --dashboard --timeout 30
+python3 core/simple_agent.py --dashboard --timeout 30
 ```
 
 ### **Docker (Containerized)**
@@ -360,12 +360,12 @@ python3 production_agent.py --config production.json
 ### **Quick Start (macOS)**
 ```bash
 source venv/bin/activate
-python3 security_agent_mac.py --dashboard --timeout 30
+python3 core/simple_agent.py --dashboard --timeout 30
 ```
 
 ### **Quick Start (Linux)**
 ```bash
-sudo python3 security_agent.py --dashboard --threshold 30
+sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
 ```
 
 ### **Quick Start (Docker)**

@@ -67,7 +67,7 @@ cd /Users/likithashankar/linux_security_agent
 source venv/bin/activate
 
 # Run the macOS security agent with dashboard and timeout
-python3 security_agent_mac.py --dashboard --threshold 30 --timeout 60
+python3 core/simple_agent.py --dashboard --threshold 30 --timeout 60
 ```
 
 **For Linux users:**
@@ -76,7 +76,7 @@ python3 security_agent_mac.py --dashboard --threshold 30 --timeout 60
 cd /Users/likithashankar/linux_security_agent
 
 # Run the full security agent with eBPF support (requires sudo)
-sudo python3 security_agent.py --dashboard --anomaly-detection --threshold 30
+sudo python3 core/enhanced_security_agent.py --dashboard --anomaly-detection --threshold 30
 ```
 
 #### Step 3: Run Demo Scripts
@@ -116,15 +116,16 @@ This script will:
 ### Core Files
 ```
 linux_security_agent/
-├── security_agent.py           # Main Linux agent with eBPF support
-├── security_agent_mac.py       # macOS-compatible version with timeout
-├── ebpf_monitor.py            # Enhanced eBPF monitoring
-├── advanced_risk_engine.py    # Behavioral risk scoring
-├── mitre_attack_detector.py   # MITRE ATT&CK framework integration
-├── anomaly_detector.py        # ML-based anomaly detection
-├── action_handler.py          # Automated response system
-├── cloud_backend.py           # Cloud integration
-└── requirements.txt           # Python dependencies
+├── core/
+│   ├── simple_agent.py            # Simple working agent (RECOMMENDED)
+│   ├── enhanced_core/enhanced_security_agent.py # Full-featured agent with all features
+│   ├── enhanced_ebpf_monitor.py  # Enhanced eBPF monitoring
+│   ├── enhanced_anomaly_detector.py # ML-based anomaly detection
+│   ├── container_security_monitor.py # Container security
+│   └── collectors/                # Collector modules (eBPF, auditd)
+├── scripts/
+│   └── simulate_attacks.py       # Attack simulation for testing
+└── requirements.txt              # Python dependencies
 ```
 
 ### Demo Scripts
@@ -171,36 +172,31 @@ docker run --rm -it \
 
 **Basic Options:**
 ```bash
-# Linux
-sudo python3 security_agent.py [OPTIONS]
+# Simple Agent (Recommended)
+sudo python3 core/simple_agent.py --collector ebpf --dashboard --threshold 30
 
-# macOS
-python3 security_agent_mac.py [OPTIONS]
+# Enhanced Agent (Full Features)
+sudo python3 core/enhanced_core/enhanced_security_agent.py --dashboard --threshold 30
 
 Options:
-  --threshold THRESHOLD    Risk score threshold for alerts (default: 50.0)
-  --output FORMAT         Output format: console, json (default: console)
-  --dashboard            Enable real-time dashboard display
-  --timeout SECONDS      Run for specified seconds then exit (macOS only)
-  --no-ebpf              Disable eBPF monitoring (use psutil fallback)
-  --no-anomaly-detection  Disable ML anomaly detection
-  --no-actions           Disable automated actions (warn/freeze/kill)
+  --collector TYPE        Collector: ebpf or auditd (default: ebpf)
+  --threshold THRESHOLD   Risk score threshold for alerts (default: 50.0)
+  --output FORMAT        Output format: console, json (default: console)
+  --dashboard           Enable real-time dashboard display
+  --train-models        Train ML models on system data
+  --append              Append to existing feature store when training
 ```
 
 **Advanced Options:**
 ```bash
-# Linux
-sudo python3 security_agent.py \
+# Enhanced Agent with Training
+sudo python3 core/enhanced_core/enhanced_security_agent.py \
+    --train-models \
     --dashboard \
-    --anomaly-detection \
-    --threshold 40 \
-    --action-log /var/log/security_agent.log
+    --threshold 40
 
-# macOS
-python3 security_agent_mac.py \
-    --dashboard \
-    --threshold 40 \
-    --timeout 60
+# Simple Agent with Specific Collector
+sudo python3 core/simple_agent.py --collector auditd --dashboard --threshold 30
 ```
 
 ## 📊 Understanding Risk Scores
@@ -228,7 +224,7 @@ python3 security_agent_mac.py \
 **Problem**: eBPF requires root privileges
 **Solution**: 
 ```bash
-sudo python3 security_agent.py --dashboard
+sudo python3 core/enhanced_security_agent.py --dashboard
 ```
 
 #### "BCC not available" Error (Linux)
@@ -258,14 +254,14 @@ pip install -r requirements.txt
 **Problem**: Too many processes being monitored
 **Solution**: Adjust thresholds or use filtering
 ```bash
-python3 security_agent.py --threshold 70 --no-dashboard
+python3 core/enhanced_security_agent.py --threshold 70 --no-dashboard
 ```
 
 ### Debug Mode
 
 ```bash
 # Run with verbose output
-sudo python3 security_agent.py --dashboard --threshold 10
+sudo python3 core/enhanced_security_agent.py --dashboard --threshold 10
 
 # Check logs
 tail -f /var/log/security_agent.log
@@ -308,7 +304,7 @@ htop
 
 ```bash
 # Production deployment
-sudo python3 security_agent.py \
+sudo python3 core/enhanced_security_agent.py \
     --dashboard \
     --anomaly-detection \
     --threshold 30 \
@@ -321,10 +317,10 @@ sudo python3 security_agent.py \
 #### SIEM Integration
 ```bash
 # Output to SIEM
-sudo python3 security_agent.py --output json > /var/log/siem_events.json
+sudo python3 core/enhanced_security_agent.py --output json > /var/log/siem_events.json
 
 # Send to external system
-sudo python3 security_agent.py --output json | \
+sudo python3 core/enhanced_security_agent.py --output json | \
     curl -X POST -H "Content-Type: application/json" \
     -d @- http://siem.example.com/api/events
 ```
@@ -332,14 +328,14 @@ sudo python3 security_agent.py --output json | \
 #### Monitoring Integration
 ```bash
 # Prometheus metrics
-sudo python3 security_agent.py --output json | \
+sudo python3 core/enhanced_security_agent.py --output json | \
     jq -r '.processes[] | "security_risk{pid=\"\(.pid)\"} \(.risk_score)"'
 ```
 
 #### Alerting
 ```bash
 # Email alerts for high-risk processes
-sudo python3 security_agent.py --output json | \
+sudo python3 core/enhanced_security_agent.py --output json | \
     jq -r '.processes[] | select(.risk_score > 80) | "ALERT: High risk process \(.name)"' | \
     mail -s "Security Alert" security@company.com
 ```
@@ -424,12 +420,12 @@ python3 run_tests.py
 
 ### Start Agent (Linux)
 ```bash
-sudo python3 security_agent.py --dashboard --anomaly-detection --threshold 30
+sudo python3 core/enhanced_security_agent.py --dashboard --anomaly-detection --threshold 30
 ```
 
 ### Start Agent (macOS)
 ```bash
-python3 security_agent_mac.py --dashboard --threshold 30 --timeout 60
+python3 core/simple_agent.py --dashboard --threshold 30 --timeout 60
 ```
 
 ### Run Demo

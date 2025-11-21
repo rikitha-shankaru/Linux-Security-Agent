@@ -22,13 +22,13 @@ sudo python3 core/simple_agent.py --collector ebpf --dashboard --threshold 30
 **Linux (Enhanced Agent - Full Features):**
 ```bash
 # Run with dashboard
-sudo python3 core/enhanced_security_agent.py --dashboard --threshold 30
+sudo python3 core/enhanced_core/simple_agent.py --dashboard --threshold 30
 
 # Run with specific collector
-sudo python3 core/enhanced_security_agent.py --collector ebpf --dashboard
+sudo python3 core/enhanced_core/simple_agent.py --collector ebpf --dashboard
 
 # Run with JSON output
-sudo python3 core/enhanced_security_agent.py --output json --timeout 60
+sudo python3 core/enhanced_core/simple_agent.py --output json --timeout 60
 ```
 
 ### Advanced Usage
@@ -36,13 +36,13 @@ sudo python3 core/enhanced_security_agent.py --output json --timeout 60
 **Training Models:**
 ```bash
 # Train models on real system data
-sudo python3 core/enhanced_security_agent.py --train-models
+sudo python3 core/enhanced_core/simple_agent.py --train-models
 
 # Train and append to existing feature store
-sudo python3 core/enhanced_security_agent.py --train-models --append
+sudo python3 core/enhanced_core/simple_agent.py --train-models --append
 
 # Train then run dashboard
-sudo python3 core/enhanced_security_agent.py --train-models --dashboard
+sudo python3 core/enhanced_core/simple_agent.py --train-models --dashboard
 ```
 
 **With Attack Testing:**
@@ -64,7 +64,7 @@ python3 scripts/simulate_attacks.py
 | `--threshold` | Risk score threshold for alerts | 50.0 |
 | `--dashboard` | Display real-time dashboard | False |
 
-### Enhanced Agent (`core/enhanced_security_agent.py`)
+### Enhanced Agent (`core/enhanced_core/simple_agent.py`)
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -168,7 +168,7 @@ python3 run_demo.py
 **Linux:**
 ```bash
 # Start monitoring
-sudo python3 security_agent.py --dashboard
+sudo python3 core/simple_agent.py --dashboard
 
 # In another terminal, run suspicious behavior
 cd demo
@@ -178,7 +178,7 @@ python3 suspicious_behavior.py
 **macOS:**
 ```bash
 # Start monitoring with timeout
-python3 security_agent_mac.py --dashboard --timeout 60
+python3 core/simple_agent.py --dashboard --timeout 60
 
 # In another terminal, run suspicious behavior
 cd demo
@@ -196,13 +196,13 @@ PID 1235: bash (Risk: 82.1, Anomaly: -0.23)
 **Linux:**
 ```bash
 # Start with JSON output
-sudo python3 security_agent.py --output json
+sudo python3 core/simple_agent.py --output json
 ```
 
 **macOS:**
 ```bash
 # Start with JSON output and timeout
-python3 security_agent_mac.py --output json --timeout 30
+python3 core/simple_agent.py --output json --timeout 30
 ```
 
 # Output will be in JSON format:
@@ -225,7 +225,7 @@ python3 security_agent_mac.py --output json --timeout 30
 
 ```bash
 # Start with actions enabled
-sudo python3 security_agent.py --threshold 30 --enable-kill
+sudo python3 core/simple_agent.py --threshold 30 --enable-kill
 
 # Processes will be automatically:
 # - Warned at risk score 18+
@@ -239,17 +239,17 @@ sudo python3 security_agent.py --threshold 30 --enable-kill
 
 ```bash
 # Output to file for SIEM ingestion
-sudo python3 security_agent.py --output json > /var/log/security_events.json
+sudo python3 core/simple_agent.py --output json > /var/log/security_events.json
 
 # Or use syslog
-sudo python3 security_agent.py --action-log /dev/log
+sudo python3 core/simple_agent.py --action-log /dev/log
 ```
 
 ### With Monitoring Systems
 
 ```bash
 # Use with Prometheus/Grafana
-sudo python3 security_agent.py --output json | \
+sudo python3 core/simple_agent.py --output json | \
     jq -r '.processes[] | select(.risk_score > 50) | "security_risk{pid=\"\(.pid)\",name=\"\(.name)\"} \(.risk_score)"'
 ```
 
@@ -257,7 +257,7 @@ sudo python3 security_agent.py --output json | \
 
 ```bash
 # Send alerts to external systems
-sudo python3 security_agent.py --output json | \
+sudo python3 core/simple_agent.py --output json | \
     jq -r '.processes[] | select(.risk_score > 80) | "ALERT: High risk process \(.name) (PID: \(.pid)) with score \(.risk_score)"'
 ```
 
@@ -277,13 +277,13 @@ sudo python3 security_agent.py --output json | \
 **Linux:**
 ```bash
 # Run with verbose output
-sudo python3 security_agent.py --dashboard --threshold 10
+sudo python3 core/simple_agent.py --dashboard --threshold 10
 ```
 
 **macOS:**
 ```bash
 # Run with verbose output and timeout
-python3 security_agent_mac.py --dashboard --threshold 10 --timeout 30
+python3 core/simple_agent.py --dashboard --threshold 10 --timeout 30
 ```
 
 ### Log Analysis

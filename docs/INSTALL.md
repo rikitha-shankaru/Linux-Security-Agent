@@ -79,7 +79,7 @@ pip3 install -r requirements.txt
 sudo python3 -c "from bcc import BPF; print('BCC is working')"
 
 # Test the security agent
-sudo python3 security_agent.py --help
+sudo python3 core/simple_agent.py --help
 ```
 
 **macOS:**
@@ -87,8 +87,8 @@ sudo python3 security_agent.py --help
 # Test psutil installation
 python3 -c "import psutil; print('psutil is working')"
 
-# Test the macOS security agent
-python3 security_agent_mac.py --help
+# Test the security agent (Linux only - no macOS version)
+sudo python3 core/simple_agent.py --help
 ```
 
 ### Method 2: Docker Installation
@@ -113,7 +113,7 @@ WORKDIR /app
 RUN pip3 install -r requirements.txt
 
 # Set entrypoint
-ENTRYPOINT ["python3", "security_agent.py"]
+ENTRYPOINT ["python3", "core/simple_agent.py"]
 ```
 
 #### Step 2: Build and Run
@@ -138,7 +138,7 @@ mkdir -p security-agent-1.0/etc/security-agent
 mkdir -p security-agent-1.0/var/log
 
 # Copy files
-cp security_agent.py security-agent-1.0/usr/local/bin/
+cp core/simple_agent.py security-agent-1.0/usr/local/bin/core/simple_agent.py
 cp *.py security-agent-1.0/usr/local/lib/python3.8/site-packages/
 cp requirements.txt security-agent-1.0/etc/security-agent/
 
@@ -206,7 +206,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/local/bin/security_agent.py --dashboard --anomaly-detection
+ExecStart=/usr/local/bin/core/simple_agent.py --collector ebpf --dashboard --threshold 30
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -231,7 +231,7 @@ sudo systemctl start security-agent
 **Linux:**
 ```bash
 # Test basic functionality
-sudo python3 security_agent.py --help
+sudo python3 core/simple_agent.py --help
 
 # Test with demo scripts
 cd demo
@@ -239,13 +239,13 @@ python3 normal_behavior.py
 python3 suspicious_behavior.py
 
 # Test monitoring
-sudo python3 security_agent.py --dashboard --threshold 10
+sudo python3 core/simple_agent.py --dashboard --threshold 10
 ```
 
 **macOS:**
 ```bash
 # Test basic functionality
-python3 security_agent_mac.py --help
+python3 core/simple_agent.py --help
 
 # Test with demo scripts
 cd demo
@@ -253,7 +253,7 @@ python3 normal_behavior.py
 python3 suspicious_behavior.py
 
 # Test monitoring with timeout
-python3 security_agent_mac.py --dashboard --threshold 10 --timeout 30
+python3 core/simple_agent.py --dashboard --threshold 10 --timeout 30
 ```
 
 ### Check Logs
@@ -352,22 +352,22 @@ pip3 install click
 **Solution (Linux):**
 ```bash
 # Ensure running as root
-sudo python3 security_agent.py
+sudo python3 core/simple_agent.py
 
 # Check capabilities
 sudo setcap cap_sys_admin+ep /usr/bin/python3
 
 # Or use sudoers
-echo "security-agent ALL=(ALL) NOPASSWD: /usr/local/bin/security_agent.py" | sudo tee /etc/sudoers.d/security-agent
+echo "security-agent ALL=(ALL) NOPASSWD: /usr/local/bin/core/simple_agent.py" | sudo tee /etc/sudoers.d/security-agent
 ```
 
 **Solution (macOS):**
 ```bash
 # macOS version doesn't require root privileges
-python3 security_agent_mac.py --dashboard
+python3 core/simple_agent.py --dashboard
 
 # If you get permission errors, check file permissions
-chmod +x security_agent_mac.py
+chmod +x core/simple_agent.py
 ```
 
 ### Performance Issues
@@ -379,7 +379,7 @@ chmod +x security_agent_mac.py
 **Solution**:
 ```bash
 # Use eBPF instead of fallback mode
-sudo python3 security_agent.py --use-ebpf
+sudo python3 core/simple_agent.py --use-ebpf
 
 # Reduce monitoring frequency
 # Edit the code to increase sleep intervals
@@ -395,7 +395,7 @@ sudo python3 security_agent.py --use-ebpf
 # Edit the code to reduce maxlen in deque
 
 # Use JSON output instead of dashboard
-sudo python3 security_agent.py --output json
+sudo python3 core/simple_agent.py --output json
 ```
 
 ### Security Issues
@@ -411,7 +411,7 @@ sudo chown root:root /var/log/security_agent.log
 sudo chmod 600 /var/log/security_agent.log
 
 # Or use syslog
-sudo python3 security_agent.py --action-log /dev/log
+sudo python3 core/simple_agent.py --action-log /dev/log
 ```
 
 #### 2. Action Permissions
@@ -440,7 +440,7 @@ sudo systemctl stop security-agent
 sudo systemctl disable security-agent
 
 # Remove files
-sudo rm -rf /usr/local/bin/security_agent.py
+sudo rm -rf /usr/local/bin/core/simple_agent.py
 sudo rm -rf /usr/local/lib/python3.8/site-packages/security_agent*
 sudo rm -rf /etc/security-agent
 sudo rm -rf /var/log/security_agent.log
