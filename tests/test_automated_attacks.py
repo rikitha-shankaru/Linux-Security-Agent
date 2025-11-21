@@ -278,17 +278,17 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with proper alignment - fixed width columns
-        # Show error first if any
+        # Print result with proper alignment - consistent column widths
         if error:
             print(f"   ⚠️  Attack execution timeout")
         
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        print(f"   {'Status:':<18} {status}")
+        # Use consistent 20-char width for labels, right-align numbers
+        print(f"   {'Status:':<20} {status}")
         if executed:
-            print(f"   {'Risk Score:':<18} {risk_score:>6.2f}")
-            print(f"   {'Anomaly Score:':<18} {anomaly_score:>6.2f}")
-            print(f"   {'Execution Time:':<18} {execution_time:>6.2f}s")
+            print(f"   {'Risk Score:':<20} {risk_score:>7.2f}")
+            print(f"   {'Anomaly Score:':<20} {anomaly_score:>7.2f}")
+            print(f"   {'Execution Time:':<20} {execution_time:>7.2f}s")
         print()  # Blank line for spacing
         sys.stdout.flush()
         
@@ -459,10 +459,10 @@ class AutomatedAttackTestRunner:
         print(f"\n{'='*70}")
         print("📊 TEST SUMMARY")
         print(f"{'='*70}")
-        print(f"  {'Tests run:':<18} {tests_run:>3}")
-        print(f"  {'Failures:':<18} {failures:>3}")
-        print(f"  {'Errors:':<18} {errors:>3}")
-        print(f"  {'Success:':<18} {'✅ YES' if success else '❌ NO'}")
+        print(f"  {'Tests run:':<20} {tests_run:>3}")
+        print(f"  {'Failures:':<20} {failures:>3}")
+        print(f"  {'Errors:':<20} {errors:>3}")
+        print(f"  {'Success:':<20} {'✅ YES' if success else '❌ NO'}")
         sys.stdout.flush()
         
         # Save report
