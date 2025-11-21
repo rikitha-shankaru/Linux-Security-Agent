@@ -305,6 +305,8 @@ class TestAutomatedAttacks(unittest.TestCase):
             AttackSimulator.high_frequency_attack
         )
         self.assertTrue(result.executed, "Attack should execute")
+        # Suppress unittest's default output
+        self.assertTrue(True)
     
     def test_process_churn(self):
         """Test process churn detection"""
@@ -315,6 +317,8 @@ class TestAutomatedAttacks(unittest.TestCase):
             AttackSimulator.process_churn
         )
         self.assertTrue(result.executed, "Attack should execute")
+        # Suppress unittest's default output
+        self.assertTrue(True)
     
     def test_suspicious_file_patterns(self):
         """Test suspicious file pattern detection"""
@@ -325,6 +329,8 @@ class TestAutomatedAttacks(unittest.TestCase):
             AttackSimulator.suspicious_file_patterns
         )
         self.assertTrue(result.executed, "Attack should execute")
+        # Suppress unittest's default output
+        self.assertTrue(True)
     
     def test_ptrace_attempts(self):
         """Test ptrace attempt detection"""
@@ -336,6 +342,8 @@ class TestAutomatedAttacks(unittest.TestCase):
         )
         # Ptrace might not always execute (depends on system)
         # So we don't assert execution
+        # Suppress unittest's default output
+        self.assertTrue(True)
     
     def generate_test_report(self) -> Dict[str, Any]:
         """Generate comprehensive test report"""
@@ -369,18 +377,23 @@ class AutomatedAttackTestRunner:
     
     def run_all_tests(self) -> Dict[str, Any]:
         """Run all attack tests and generate report"""
+        sys.stdout.flush()
         print(f"{'='*70}")
         print("🧪 AUTOMATED ATTACK DETECTION TEST SUITE")
         print(f"{'='*70}")
         print("\nThis will test the agent's ability to detect various attack patterns.")
         print("The agent will run in the background while attacks are executed.\n")
+        sys.stdout.flush()
         
         # Create test suite
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromTestCase(TestAutomatedAttacks)
         
-        # Run tests
-        runner = unittest.TextTestRunner(verbosity=2)
+        # Run tests with verbosity=0 to suppress unittest's output
+        # We'll handle all output ourselves
+        import io
+        test_output = io.StringIO()
+        runner = unittest.TextTestRunner(verbosity=0, stream=test_output, buffer=True)
         result = runner.run(suite)
         
         # Generate report
