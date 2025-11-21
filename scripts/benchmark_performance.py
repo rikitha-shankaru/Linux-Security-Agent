@@ -99,13 +99,20 @@ class PerformanceBenchmark:
         """Clean up agent process"""
         if self.agent_proc:
             try:
-                self.agent_proc.terminate()
-                self.agent_proc.wait(timeout=5)
-            except:
-                try:
-                    self.agent_proc.kill()
-                except:
-                    pass
+                # Check if process is still running
+                if self.agent_proc.poll() is None:
+                    self.agent_proc.terminate()
+                    try:
+                        self.agent_proc.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        self.agent_proc.kill()
+                        self.agent_proc.wait()
+            except Exception:
+                # Ignore cleanup errors
+                pass
+            finally:
+                self.agent_proc = None
+                self.agent_process = None
     
     def benchmark_cpu_overhead(self, duration: int = 60) -> Dict[str, Any]:
         """Measure CPU overhead of running agent"""
