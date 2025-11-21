@@ -136,43 +136,48 @@ temp_dir.rmdir()
     print(f"{GREEN}✅ High-frequency pattern executed (300 file ops, longer runtime){RESET}")
 
 def simulate_suspicious_file_patterns():
-    """Simulate suspicious file access patterns"""
+    """Simulate suspicious file access patterns with high-risk operations"""
     print_attack(
         "Suspicious File Patterns",
-        "Bursty file I/O with unusual patterns"
+        "Bursty file I/O with chmod/chown operations (medium-high risk)"
     )
     
     temp_dir = Path('/tmp/suspicious_pattern')
     temp_dir.mkdir(exist_ok=True)
     
     try:
-        # Create and delete files in rapid succession (increased from 50 to 200)
+        # Create and delete files with chmod/chown (medium risk: 3 points each)
         for i in range(200):
             # Create file
             test_file = temp_dir / f"suspicious_{i}.dat"
-            # Larger files to generate more I/O
             test_file.write_bytes(b'x' * 10240)  # 10KB file
             
             # Read it back multiple times
             for _ in range(3):
                 test_file.read_bytes()
             
-            # Also do stat, chmod, etc.
+            # Generate chmod/chown syscalls (medium risk)
+            try:
+                os.chmod(test_file, 0o777)  # chmod syscall
+                os.chown(test_file, 0, 0)  # chown syscall (may fail but generates syscall)
+            except:
+                pass
+            
+            # Also do stat
             os.stat(test_file)
-            os.chmod(test_file, 0o755)
             
             # Delete it
             test_file.unlink()
             
             # Minimal delay for bursty pattern
             if i % 20 == 0:
-                time.sleep(0.001)
+                time.sleep(0.01)
         
         temp_dir.rmdir()
     except Exception as e:
         print(f"{RED}Error: {e}{RESET}")
     
-    print(f"{GREEN}✅ Suspicious file pattern executed (200 files){RESET}")
+    print(f"{GREEN}✅ Suspicious file pattern executed (200 files with chmod/chown){RESET}")
 
 def simulate_process_churn():
     """Simulate rapid process creation/termination"""
