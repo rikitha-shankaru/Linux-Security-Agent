@@ -181,6 +181,30 @@ class TestAutomatedAttacks(unittest.TestCase):
         self.agent_stats_before: Dict[str, Any] = {}
         self.agent_stats_after: Dict[str, Any] = {}
         
+        # Kill any existing agent processes before starting
+        self._kill_existing_agents()
+    
+    def _kill_existing_agents(self):
+        """Kill any existing agent processes"""
+        try:
+            # Find and kill any running simple_agent.py processes
+            result = subprocess.run(
+                ['pgrep', '-f', 'simple_agent.py'],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                pids = result.stdout.strip().split('\n')
+                for pid in pids:
+                    if pid:
+                        try:
+                            subprocess.run(['sudo', 'kill', '-9', pid], 
+                                         capture_output=True, timeout=2)
+                        except:
+                            pass
+        except:
+            pass
+    
     def tearDown(self):
         """Clean up after tests"""
         if self.agent:
@@ -198,6 +222,9 @@ class TestAutomatedAttacks(unittest.TestCase):
                     self.agent_process.kill()
                 except:
                     pass
+        
+        # Clean up any remaining processes
+        self._kill_existing_agents()
     
     def start_agent_in_background(self):
         """Start agent in background process"""
