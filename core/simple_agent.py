@@ -243,12 +243,16 @@ class SimpleSecurityAgent:
             table.add_column("Anomaly", style="magenta")
             table.add_column("Syscalls", style="blue")
             
-            # Sort by risk score
+            # Sort by risk score, but also show recently active processes
+            current_time = time.time()
             sorted_procs = sorted(
                 self.processes.items(),
-                key=lambda x: x[1]['risk_score'],
+                key=lambda x: (
+                    x[1]['risk_score'],  # Primary: risk score
+                    current_time - x[1].get('last_update', 0)  # Secondary: recency (negative for reverse)
+                ),
                 reverse=True
-            )[:20]  # Top 20
+            )[:30]  # Top 30 (increased to show more processes)
             
             # Add processes or "Waiting for data..." message
             if sorted_procs:
@@ -256,9 +260,18 @@ class SimpleSecurityAgent:
                     risk = proc['risk_score']
                     risk_style = "red" if risk >= 50 else "yellow" if risk >= 30 else "green"
                     
+                    # Check if process is still alive (recently active)
+                    time_since_update = current_time - proc.get('last_update', 0)
+                    is_active = time_since_update < 5.0  # Active if updated in last 5 seconds
+                    
+                    # Highlight recently active processes
+                    process_name = proc['name'][:30]
+                    if not is_active and time_since_update < 30:
+                        process_name = f"{process_name} (recent)"
+                    
                     table.add_row(
                         str(pid),
-                        proc['name'][:30],
+                        process_name,
                         f"[{risk_style}]{risk:.1f}[/]",
                         f"{proc['anomaly_score']:.2f}",
                         str(len(proc['syscalls']))

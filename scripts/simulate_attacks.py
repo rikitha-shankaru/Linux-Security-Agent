@@ -82,30 +82,46 @@ def simulate_high_frequency_attack():
         "Rapid syscall bursts to trigger rate-based detection"
     )
     
-    # Rapid file operations - MORE AGGRESSIVE
-    temp_dir = Path('/tmp/attack_sim')
-    temp_dir.mkdir(exist_ok=True)
+    # Run in a separate process that stays alive longer
+    import subprocess
+    attack_script = '''
+import os
+import time
+from pathlib import Path
+
+temp_dir = Path("/tmp/attack_sim")
+temp_dir.mkdir(exist_ok=True)
+
+# Generate syscalls over 3-4 seconds to be visible
+for i in range(300):
+    test_file = temp_dir / f"test_{i}.txt"
+    test_file.write_text(f"Attack simulation data {i}\\n" * 100)
+    test_file.read_text()
+    test_file.chmod(0o755)
+    os.stat(test_file)
+    if i % 30 == 0:
+        time.sleep(0.1)  # Slower to keep process alive
+
+# Cleanup
+for file in temp_dir.glob("test_*.txt"):
+    file.unlink()
+temp_dir.rmdir()
+'''
     
     try:
-        # Create MANY files rapidly (increased from 100 to 500)
-        for i in range(500):
-            test_file = temp_dir / f"test_{i}.txt"
-            test_file.write_text(f"Attack simulation data {i}\n" * 100)  # Larger files
-            test_file.read_text()
-            # Also do stat, chmod, etc. to generate more syscalls
-            test_file.chmod(0o755)
-            os.stat(test_file)
-            if i % 50 == 0:
-                time.sleep(0.001)  # Minimal delay
-        
-        # Rapid cleanup
-        for file in temp_dir.glob("test_*.txt"):
-            file.unlink()
-        temp_dir.rmdir()
+        # Run in separate process that stays alive
+        proc = subprocess.Popen(
+            [sys.executable, '-c', attack_script],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        proc.wait(timeout=10)  # Wait for completion
+    except subprocess.TimeoutExpired:
+        proc.kill()
     except Exception as e:
         print(f"{RED}Error: {e}{RESET}")
     
-    print(f"{GREEN}✅ High-frequency pattern executed (500 file ops){RESET}")
+    print(f"{GREEN}✅ High-frequency pattern executed (300 file ops, longer runtime){RESET}")
 
 def simulate_suspicious_file_patterns():
     """Simulate suspicious file access patterns"""
@@ -153,21 +169,23 @@ def simulate_process_churn():
         "Rapid fork/exec patterns"
     )
     
-    # Spawn MANY short-lived processes (increased from 20 to 100)
+    # Spawn MANY processes that run LONGER to be visible in dashboard
     processes = []
-    for i in range(100):
-        # Each process does file I/O to generate more syscalls
-        # Fix: Use string formatting that works correctly
+    for i in range(50):  # Reduced count but longer runtime
+        # Each process does file I/O and runs for 2-3 seconds
         script_code = f'''
 import os
 import time
-# Generate syscalls
-for j in range(10):
+# Generate syscalls over longer period
+for j in range(20):
     filename = "/tmp/churn_{i}_" + str(j) + ".tmp"
     with open(filename, "w") as f:
-        f.write("test")
+        f.write("test " * 100)  # Larger writes
+    with open(filename, "r") as f:
+        f.read()
+    os.stat(filename)
     os.remove(filename)
-time.sleep(0.01)
+    time.sleep(0.1)  # Slower to keep process alive longer
 '''
         proc = subprocess.Popen(
             [sys.executable, '-c', script_code],
@@ -175,17 +193,16 @@ time.sleep(0.01)
             stderr=subprocess.DEVNULL
         )
         processes.append(proc)
-        if i % 10 == 0:
-            time.sleep(0.01)  # Small delay every 10 processes
+        time.sleep(0.05)  # Small delay between spawns
     
-    # Wait for all to complete
+    # Wait for all to complete (with longer timeout)
     for proc in processes:
         try:
-            proc.wait(timeout=2)
+            proc.wait(timeout=5)  # Increased timeout
         except subprocess.TimeoutExpired:
             proc.kill()
     
-    print(f"{GREEN}✅ Process churn pattern executed (100 processes){RESET}")
+    print(f"{GREEN}✅ Process churn pattern executed (50 processes, longer runtime){RESET}")
 
 def simulate_network_scanning():
     """Simulate network scanning pattern"""
