@@ -18,6 +18,7 @@ Essential documentation for the Linux Security Agent.
 ## 📊 Project Information
 
 - **[GAP_ANALYSIS.md](GAP_ANALYSIS.md)** - Known limitations and future improvements
+- **[PROFESSOR_TECHNICAL_ANSWERS.md](PROFESSOR_TECHNICAL_ANSWERS.md)** - Technical Q&A for professor
 
 ## 🔬 Research
 
