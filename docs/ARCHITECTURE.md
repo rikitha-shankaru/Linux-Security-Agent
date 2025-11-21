@@ -344,25 +344,25 @@ python3 production_agent.py --config production.json
 
 > **Note**: This comparison highlights what this research project demonstrates vs. production enterprise solutions. This is not a production-ready replacement for commercial EDR systems.
 
-| Feature | This System (Research) | CrowdStrike Falcon | SentinelOne | Carbon Black |
-|---------|------------------------|-------------------|-------------|--------------|
-| **Purpose** | Academic Research / Learning | Production EDR | Production EDR | Production EDR |
-| **Cost** | Free (Open Source) | ~$8.99/endpoint/month | ~$2.99/endpoint/month | ~$7.00/endpoint/month |
-| **Production Ready** | ❌ Research Prototype | ✅ Enterprise-Grade | ✅ Enterprise-Grade | ✅ Enterprise-Grade |
-| **Real-time Syscall Monitoring** | ✅ (eBPF/auditd) | ✅ (Kernel-level) | ✅ (Kernel-level) | ✅ (Kernel-level) |
-| **ML Anomaly Detection** | ✅ (Basic ensemble) | ✅ (Advanced AI) | ✅ (Advanced AI) | ✅ (Advanced AI) |
-| **MITRE ATT&CK Mapping** | ✅ (Basic mapping) | ✅ (Full coverage) | ✅ (Full coverage) | ✅ (Full coverage) |
-| **Platform Support** | ✅ Linux (eBPF/auditd) | ✅ Windows, Linux, Mac | ✅ Windows, Linux, Mac | ✅ Windows, Linux, Mac |
-| **Customization** | ✅ Full source code access | ⚠️ Limited (config only) | ⚠️ Limited (config only) | ⚠️ Limited (config only) |
-| **Data Privacy** | ✅ Local-only (no cloud) | ⚠️ Cloud-based | ⚠️ Cloud-based | ⚠️ Cloud-based |
-| **Open Source** | ✅ Yes | ❌ No | ❌ No | ❌ No |
-| **Threat Intelligence** | ⚠️ Basic (static) | ✅ Real-time feeds | ✅ Real-time feeds | ✅ Real-time feeds |
-| **Incident Response** | ⚠️ Basic (manual) | ✅ Automated workflows | ✅ Automated workflows | ✅ Automated workflows |
-| **Scalability** | ⚠️ Single endpoint | ✅ Millions of endpoints | ✅ Millions of endpoints | ✅ Millions of endpoints |
-| **Support & Maintenance** | ⚠️ Self-supported | ✅ 24/7 enterprise support | ✅ 24/7 enterprise support | ✅ 24/7 enterprise support |
-| **Compliance** | ❌ Not certified | ✅ SOC2, ISO, FedRAMP | ✅ SOC2, ISO, FedRAMP | ✅ SOC2, ISO, FedRAMP |
-| **Academic Value** | ✅ Excellent (learning/research) | ⚠️ Limited (black box) | ⚠️ Limited (black box) | ⚠️ Limited (black box) |
-| **Code Transparency** | ✅ Full visibility | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary |
+| Feature                          | This System (Research)              | CrowdStrike Falcon          | SentinelOne                 | Carbon Black                 |
+|----------------------------------|-------------------------------------|-----------------------------|-----------------------------|------------------------------|
+| **Purpose**                      | Academic Research / Learning        | Production EDR              | Production EDR              | Production EDR               |
+| **Cost**                         | Free (Open Source)                  | ~$8.99/endpoint/month       | ~$2.99/endpoint/month        | ~$7.00/endpoint/month         |
+| **Production Ready**             | ❌ Research Prototype                | ✅ Enterprise-Grade         | ✅ Enterprise-Grade          | ✅ Enterprise-Grade           |
+| **Real-time Syscall Monitoring** | ✅ (eBPF/auditd)                    | ✅ (Kernel-level)           | ✅ (Kernel-level)            | ✅ (Kernel-level)            |
+| **ML Anomaly Detection**         | ✅ (Basic ensemble)                  | ✅ (Advanced AI)             | ✅ (Advanced AI)             | ✅ (Advanced AI)              |
+| **MITRE ATT&CK Mapping**         | ✅ (Basic mapping)                  | ✅ (Full coverage)          | ✅ (Full coverage)           | ✅ (Full coverage)            |
+| **Platform Support**             | ✅ Linux (eBPF/auditd)              | ✅ Windows, Linux, Mac       | ✅ Windows, Linux, Mac        | ✅ Windows, Linux, Mac        |
+| **Customization**                | ✅ Full source code access           | ⚠️ Limited (config only)     | ⚠️ Limited (config only)     | ⚠️ Limited (config only)      |
+| **Data Privacy**                 | ✅ Local-only (no cloud)            | ⚠️ Cloud-based              | ⚠️ Cloud-based               | ⚠️ Cloud-based               |
+| **Open Source**                  | ✅ Yes                              | ❌ No                        | ❌ No                         | ❌ No                         |
+| **Threat Intelligence**           | ⚠️ Basic (static)                   | ✅ Real-time feeds           | ✅ Real-time feeds            | ✅ Real-time feeds            |
+| **Incident Response**             | ⚠️ Basic (manual)                   | ✅ Automated workflows       | ✅ Automated workflows        | ✅ Automated workflows        |
+| **Scalability**                  | ⚠️ Single endpoint                  | ✅ Millions of endpoints      | ✅ Millions of endpoints       | ✅ Millions of endpoints       |
+| **Support & Maintenance**        | ⚠️ Self-supported                   | ✅ 24/7 enterprise support  | ✅ 24/7 enterprise support   | ✅ 24/7 enterprise support   |
+| **Compliance**                   | ❌ Not certified                    | ✅ SOC2, ISO, FedRAMP        | ✅ SOC2, ISO, FedRAMP         | ✅ SOC2, ISO, FedRAMP         |
+| **Academic Value**               | ✅ Excellent (learning/research)     | ⚠️ Limited (black box)      | ⚠️ Limited (black box)       | ⚠️ Limited (black box)        |
+| **Code Transparency**            | ✅ Full visibility                  | ❌ Proprietary               | ❌ Proprietary                | ❌ Proprietary                |
 
 ### **Key Takeaways**
 
