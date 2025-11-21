@@ -76,55 +76,129 @@ def evaluate_models(detector: EnhancedAnomalyDetector,
     print("🔍 Running Model Evaluation...")
     print("=" * 70)
     
-    # Evaluate at different thresholds
+    # OPTIMIZATION: Pre-compute all anomaly scores once
+    print("\n📊 Computing anomaly scores for all samples...")
+    print("   (This may take a minute - computing scores for 300 samples)")
+    
+    normal_scores = []
+    total_normal = len(normal_samples)
+    for i, (syscalls, process_info) in enumerate(normal_samples):
+        if (i + 1) % 50 == 0:
+            print(f"   Normal samples: {i+1}/{total_normal} ({((i+1)/total_normal)*100:.1f}%)")
+        result = detector.detect_anomaly_ensemble(syscalls, process_info)
+        normal_scores.append(result.anomaly_score)
+    
+    anomalous_scores = []
+    total_anomalous = len(anomalous_samples)
+    for i, (syscalls, process_info) in enumerate(anomalous_samples):
+        if (i + 1) % 25 == 0:
+            print(f"   Anomalous samples: {i+1}/{total_anomalous} ({((i+1)/total_anomalous)*100:.1f}%)")
+        result = detector.detect_anomaly_ensemble(syscalls, process_info)
+        anomalous_scores.append(result.anomaly_score)
+    
+    print("   ✅ All scores computed!")
+    
+    # Now evaluate at different thresholds using pre-computed scores
+    print("\n📈 Evaluating at different thresholds...")
     thresholds = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
     results = []
     
     for threshold in thresholds:
-        metrics = evaluator.evaluate_on_dataset(
-            normal_samples, 
-            anomalous_samples, 
-            threshold=threshold
-        )
+        # Calculate metrics using pre-computed scores
+        tp = sum(1 for score in anomalous_scores if score >= threshold)
+        fn = len(anomalous_scores) - tp
+        fp = sum(1 for score in normal_scores if score >= threshold)
+        tn = len(normal_scores) - fp
+        
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+        accuracy = (tp + tn) / (tp + fp + tn + fn) if (tp + fp + tn + fn) > 0 else 0.0
+        
         results.append({
             'threshold': threshold,
-            'precision': metrics.precision,
-            'recall': metrics.recall,
-            'f1_score': metrics.f1_score,
-            'accuracy': metrics.accuracy,
-            'true_positives': metrics.true_positives,
-            'false_positives': metrics.false_positives,
-            'true_negatives': metrics.true_negatives,
-            'false_negatives': metrics.false_negatives
+            'precision': precision,
+            'recall': recall,
+            'f1_score': f1_score,
+            'accuracy': accuracy,
+            'true_positives': tp,
+            'false_positives': fp,
+            'true_negatives': tn,
+            'false_negatives': fn
         })
+        print(f"   Threshold {threshold:.1f}: F1={f1_score:.3f}, Precision={precision:.3f}, Recall={recall:.3f}")
     
     # Find optimal threshold
-    optimal = evaluator.find_optimal_threshold(
-        normal_samples,
-        anomalous_samples,
-        threshold_range=(10.0, 80.0),
-        step=5.0
-    )
+    print("\n🎯 Finding optimal threshold...")
+    best_threshold = 50.0
+    best_f1 = 0.0
+    threshold_range = np.arange(10.0, 80.0, 5.0)
+    
+    for threshold in threshold_range:
+        tp = sum(1 for score in anomalous_scores if score >= threshold)
+        fn = len(anomalous_scores) - tp
+        fp = sum(1 for score in normal_scores if score >= threshold)
+        
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+        
+        if f1_score > best_f1:
+            best_f1 = f1_score
+            best_threshold = threshold
+    
+    print(f"   ✅ Optimal threshold: {best_threshold:.1f} (F1={best_f1:.3f})")
     
     # Generate confusion matrix at optimal threshold
-    confusion_matrix = evaluator.generate_confusion_matrix(
-        normal_samples,
-        anomalous_samples,
-        threshold=optimal['optimal_threshold']
-    )
+    print("\n📋 Generating confusion matrix...")
+    tp = sum(1 for score in anomalous_scores if score >= best_threshold)
+    fn = len(anomalous_scores) - tp
+    fp = sum(1 for score in normal_scores if score >= best_threshold)
+    tn = len(normal_scores) - fp
     
-    # Generate ROC curve data
-    roc_data = evaluator.calculate_roc_curve(
-        normal_samples,
-        anomalous_samples,
-        num_thresholds=50
-    )
+    confusion_matrix = {
+        'true_positives': tp,
+        'false_positives': fp,
+        'true_negatives': tn,
+        'false_negatives': fn
+    }
     
-    # Calculate AUC (simplified - using trapezoidal rule)
-    auc = 0.0
-    if len(roc_data['fpr']) > 1:
-        for i in range(1, len(roc_data['fpr'])):
-            auc += (roc_data['fpr'][i] - roc_data['fpr'][i-1]) * roc_data['tpr'][i]
+    # Generate ROC curve data (using pre-computed scores)
+    print("\n📉 Generating ROC curve...")
+    all_scores = normal_scores + anomalous_scores
+    min_score = min(all_scores)
+    max_score = max(all_scores)
+    roc_thresholds = np.linspace(min_score, max_score, 30)  # Reduced from 50
+    
+    tpr = []
+    fpr = []
+    
+    for threshold in roc_thresholds:
+        tp = sum(1 for score in anomalous_scores if score >= threshold)
+        fn = len(anomalous_scores) - tp
+        fp = sum(1 for score in normal_scores if score >= threshold)
+        
+        tpr_val = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        fpr_val = fp / len(normal_scores) if len(normal_scores) > 0 else 0.0
+        
+        tpr.append(tpr_val)
+        fpr.append(fpr_val)
+    
+    # Calculate AUC using trapezoidal rule
+    auc = np.trapz(tpr, fpr)
+    print(f"   ✅ ROC AUC: {auc:.4f}")
+    
+    optimal = {
+        'optimal_threshold': best_threshold,
+        'optimal_f1': best_f1
+    }
+    
+    roc_data = {
+        'true_positive_rates': tpr,
+        'false_positive_rates': fpr,
+        'thresholds': roc_thresholds.tolist(),
+        'auc': float(auc)
+    }
     
     return {
         'threshold_results': results,
