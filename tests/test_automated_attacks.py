@@ -313,10 +313,10 @@ class TestAutomatedAttacks(unittest.TestCase):
         # Exact hard-coded format to match desired output
         print("   Status:            " + status)
         if executed:
-            # All values start at same column (after "            ")
-            print("   Risk Score:        " + f"{risk_score:>6.2f}")
-            print("   Anomaly Score:     " + f"{anomaly_score:>6.2f}")
-            print("   Execution Time:    " + f"{execution_time:>6.2f}s")
+            # Format numbers without leading spaces - just the value
+            print("   Risk Score:        " + f"{risk_score:.2f}")
+            print("   Anomaly Score:     " + f"{anomaly_score:.2f}")
+            print("   Execution Time:    " + f"{execution_time:.2f}s")
         print()  # Blank line for spacing
         sys.stdout.flush()
         
