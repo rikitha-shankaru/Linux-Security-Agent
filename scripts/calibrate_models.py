@@ -80,6 +80,18 @@ Examples:
         
     elif args.normal and args.anomalous:
         print("📂 Loading normal and anomalous data...")
+        
+        # Check if files exist first
+        if not os.path.exists(args.normal):
+            print(f"❌ File not found: {args.normal}")
+            print(f"   💡 Tip: Use --file option with existing dataset, or create {args.normal}")
+            return 1
+        
+        if not os.path.exists(args.anomalous):
+            print(f"❌ File not found: {args.anomalous}")
+            print(f"   💡 Tip: Create attack dataset or use --file option with normal data only")
+            return 1
+        
         normal_data = detector.load_training_data_from_file(args.normal)
         anomalous_data = detector.load_training_data_from_file(args.anomalous)
         
