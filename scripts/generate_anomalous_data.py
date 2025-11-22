@@ -9,6 +9,7 @@ import sys
 import os
 import json
 import random
+import argparse
 from pathlib import Path
 from typing import List, Dict, Tuple
 
@@ -159,6 +160,5 @@ def main():
 
 
 if __name__ == "__main__":
-    import argparse
     sys.exit(main())
 
