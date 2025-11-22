@@ -224,8 +224,8 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                     os.dup2(old_stderr_fd, sys.stderr.fileno())
                     os.close(old_stderr_fd)
                     os.close(read_fd)
-                except:
-                    pass
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to restore stderr file descriptor during cleanup: {cleanup_error}")
             
             logger.info("eBPF program loaded successfully")
             

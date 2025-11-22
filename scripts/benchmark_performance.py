@@ -72,8 +72,10 @@ for _ in range(100):
         try:
             p.terminate()
             p.wait(timeout=2)
-        except:
+        except subprocess.TimeoutExpired:
             p.kill()
+        except (OSError, ProcessLookupError):
+            pass  # Process may already be dead
 
 class PerformanceBenchmark:
     """Comprehensive performance benchmarking"""
@@ -520,8 +522,8 @@ def main():
         if benchmark.agent_process:
             try:
                 benchmark.agent_process.terminate()
-            except:
-                pass
+            except (OSError, ProcessLookupError):
+                pass  # Process may already be dead
     except Exception as e:
         print(f"\n❌ Error during benchmarking: {e}")
         import traceback

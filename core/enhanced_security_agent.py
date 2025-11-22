@@ -2521,7 +2521,8 @@ def main():
                         view = Panel(Text(f"Dashboard error: {e}\nPress Ctrl+C to exit.", style="red"))
                         live = Live(view, refresh_per_second=2, screen=False)
                         live.start()
-                    except:
+                    except Exception as fallback_error:
+                        logger.error(f"Failed to display fallback error view: {fallback_error}")
                         raise
                 
                 while agent.running and not exit_requested.is_set():

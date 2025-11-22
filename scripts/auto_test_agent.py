@@ -9,7 +9,12 @@ import time
 import subprocess
 import signal
 import threading
+import logging
 from pathlib import Path
+
+# Setup logging
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger('agent_tester')
 
 # Colors
 GREEN = '\033[92m'
@@ -104,8 +109,8 @@ class AgentTester:
                 sock.settimeout(0.1)
                 sock.connect(('127.0.0.1', port))
                 sock.close()
-            except:
-                pass
+            except (socket.error, ConnectionRefusedError, OSError) as e:
+                logger.debug(f"Expected connection failure on port {port}: {e}")
     
     def check_agent_output(self):
         """Check if agent detected attacks by reading log file"""
@@ -208,8 +213,9 @@ class AgentTester:
                         lines = f.readlines()
                         for line in lines[-20:]:
                             print(line.rstrip())
-                except:
-                    print(f"{RED}Could not read log file{RESET}")
+                except (IOError, OSError) as e:
+                    logger.warning(f"Could not read log file: {e}")
+                    print(f"{RED}Could not read log file: {e}{RESET}")
                 print(f"{BLUE}{'-'*60}{RESET}")
             
             # Summary
@@ -230,8 +236,8 @@ class AgentTester:
             try:
                 if os.path.exists('/tmp/agent_test_output.log'):
                     os.remove('/tmp/agent_test_output.log')
-            except:
-                pass
+            except (OSError, PermissionError) as e:
+                logger.debug(f"Could not remove log file (non-critical): {e}")
         
         return all(result[1] for result in self.test_results)
 

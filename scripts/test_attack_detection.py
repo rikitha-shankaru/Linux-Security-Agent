@@ -66,8 +66,8 @@ def test_attack_detection():
             sock.settimeout(0.1)
             sock.connect(('127.0.0.1', port))
             sock.close()
-        except:
-            pass
+        except (socket.error, ConnectionRefusedError, OSError):
+            pass  # Expected - port not open
     elapsed = time.time() - start_time
     
     print(f"   ✅ Scanned 20 ports in {elapsed:.2f}s")
@@ -77,8 +77,8 @@ def test_attack_detection():
     # Cleanup
     try:
         temp_dir.rmdir()
-    except:
-        pass
+    except (OSError, FileNotFoundError):
+        pass  # Non-critical cleanup failure
     
     print("=" * 60)
     print("✅ Attack patterns generated!")

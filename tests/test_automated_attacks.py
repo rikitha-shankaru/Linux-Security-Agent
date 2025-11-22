@@ -130,8 +130,8 @@ for j in range(20):
             test_file.chmod(0o777)
             try:
                 os.chown(test_file, 0, 0)
-            except:
-                pass
+            except (OSError, PermissionError):
+                pass  # Expected failure without root
             os.stat(test_file)
         
         for file in temp_dir.glob("susp_*.txt"):
@@ -144,14 +144,18 @@ for j in range(20):
         try:
             subprocess.run(['strace', '-e', 'trace=execve', 'echo', 'test'],
                           capture_output=True, timeout=2)
-        except:
-            pass
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass  # strace may not be available
+        except Exception:
+            pass  # Other errors expected
         
         try:
             subprocess.run(['gdb', '--batch', '--ex', 'quit'],
                           capture_output=True, timeout=2)
-        except:
-            pass
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass  # gdb may not be available
+        except Exception:
+            pass  # Other errors expected
 
 
 class AutomatedAttackTestRunner:
@@ -176,10 +180,10 @@ class AutomatedAttackTestRunner:
                         try:
                             subprocess.run(['sudo', 'kill', '-9', pid], 
                                          capture_output=True, timeout=2)
-                        except:
-                            pass
-        except:
-            pass
+                        except (subprocess.TimeoutExpired, subprocess.SubprocessError):
+                            pass  # Process may already be dead
+        except (subprocess.SubprocessError, ValueError):
+            pass  # pgrep may fail if no processes found
     
     def start_agent(self):
         """Start agent in background"""
@@ -200,11 +204,13 @@ class AutomatedAttackTestRunner:
             try:
                 self.agent_process.terminate()
                 self.agent_process.wait(timeout=5)
-            except:
+            except subprocess.TimeoutExpired:
                 try:
                     self.agent_process.kill()
-                except:
-                    pass
+                except (OSError, ProcessLookupError):
+                    pass  # Process may already be dead
+            except (OSError, ProcessLookupError):
+                pass  # Process may already be dead
         self._kill_existing_agents()
     
     def run_attack_test(self, attack_name: str, attack_type: str, attack_func) -> AttackTestResult:

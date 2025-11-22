@@ -205,8 +205,8 @@ class ResponseHandler:
                 os.kill(pid, signal.SIGTERM)
                 import time
                 time.sleep(1)  # Give process time to exit
-            except:
-                pass
+            except (OSError, ProcessLookupError) as sigterm_error:
+                logger.debug(f"Failed to send SIGTERM to PID {pid} (will try SIGKILL): {sigterm_error}")
             
             # Force kill with SIGKILL
             if self._process_exists(pid):

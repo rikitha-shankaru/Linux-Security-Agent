@@ -11,7 +11,12 @@ import time
 import subprocess
 import signal
 import random
+import logging
 from pathlib import Path
+
+# Setup logging for attack simulation
+logging.basicConfig(level=logging.WARNING)  # Only log warnings/errors
+logger = logging.getLogger('attack_simulator')
 
 # Colors for output
 RED = '\033[91m'
@@ -57,21 +62,21 @@ with open(test_file, 'w') as f:
 try:
     os.chmod(test_file, 0o777)  # chmod syscall
     os.chown(test_file, 0, 0)  # chown syscall (will fail but generates syscall)
-except:
-    pass
+except (OSError, PermissionError) as e:
+    logger.debug(f"Expected failure in chmod/chown (generates syscall): {e}")
 
 # Generate mount/unmount attempts (medium risk: 4 points)
 try:
     # Try to remount /tmp (will fail but generates mount syscall)
     os.system('mount -o remount /tmp 2>/dev/null')
-except:
-    pass
+except Exception as e:
+    logger.debug(f"Expected failure in mount (generates syscall): {e}")
 
 # Cleanup
 try:
     os.remove(test_file)
-except:
-    pass
+except (OSError, FileNotFoundError) as e:
+    logger.debug(f"Cleanup failed (non-critical): {e}")
 """
     
     # Run the script multiple times to create pattern
@@ -160,8 +165,8 @@ def simulate_suspicious_file_patterns():
             try:
                 os.chmod(test_file, 0o777)  # chmod syscall
                 os.chown(test_file, 0, 0)  # chown syscall (may fail but generates syscall)
-            except:
-                pass
+            except (OSError, PermissionError) as e:
+                logger.debug(f"Expected failure in chmod/chown (generates syscall): {e}")
             
             # Also do stat
             os.stat(test_file)
@@ -263,8 +268,11 @@ def simulate_ptrace_attempts():
             )
             try:
                 child.wait(timeout=2)
-            except:
+            except subprocess.TimeoutExpired:
                 child.kill()
+                logger.debug("strace process timeout, killed")
+            except Exception as e:
+                logger.debug(f"strace process error: {e}")
             
             # Alternative: use gdb (also generates ptrace)
             try:
@@ -275,8 +283,10 @@ def simulate_ptrace_attempts():
                     timeout=2
                 )
                 gdb_cmd.wait(timeout=2)
-            except:
-                pass
+            except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+                logger.debug(f"gdb not available or timeout (expected): {e}")
+            except Exception as e:
+                logger.debug(f"gdb process error: {e}")
             
             time.sleep(0.1)
     except FileNotFoundError:
@@ -290,7 +300,7 @@ def simulate_ptrace_attempts():
             )
             proc.wait(timeout=1)
     except Exception as e:
-        pass
+        logger.debug(f"Fallback ptrace simulation error (non-critical): {e}")
     
     print(f"{GREEN}✅ Ptrace pattern simulated (high-risk syscalls generated){RESET}")
 
