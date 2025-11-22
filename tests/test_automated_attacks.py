@@ -305,17 +305,17 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with proper alignment - EXACT FIXED FORMAT
+        # Print result with proper alignment - TABLE FORMAT
         if error:
             print(f"   ⚠️  Attack execution timeout")
         
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        # Use exact fixed strings - no f-strings for spacing
-        print("   Status:            " + status)
+        # Use table format with fixed column widths
+        print(f"   {'Status:':<18} {status}")
         if executed:
-            print(f"   Risk Score:        {risk_score:6.2f}")
-            print(f"   Anomaly Score:     {anomaly_score:6.2f}")
-            print(f"   Execution Time:    {execution_time:6.2f}s")
+            print(f"   {'Risk Score:':<18} {risk_score:>7.2f}")
+            print(f"   {'Anomaly Score:':<18} {anomaly_score:>7.2f}")
+            print(f"   {'Execution Time:':<18} {execution_time:>7.2f}s")
         print()  # Blank line for spacing
         sys.stdout.flush()
         
