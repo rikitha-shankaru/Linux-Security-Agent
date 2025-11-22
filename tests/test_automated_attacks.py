@@ -432,49 +432,43 @@ class AutomatedAttackTestRunner:
         errors = 0
         test_details = []
         
-        # Custom stream that filters unittest output but allows our prints
+        # Custom stream that completely filters unittest output
         class UnittestFilter:
             def __init__(self, original):
                 self.original = original
-                self.buffer = ""  # Buffer to catch multi-chunk unittest output
+                self.buffer = ""
             def write(self, text):
-                # Remove carriage returns that cause overwriting
+                # Remove all carriage returns
                 text = text.replace('\r', '')
                 
-                # Add to buffer to catch multi-chunk output
+                # Add to buffer
                 self.buffer += text
                 
-                # Check if buffer contains complete unittest progress line
-                if '\n' in self.buffer:
-                    lines = self.buffer.split('\n')
-                    # Process all but last line (might be incomplete)
-                    for line in lines[:-1]:
-                        # Strip any remaining control characters
-                        line = line.strip()
-                        # Check if this line is unittest output
-                        is_unittest = any(pattern in line for pattern in [
-                            'test_', ' (tests.', ' (__main__.', 
-                            '...', 'ok', 'FAIL', 'ERROR', 
-                            'Ran ', ' in ', 'OK'
-                        ])
-                        if not is_unittest and line:
-                            # Not unittest - write it
-                            self.original.write(line + '\n')
-                    # Keep last line in buffer (might be incomplete)
-                    self.buffer = lines[-1]
-                # If no newline, keep buffering
+                # Process complete lines
+                while '\n' in self.buffer:
+                    line, self.buffer = self.buffer.split('\n', 1)
+                    line = line.strip()
+                    
+                    # Check if this is unittest output - be very aggressive
+                    is_unittest = (
+                        line.startswith('test_') or
+                        ' (tests.' in line or
+                        ' (__main__.' in line or
+                        line.endswith('...') or
+                        line == 'ok' or
+                        line == 'FAIL' or
+                        line == 'ERROR' or
+                        line.startswith('Ran ') or
+                        ' in ' in line or
+                        line == 'OK' or
+                        line == ''  # Empty lines from unittest
+                    )
+                    
+                    # Only write if it's NOT unittest output
+                    if not is_unittest:
+                        self.original.write(line + '\n')
             def flush(self):
-                # Flush any remaining buffer if it's not unittest output
-                if self.buffer:
-                    self.buffer = self.buffer.strip()
-                    is_unittest = any(pattern in self.buffer for pattern in [
-                        'test_', ' (tests.', ' (__main__.', 
-                        '...', 'ok', 'FAIL', 'ERROR', 
-                        'Ran ', ' in ', 'OK'
-                    ])
-                    if not is_unittest and self.buffer:
-                        self.original.write(self.buffer)
-                    self.buffer = ""
+                # Don't flush incomplete buffer - might be unittest
                 self.original.flush()
         
         # Install filter before running tests
