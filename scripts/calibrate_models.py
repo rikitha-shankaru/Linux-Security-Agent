@@ -209,13 +209,19 @@ Examples:
     print(f"Expected Calibration Error (ECE): {metrics['ece']:.6f} (lower is better, perfect=0.0)")
     print(f"Calibrated: {metrics['calibrated']}")
     print(f"Samples: {metrics.get('n_samples', len(raw_scores))}")
-    print(f"\n📝 Note: Scores are 0.0000 because:")
-    print(f"   - All samples are normal (label=0)")
-    print(f"   - Model correctly predicts low anomaly scores")
-    print(f"   - Calibrated probabilities are close to 0 (normal)")
-    print(f"   - Brier score = mean((pred - 0)²) ≈ 0 when pred ≈ 0")
-    print(f"\n💡 For meaningful calibration metrics, use both normal AND anomalous data:")
-    print(f"   python3 scripts/calibrate_models.py --normal normal.json --anomalous attacks.json")
+    
+    # Show interpretation based on actual scores
+    if len(set(true_labels)) > 1:  # Both normal and anomalous
+        print(f"\n✅ Calibration is meaningful:")
+        print(f"   - Using both normal (label=0) and anomalous (label=1) data")
+        print(f"   - Calibrated probabilities reflect true anomaly likelihood")
+        print(f"   - Brier score {metrics['brier_score']:.4f} indicates {'good' if metrics['brier_score'] < 0.25 else 'acceptable' if metrics['brier_score'] < 0.5 else 'needs improvement'} calibration")
+    else:
+        print(f"\n📝 Note: Using only {'normal' if all(true_labels) == 0 else 'anomalous'} data:")
+        print(f"   - All samples have label={true_labels[0]}")
+        print(f"   - Calibration maps to single class probability")
+        print(f"   - For full calibration, use both normal AND anomalous data:")
+        print(f"     python3 scripts/calibrate_models.py --normal normal.json --anomalous attacks.json")
     print("=" * 70)
     
     if metrics['brier_score'] < 0.25 and metrics['ece'] < 0.1:
