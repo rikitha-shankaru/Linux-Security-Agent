@@ -250,12 +250,10 @@ class TestAutomatedAttacks(unittest.TestCase):
     def run_attack_test(self, attack_name: str, attack_type: str, 
                        attack_func) -> AttackTestResult:
         """Run a single attack test"""
-        # Clear any previous output
-        sys.stdout.flush()
+        # Print attack header - no extra flushing
         print(f"\n{'='*70}")
         print(f"🔴 Testing Attack: {attack_name}")
         print(f"{'='*70}")
-        sys.stdout.flush()
         
         # Get stats before attack
         stats_before = self.get_agent_stats()
@@ -280,7 +278,6 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         # Wait for agent to process
         print(f"   ⏳ Waiting for agent to process attack (5s)...")
-        sys.stdout.flush()
         time.sleep(5)
         
         # Get stats after attack
@@ -305,20 +302,17 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with EXACT alignment - all values start at column 20
+        # Print result - clean format, no extra spaces
         if error:
             print(f"   ⚠️  Attack execution timeout")
         
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        # All labels padded to 18 chars, then value (starts at column 20)
         print(f"   {'Status:':<18} {status}")
         if executed:
-            # All labels padded to 18 chars, values start at same column
             print(f"   {'Risk Score:':<18} {risk_score:.2f}")
             print(f"   {'Anomaly Score:':<18} {anomaly_score:.2f}")
             print(f"   {'Execution Time:':<18} {execution_time:.2f}s")
         print()  # Blank line for spacing
-        sys.stdout.flush()
         
         return result
     
@@ -411,20 +405,14 @@ class AutomatedAttackTestRunner:
     
     def run_all_tests(self) -> Dict[str, Any]:
         """Run all attack tests and generate report - with clean formatting"""
-        sys.stdout.flush()
         print(f"{'='*70}")
         print("🧪 AUTOMATED ATTACK DETECTION TEST SUITE")
         print(f"{'='*70}")
         print("\nThis will test the agent's ability to detect various attack patterns.")
         print("The agent will run in the background while attacks are executed.\n")
-        sys.stdout.flush()
         
         # Run tests directly - completely bypass unittest output
         test_instance = TestAutomatedAttacks()
-        
-        # Suppress all unittest output by redirecting stdout/stderr
-        import io
-        from contextlib import redirect_stdout, redirect_stderr
         
         test_methods = [
             ('Privilege Escalation', test_instance.test_privilege_escalation),
@@ -440,19 +428,12 @@ class AutomatedAttackTestRunner:
         test_details = []
         
         for test_name, test_method in test_methods:
-            # Redirect unittest's internal output to devnull
-            old_stdout = sys.stdout
-            old_stderr = sys.stderr
-            
             try:
-                # Only redirect during test execution, not our print statements
+                # Set up test instance
                 test_instance.setUp()
                 
-                # Capture any unittest output
-                with open(os.devnull, 'w') as devnull:
-                    # Temporarily redirect only unittest's internal streams
-                    # But keep our stdout for our formatted output
-                    test_method()
+                # Run test method directly - no output redirection
+                test_method()
                 
                 tests_run += 1
             except unittest.SkipTest:
@@ -473,8 +454,6 @@ class AutomatedAttackTestRunner:
                     'error': str(e)
                 })
             finally:
-                sys.stdout = old_stdout
-                sys.stderr = old_stderr
                 try:
                     test_instance.tearDown()
                 except:
@@ -483,7 +462,6 @@ class AutomatedAttackTestRunner:
         success = (failures == 0 and errors == 0)
         
         # Generate report with clean formatting
-        sys.stdout.flush()
         print(f"\n{'='*70}")
         print("📊 TEST SUMMARY")
         print(f"{'='*70}")
@@ -491,7 +469,6 @@ class AutomatedAttackTestRunner:
         print(f"  Failures:    {failures:>3}")
         print(f"  Errors:      {errors:>3}")
         print(f"  Success:     {'✅ YES' if success else '❌ NO'}")
-        sys.stdout.flush()
         
         # Save report
         report_path = project_root / "attack_test_report.json"
