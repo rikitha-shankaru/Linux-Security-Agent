@@ -120,6 +120,8 @@ def save_anomalous_dataset(data: List[Tuple[List[str], Dict]], output_path: str)
 
 
 def main():
+    import argparse
+    
     if not IMPORTS_AVAILABLE:
         print(f"❌ Cannot import required modules: {IMPORT_ERROR}")
         return 1
