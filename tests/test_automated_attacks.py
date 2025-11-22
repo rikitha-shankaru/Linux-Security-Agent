@@ -305,18 +305,18 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with EXACT alignment - match desired format exactly
+        # Print result with EXACT alignment - all values start at column 20
         if error:
             print(f"   ⚠️  Attack execution timeout")
         
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        # Exact hard-coded format to match desired output
-        print("   Status:            " + status)
+        # All labels padded to 18 chars, then value (starts at column 20)
+        print(f"   {'Status:':<18} {status}")
         if executed:
-            # Format numbers without leading spaces - just the value
-            print("   Risk Score:        " + f"{risk_score:.2f}")
-            print("   Anomaly Score:     " + f"{anomaly_score:.2f}")
-            print("   Execution Time:    " + f"{execution_time:.2f}s")
+            # All labels padded to 18 chars, values start at same column
+            print(f"   {'Risk Score:':<18} {risk_score:.2f}")
+            print(f"   {'Anomaly Score:':<18} {anomaly_score:.2f}")
+            print(f"   {'Execution Time:':<18} {execution_time:.2f}s")
         print()  # Blank line for spacing
         sys.stdout.flush()
         
