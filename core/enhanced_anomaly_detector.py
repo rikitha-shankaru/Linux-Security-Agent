@@ -123,6 +123,15 @@ class EnhancedAnomalyDetector:
             'false_positives': 0,
             'model_performance': {}
         }
+        
+        # Model calibration (optional)
+        self.calibrator = None
+        if self.config.get('enable_calibration', False):
+            try:
+                from core.utils.model_calibration import ModelCalibrator
+                self.calibrator = ModelCalibrator()
+            except ImportError:
+                pass  # Calibration optional
     
     def extract_advanced_features(self, syscalls: List[str], process_info: Dict = None) -> np.ndarray:
         """
@@ -474,12 +483,24 @@ class EnhancedAnomalyDetector:
 
         # Final decision
         is_anomaly = anomaly_votes >= (total_models / 2) if total_models > 0 else False
-        confidence = anomaly_votes / total_models if total_models > 0 else 0.0
         
         # Convert to 0-100 risk score and add bounded n-gram contribution
         risk_score = min(100, max(0, ensemble_score * 100))
         ngram_weight = float(self.config.get('ngram_weight', 0.2))  # 0..1
         risk_score = min(100.0, max(0.0, risk_score + 100.0 * ngram_weight * ngram_rarity))
+        
+        # Calculate confidence with calibration if available
+        if self.calibrator and self.calibrator.is_calibrated:
+            calibrated_pred = self.calibrator.predict_calibrated(risk_score)
+            calibrated_score = calibrated_pred.calibrated_score
+            confidence = calibrated_pred.calibrated_probability
+            # Use calibrated score if significantly different
+            if abs(calibrated_score - risk_score) > 5.0:
+                risk_score = calibrated_score
+        else:
+            # Use improved ensemble confidence calculation
+            from core.utils.model_calibration import calculate_ensemble_confidence
+            confidence = calculate_ensemble_confidence(scores, predictions)
         
         # Generate explanation
         explanation = self._generate_explanation(predictions, scores, features)
