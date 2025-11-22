@@ -250,11 +250,10 @@ class TestAutomatedAttacks(unittest.TestCase):
     def run_attack_test(self, attack_name: str, attack_type: str, 
                        attack_func) -> AttackTestResult:
         """Run a single attack test"""
-        # Print attack header - ensure clean output with explicit flush
-        sys.stdout.write(f"\n{'='*70}\n")
-        sys.stdout.write(f"🔴 Testing Attack: {attack_name}\n")
-        sys.stdout.write(f"{'='*70}\n")
-        sys.stdout.flush()
+        # Print attack header - clean output
+        print(f"\n{'='*70}")
+        print(f"🔴 Testing Attack: {attack_name}")
+        print(f"{'='*70}")
         
         # Get stats before attack
         stats_before = self.get_agent_stats()
