@@ -135,18 +135,34 @@ Examples:
         print("❌ Calibration failed")
         return 1
     
-    # Evaluate calibration
-    print("📈 Evaluating calibration quality...")
-    metrics = detector.calibrator.evaluate_calibration(raw_scores_array, true_labels_array)
-    
-    print("\n" + "=" * 70)
-    print("📊 Calibration Results")
-    print("=" * 70)
-    print(f"Brier Score: {metrics['brier_score']:.4f} (lower is better)")
-    print(f"Expected Calibration Error (ECE): {metrics['ece']:.4f} (lower is better)")
-    print(f"Calibrated: {metrics['calibrated']}")
-    print(f"Samples: {metrics.get('n_samples', len(raw_scores))}")
-    print("=" * 70)
+        # Evaluate calibration
+        print("📈 Evaluating calibration quality...")
+        metrics = detector.calibrator.evaluate_calibration(raw_scores_array, true_labels_array)
+        
+        # Show some sample predictions for debugging
+        print("\n📊 Sample Predictions (first 5):")
+        for i in range(min(5, len(raw_scores))):
+            pred = detector.calibrator.predict_calibrated(raw_scores[i])
+            print(f"   Sample {i+1}: Raw={raw_scores[i]:.2f}, "
+                  f"Calibrated={pred.calibrated_score:.2f}, "
+                  f"Prob={pred.calibrated_probability:.4f}, "
+                  f"CI=[{pred.confidence_interval_lower:.2f}, {pred.confidence_interval_upper:.2f}]")
+        
+        print("\n" + "=" * 70)
+        print("📊 Calibration Results")
+        print("=" * 70)
+        print(f"Brier Score: {metrics['brier_score']:.6f} (lower is better, perfect=0.0)")
+        print(f"Expected Calibration Error (ECE): {metrics['ece']:.6f} (lower is better, perfect=0.0)")
+        print(f"Calibrated: {metrics['calibrated']}")
+        print(f"Samples: {metrics.get('n_samples', len(raw_scores))}")
+        print(f"\n📝 Note: Scores are 0.0000 because:")
+        print(f"   - All samples are normal (label=0)")
+        print(f"   - Model correctly predicts low anomaly scores")
+        print(f"   - Calibrated probabilities are close to 0 (normal)")
+        print(f"   - Brier score = mean((pred - 0)²) ≈ 0 when pred ≈ 0")
+        print(f"\n💡 For meaningful calibration metrics, use both normal AND anomalous data:")
+        print(f"   python3 scripts/calibrate_models.py --normal normal.json --anomalous attacks.json")
+        print("=" * 70)
     
     if metrics['brier_score'] < 0.25 and metrics['ece'] < 0.1:
         print("\n✅ Calibration quality is good!")
