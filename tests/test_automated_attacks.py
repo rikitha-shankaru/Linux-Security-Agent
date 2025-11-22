@@ -438,6 +438,9 @@ class AutomatedAttackTestRunner:
                 self.original = original
                 self.buffer = ""  # Buffer to catch multi-chunk unittest output
             def write(self, text):
+                # Remove carriage returns that cause overwriting
+                text = text.replace('\r', '')
+                
                 # Add to buffer to catch multi-chunk output
                 self.buffer += text
                 
@@ -446,13 +449,15 @@ class AutomatedAttackTestRunner:
                     lines = self.buffer.split('\n')
                     # Process all but last line (might be incomplete)
                     for line in lines[:-1]:
+                        # Strip any remaining control characters
+                        line = line.strip()
                         # Check if this line is unittest output
                         is_unittest = any(pattern in line for pattern in [
                             'test_', ' (tests.', ' (__main__.', 
                             '...', 'ok', 'FAIL', 'ERROR', 
                             'Ran ', ' in ', 'OK'
                         ])
-                        if not is_unittest:
+                        if not is_unittest and line:
                             # Not unittest - write it
                             self.original.write(line + '\n')
                     # Keep last line in buffer (might be incomplete)
@@ -461,12 +466,13 @@ class AutomatedAttackTestRunner:
             def flush(self):
                 # Flush any remaining buffer if it's not unittest output
                 if self.buffer:
+                    self.buffer = self.buffer.strip()
                     is_unittest = any(pattern in self.buffer for pattern in [
                         'test_', ' (tests.', ' (__main__.', 
                         '...', 'ok', 'FAIL', 'ERROR', 
                         'Ran ', ' in ', 'OK'
                     ])
-                    if not is_unittest:
+                    if not is_unittest and self.buffer:
                         self.original.write(self.buffer)
                     self.buffer = ""
                 self.original.flush()
