@@ -243,7 +243,7 @@ class AutomatedAttackTestRunner:
             detected=detected,
             risk_score=risk_score,
             anomaly_score=anomaly_score,
-            detection_time=execution_time,
+            execution_time=execution_time,
             error=error
         )
         
@@ -253,12 +253,13 @@ class AutomatedAttackTestRunner:
             print(f"   ⚠️  Attack execution timeout")
         
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        # Use exact fixed spacing - all values align at column 20
-        print(f"   Status:            {status}")
+        # Use consistent field width for alignment
+        field_width = 18
+        print(f"   {'Status:':<{field_width}} {status}")
         if executed:
-            print(f"   Risk Score:        {risk_score:.2f}")
-            print(f"   Anomaly Score:     {anomaly_score:.2f}")
-            print(f"   Execution Time:    {execution_time:.2f}s")
+            print(f"   {'Risk Score:':<{field_width}} {risk_score:.2f}")
+            print(f"   {'Anomaly Score:':<{field_width}} {anomaly_score:.2f}")
+            print(f"   {'Execution Time:':<{field_width}} {execution_time:.2f}s")
         print()
         
         return result
@@ -305,14 +306,15 @@ class AutomatedAttackTestRunner:
         
         success = (failures == 0 and errors == 0)
         
-        # Print summary
+        # Print summary with consistent alignment
         print(f"\n{'='*70}")
         print("📊 TEST SUMMARY")
         print(f"{'='*70}")
-        print(f"  Tests run:   {tests_run:>3}")
-        print(f"  Failures:    {failures:>3}")
-        print(f"  Errors:      {errors:>3}")
-        print(f"  Success:     {'✅ YES' if success else '❌ NO'}")
+        label_width = 12
+        print(f"  {'Tests run':<{label_width}} {tests_run:>3}")
+        print(f"  {'Failures':<{label_width}} {failures:>3}")
+        print(f"  {'Errors':<{label_width}} {errors:>3}")
+        print(f"  {'Success':<{label_width}} {'✅ YES' if success else '❌ NO'}")
         
         # Save report
         report_path = project_root / "attack_test_report.json"
