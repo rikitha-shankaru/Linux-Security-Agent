@@ -205,15 +205,17 @@ class PerformanceBenchmark:
         print(f"\n{'─'*70}")
         print("📈 CPU Overhead Results")
         print(f"{'─'*70}")
-        print(f"  Baseline CPU (system idle):  {baseline_cpu:>6.2f}%")
-        print(f"  Agent CPU (idle):             {idle_cpu:>6.2f}%")
-        print(f"  Agent CPU (under load):      {load_cpu:>6.2f}%")
-        print(f"  CPU Overhead:                 {overhead:>6.2f}%")
+        print(f"  {'Metric':<30} {'Value':>15} {'Target':>15}")
+        print(f"  {'-'*30} {'-'*15} {'-'*15}")
+        print(f"  {'Baseline CPU (system idle)':<30} {baseline_cpu:>14.2f}% {'N/A':>15}")
+        print(f"  {'Agent CPU (idle)':<30} {idle_cpu:>14.2f}% {'N/A':>15}")
+        print(f"  {'Agent CPU (under load)':<30} {load_cpu:>14.2f}% {'N/A':>15}")
+        print(f"  {'CPU Overhead':<30} {overhead:>14.2f}% {'<5%':>15}")
         print(f"{'─'*70}")
         if overhead < 5.0:
-            print("  ✅ Meets target (<5% overhead)")
+            print(f"  {'Status':<30} {'✅ PASS':>15} {'Meets target':>15}")
         else:
-            print("  ⚠️  Exceeds target (≥5% overhead)")
+            print(f"  {'Status':<30} {'⚠️  FAIL':>15} {'Exceeds target':>15}")
         
         # Cleanup
         self._cleanup_agent()
@@ -299,10 +301,12 @@ class PerformanceBenchmark:
                 
                 memory_per_process = ((final_memory - initial_memory) / count * 1024) if count > 0 else 0
                 
-                print(f"   Initial: {initial_memory:.2f} MB")
-                print(f"   Final:   {final_memory:.2f} MB")
-                print(f"   Increase: {final_memory - initial_memory:.2f} MB")
-                print(f"   Per process: {memory_per_process:.2f} KB")
+                print(f"   {'Metric':<20} {'Value':>15}")
+                print(f"   {'-'*20} {'-'*15}")
+                print(f"   {'Initial Memory':<20} {initial_memory:>14.2f} MB")
+                print(f"   {'Final Memory':<20} {final_memory:>14.2f} MB")
+                print(f"   {'Memory Increase':<20} {final_memory - initial_memory:>14.2f} MB")
+                print(f"   {'Per Process':<20} {memory_per_process:>14.2f} KB")
                 
                 results.append({
                     'process_count': count,
@@ -387,7 +391,15 @@ class PerformanceBenchmark:
                 
                 avg_cpu = statistics.mean(cpu_samples) if cpu_samples else 0.0
                 
-                print(f"   ✅ CPU: {avg_cpu:.2f}%, Memory: {memory:.2f} MB, Time: {elapsed:.2f}s")
+                print(f"   {'Metric':<15} {'Value':>15}")
+                print(f"   {'-'*15} {'-'*15}")
+                print(f"   {'CPU Usage':<15} {avg_cpu:>14.2f}%")
+                print(f"   {'Memory':<15} {memory:>14.2f} MB")
+                print(f"   {'Elapsed Time':<15} {elapsed:>14.2f}s")
+                if avg_cpu < 20.0:
+                    print(f"   {'Status':<15} {'✅ PASS':>15}")
+                else:
+                    print(f"   {'Status':<15} {'⚠️  FAIL':>15}")
                 
                 results.append({
                     'process_count': count,
@@ -443,7 +455,7 @@ class PerformanceBenchmark:
         return results
     
     def print_summary(self, results: Dict[str, Any]):
-        """Print benchmark summary"""
+        """Print benchmark summary with clean formatting"""
         print(f"\n{'='*70}")
         print("📊 PERFORMANCE BENCHMARK SUMMARY")
         print(f"{'='*70}")
@@ -451,33 +463,62 @@ class PerformanceBenchmark:
         # CPU Overhead
         cpu = results.get('cpu_overhead', {})
         print(f"\n💻 CPU Overhead:")
-        print(f"  Baseline:        {cpu.get('baseline_cpu_percent', 0):>6.2f}%")
-        print(f"  Agent (load):    {cpu.get('load_cpu_percent', 0):>6.2f}%")
-        print(f"  Overhead:        {cpu.get('cpu_overhead_percent', 0):>6.2f}%")
+        baseline = cpu.get('baseline_cpu_percent', 0)
+        load_cpu = cpu.get('load_cpu_percent', 0)
+        overhead = cpu.get('cpu_overhead_percent', 0)
+        
+        print(f"  {'Metric':<25} {'Value':>15} {'Status':>20}")
+        print(f"  {'-'*25} {'-'*15} {'-'*20}")
+        print(f"  {'Baseline (idle)':<25} {baseline:>14.2f}% {'':>20}")
+        print(f"  {'Agent (under load)':<25} {load_cpu:>14.2f}% {'':>20}")
+        print(f"  {'CPU Overhead':<25} {overhead:>14.2f}% {'':>20}")
+        
         if cpu.get('meets_target'):
-            print("  ✅ Meets target (<5% overhead)")
+            print(f"  {'Target Status':<25} {'':>15} {'✅ Meets target':>20}")
         else:
-            print("  ⚠️  Exceeds target (≥5% overhead)")
+            print(f"  {'Target Status':<25} {'':>15} {'⚠️  Exceeds target':>20}")
         
         # Memory Usage
         memory = results.get('memory_usage', {})
         summary = memory.get('summary', {})
         print(f"\n💾 Memory Usage:")
-        print(f"  Max processes tested: {summary.get('max_processes_tested', 0)}")
-        print(f"  Avg per process:      {summary.get('avg_memory_per_process_kb', 0):>8.2f} KB")
+        max_procs = summary.get('max_processes_tested', 0)
+        avg_mem = summary.get('avg_memory_per_process_kb', 0)
+        
+        print(f"  {'Metric':<25} {'Value':>15} {'':>20}")
+        print(f"  {'-'*25} {'-'*15} {'-'*20}")
+        print(f"  {'Max processes tested':<25} {max_procs:>15} {'':>20}")
+        print(f"  {'Avg per process':<25} {avg_mem:>14.2f} KB {'':>20}")
         
         # Scalability
         scale = results.get('scalability', {})
         print(f"\n📈 Scalability:")
         scale_tests = scale.get('scalability_tests', [])
+        
         if scale_tests:
-            max_test = max(scale_tests, key=lambda x: x.get('process_count', 0))
-            print(f"  Max processes: {max_test.get('process_count', 0)}")
-            print(f"  CPU at max:    {max_test.get('avg_cpu_percent', 0):>6.2f}%")
+            print(f"  {'Process Count':<20} {'CPU %':>10} {'Memory (MB)':>15} {'Status':>15}")
+            print(f"  {'-'*20} {'-'*10} {'-'*15} {'-'*15}")
+            
+            for test in sorted(scale_tests, key=lambda x: x.get('process_count', 0)):
+                proc_count = test.get('process_count', 0)
+                cpu_pct = test.get('avg_cpu_percent', 0)
+                mem_mb = test.get('memory_mb', 0)
+                handles = test.get('handles_load', False)
+                
+                status = "✅ Pass" if handles else "⚠️  Fail"
+                if 'error' in test:
+                    status = "❌ Error"
+                
+                print(f"  {proc_count:<20} {cpu_pct:>9.2f}% {mem_mb:>14.2f} {status:>15}")
+            
             if scale.get('all_tests_passed'):
-                print("  ✅ Handles 1000+ processes")
+                print(f"\n  ✅ All scalability tests passed (handles 1000+ processes)")
             else:
-                print("  ⚠️  Some tests failed")
+                failed = [t for t in scale_tests if not t.get('handles_load', False) and 'error' not in t]
+                if failed:
+                    print(f"\n  ⚠️  {len(failed)} scalability test(s) failed")
+        else:
+            print("  ⚠️  No scalability test results available")
         
         print(f"\n{'='*70}")
     
