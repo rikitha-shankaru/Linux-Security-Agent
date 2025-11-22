@@ -13,6 +13,7 @@ import threading
 import json
 import statistics
 import signal
+import getpass
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
@@ -89,6 +90,57 @@ class PerformanceBenchmark:
         # Setup signal handler for Ctrl+C
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
+        
+        # Validate sudo access
+        self._validate_sudo_access()
+    
+    def _validate_sudo_access(self):
+        """Check if sudo works, prompt for password if needed and cache credentials"""
+        # First, check if sudo works without password
+        try:
+            result = subprocess.run(
+                ['sudo', '-n', 'true'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=2
+            )
+            if result.returncode == 0:
+                print("✅ Sudo access confirmed (no password required)")
+                # Refresh sudo timestamp to extend cache
+                subprocess.run(['sudo', '-v'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+                return
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+        
+        # Sudo requires password - prompt for it
+        print("\n🔐 Sudo access required for eBPF monitoring")
+        print("   Please enter your sudo password (will be cached for this session):")
+        sudo_password = getpass.getpass("   Password: ")
+        
+        # Validate and cache password by running sudo -v
+        try:
+            proc = subprocess.Popen(
+                ['sudo', '-S', '-v'],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            proc.communicate(input=(sudo_password + '\n').encode(), timeout=10)
+            
+            if proc.returncode == 0:
+                print("✅ Sudo password validated and cached")
+                # Clear password from memory for security
+                sudo_password = None
+                del sudo_password
+            else:
+                print("❌ Invalid sudo password. Exiting.")
+                sys.exit(1)
+        except subprocess.TimeoutExpired:
+            print("❌ Sudo validation timed out. Exiting.")
+            sys.exit(1)
+        except Exception as e:
+            print(f"❌ Error validating sudo: {e}")
+            sys.exit(1)
     
     def _signal_handler(self, signum, frame):
         """Handle Ctrl+C gracefully"""
@@ -136,6 +188,7 @@ class PerformanceBenchmark:
         agent_script = project_root / "core" / "simple_agent.py"
         
         try:
+            # Sudo credentials should be cached from _validate_sudo_access
             self.agent_proc = subprocess.Popen(
                 ['sudo', 'python3', str(agent_script), '--collector', 'ebpf', '--threshold', '30'],
                 stdout=subprocess.DEVNULL,
@@ -278,6 +331,7 @@ class PerformanceBenchmark:
             agent_script = project_root / "core" / "simple_agent.py"
             try:
                 print("   → Starting agent...", end='', flush=True)
+                # Sudo credentials should be cached from _validate_sudo_access
                 agent_proc = subprocess.Popen(
                     ['sudo', 'python3', str(agent_script), '--collector', 'ebpf'],
                     stdout=subprocess.DEVNULL,
@@ -377,6 +431,7 @@ class PerformanceBenchmark:
             # Start agent
             agent_script = project_root / "core" / "simple_agent.py"
             try:
+                # Sudo credentials should be cached from _validate_sudo_access
                 agent_proc = subprocess.Popen(
                     ['sudo', 'python3', str(agent_script), '--collector', 'ebpf'],
                     stdout=subprocess.DEVNULL,
