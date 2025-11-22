@@ -65,11 +65,10 @@ def main():
     print("✅ AUTOMATED ATTACK TESTS COMPLETE")
     print(f"{'='*70}")
     print(f"\n📊 Results:")
-    label_width = 12
-    print(f"  {'Tests Run':<{label_width}} {report['tests_run']:>3}")
-    print(f"  {'Failures':<{label_width}} {report['failures']:>3}")
-    print(f"  {'Errors':<{label_width}} {report['errors']:>3}")
-    print(f"  {'Success':<{label_width}} {'✅ YES' if report['success'] else '❌ NO'}")
+    print(f"  Tests Run:    {report['tests_run']:>3}")
+    print(f"  Failures:    {report['failures']:>3}")
+    print(f"  Errors:      {report['errors']:>3}")
+    print(f"  Success:     {'✅ YES' if report['success'] else '❌ NO'}")
     print(f"\n💾 Full report: attack_test_report.json")
     print(f"{'='*70}")
     

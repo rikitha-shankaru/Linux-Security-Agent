@@ -253,13 +253,12 @@ class AutomatedAttackTestRunner:
             print(f"   ⚠️  Attack execution timeout")
         
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        # Use consistent field width for alignment
-        field_width = 18
-        print(f"   {'Status:':<{field_width}} {status}")
+        # Exact fixed spacing - all values start at same column
+        print(f"   Status:            {status}")
         if executed:
-            print(f"   {'Risk Score:':<{field_width}} {risk_score:.2f}")
-            print(f"   {'Anomaly Score:':<{field_width}} {anomaly_score:.2f}")
-            print(f"   {'Execution Time:':<{field_width}} {execution_time:.2f}s")
+            print(f"   Risk Score:        {risk_score:.2f}")
+            print(f"   Anomaly Score:     {anomaly_score:.2f}")
+            print(f"   Execution Time:    {execution_time:.2f}s")
         print()
         
         return result
@@ -310,11 +309,11 @@ class AutomatedAttackTestRunner:
         print(f"\n{'='*70}")
         print("📊 TEST SUMMARY")
         print(f"{'='*70}")
-        label_width = 12
-        print(f"  {'Tests run':<{label_width}} {tests_run:>3}")
-        print(f"  {'Failures':<{label_width}} {failures:>3}")
-        print(f"  {'Errors':<{label_width}} {errors:>3}")
-        print(f"  {'Success':<{label_width}} {'✅ YES' if success else '❌ NO'}")
+        # Exact fixed spacing for summary
+        print(f"  Tests run:   {tests_run:>3}")
+        print(f"  Failures:    {failures:>3}")
+        print(f"  Errors:      {errors:>3}")
+        print(f"  Success:     {'✅ YES' if success else '❌ NO'}")
         
         # Save report
         report_path = project_root / "attack_test_report.json"
