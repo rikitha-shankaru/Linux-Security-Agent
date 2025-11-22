@@ -257,6 +257,8 @@ Permission errors on Linux - need to run with sudo for eBPF. On macOS it works w
 
 ## 🏗️ Architecture
 
+> **📊 For detailed visual architecture diagrams, see [docs/ARCHITECTURE_DIAGRAMS.md](docs/ARCHITECTURE_DIAGRAMS.md)**
+
 ### **Core Components**
 - **SecurityAgent**: Main orchestrator and eBPF integration
 - **MacSecurityAgent**: macOS-compatible version with simulation

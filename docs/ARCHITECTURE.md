@@ -11,6 +11,8 @@ This is a **research prototype** implementing EDR (Endpoint Detection and Respon
 
 ## 🏗️ **System Architecture**
 
+> **📊 For detailed visual architecture diagrams, see [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md)**
+
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   eBPF Monitor  │───▶│  Security Agent  │───▶│ Action Handler  │
