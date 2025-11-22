@@ -416,15 +416,16 @@ class AutomatedAttackTestRunner:
         print("\nThis will test the agent's ability to detect various attack patterns.")
         print("The agent will run in the background while attacks are executed.\n")
         
-        # Run tests directly - completely bypass unittest output
+        # Run tests directly - call run_attack_test directly, bypass unittest completely
         test_instance = TestAutomatedAttacks()
         
-        test_methods = [
-            ('Privilege Escalation', test_instance.test_privilege_escalation),
-            ('High-Frequency Attack', test_instance.test_high_frequency_attack),
-            ('Process Churn', test_instance.test_process_churn),
-            ('Ptrace Attempts', test_instance.test_ptrace_attempts),
-            ('Suspicious File Patterns', test_instance.test_suspicious_file_patterns),
+        # Define attacks to test
+        attacks = [
+            ('Privilege Escalation', 'T1078', AttackSimulator.privilege_escalation),
+            ('High-Frequency Attack', 'DoS', AttackSimulator.high_frequency_attack),
+            ('Process Churn', 'T1055', AttackSimulator.process_churn),
+            ('Ptrace Attempts', 'T1055', AttackSimulator.ptrace_attempts),
+            ('Suspicious File Patterns', 'T1070', AttackSimulator.suspicious_file_patterns),
         ]
         
         tests_run = 0
@@ -432,89 +433,28 @@ class AutomatedAttackTestRunner:
         errors = 0
         test_details = []
         
-        # Custom stream that completely filters unittest output
-        class UnittestFilter:
-            def __init__(self, original):
-                self.original = original
-                self.buffer = ""
-            def write(self, text):
-                # Remove all carriage returns
-                text = text.replace('\r', '')
-                
-                # Add to buffer
-                self.buffer += text
-                
-                # Process complete lines
-                while '\n' in self.buffer:
-                    line, self.buffer = self.buffer.split('\n', 1)
-                    line = line.strip()
-                    
-                    # Check if this is unittest output - be very aggressive
-                    is_unittest = (
-                        line.startswith('test_') or
-                        ' (tests.' in line or
-                        ' (__main__.' in line or
-                        line.endswith('...') or
-                        line == 'ok' or
-                        line == 'FAIL' or
-                        line == 'ERROR' or
-                        line.startswith('Ran ') or
-                        ' in ' in line or
-                        line == 'OK' or
-                        line == ''  # Empty lines from unittest
-                    )
-                    
-                    # Only write if it's NOT unittest output
-                    if not is_unittest:
-                        self.original.write(line + '\n')
-            def flush(self):
-                # Don't flush incomplete buffer - might be unittest
-                self.original.flush()
-        
-        # Install filter before running tests
-        original_stdout = sys.stdout
-        original_stderr = sys.stderr
-        filtered_stdout = UnittestFilter(original_stdout)
-        filtered_stderr = UnittestFilter(original_stderr)
-        sys.stdout = filtered_stdout
-        sys.stderr = filtered_stderr
-        
+        # Start agent once for all tests
         try:
-            for test_name, test_method in test_methods:
+            test_instance.setUp()
+            test_instance.start_agent_in_background()
+            
+            # Run each attack test directly
+            for attack_name, attack_type, attack_func in attacks:
                 try:
-                    # Set up test instance
-                    test_instance.setUp()
-                    
-                    # Run test method - unittest output is filtered
-                    test_method()
-                    
+                    result = test_instance.run_attack_test(attack_name, attack_type, attack_func)
                     tests_run += 1
-                except unittest.SkipTest:
-                    tests_run += 1
-                    # Skipped tests are OK
-                except AssertionError as e:
-                    tests_run += 1
-                    failures += 1
-                    test_details.append({
-                        'test': test_name,
-                        'error': str(e)
-                    })
                 except Exception as e:
                     tests_run += 1
                     errors += 1
                     test_details.append({
-                        'test': test_name,
+                        'test': attack_name,
                         'error': str(e)
                     })
-                finally:
-                    try:
-                        test_instance.tearDown()
-                    except:
-                        pass
         finally:
-            # Restore original streams
-            sys.stdout = original_stdout
-            sys.stderr = original_stderr
+            try:
+                test_instance.tearDown()
+            except:
+                pass
         
         success = (failures == 0 and errors == 0)
         
