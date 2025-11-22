@@ -432,37 +432,60 @@ class AutomatedAttackTestRunner:
         errors = 0
         test_details = []
         
-        for test_name, test_method in test_methods:
-            try:
-                # Set up test instance
-                test_instance.setUp()
-                
-                # Run test method directly - no output redirection
-                test_method()
-                
-                tests_run += 1
-            except unittest.SkipTest:
-                tests_run += 1
-                # Skipped tests are OK
-            except AssertionError as e:
-                tests_run += 1
-                failures += 1
-                test_details.append({
-                    'test': test_name,
-                    'error': str(e)
-                })
-            except Exception as e:
-                tests_run += 1
-                errors += 1
-                test_details.append({
-                    'test': test_name,
-                    'error': str(e)
-                })
-            finally:
+        # Custom stream that filters unittest output but allows our prints
+        class UnittestFilter:
+            def __init__(self, original):
+                self.original = original
+            def write(self, text):
+                # Filter out unittest progress indicators (dots, test names, etc)
+                if any(x in text for x in ['test_', ' (tests.', '...', 'ok\n', 'FAIL\n', 'ERROR\n', 'Ran ', ' in ', 's\n']):
+                    return  # Suppress unittest output
+                self.original.write(text)
+            def flush(self):
+                self.original.flush()
+        
+        # Install filter before running tests
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        sys.stdout = UnittestFilter(original_stdout)
+        sys.stderr = UnittestFilter(original_stderr)
+        
+        try:
+            for test_name, test_method in test_methods:
                 try:
-                    test_instance.tearDown()
-                except:
-                    pass
+                    # Set up test instance
+                    test_instance.setUp()
+                    
+                    # Run test method - unittest output is filtered
+                    test_method()
+                    
+                    tests_run += 1
+                except unittest.SkipTest:
+                    tests_run += 1
+                    # Skipped tests are OK
+                except AssertionError as e:
+                    tests_run += 1
+                    failures += 1
+                    test_details.append({
+                        'test': test_name,
+                        'error': str(e)
+                    })
+                except Exception as e:
+                    tests_run += 1
+                    errors += 1
+                    test_details.append({
+                        'test': test_name,
+                        'error': str(e)
+                    })
+                finally:
+                    try:
+                        test_instance.tearDown()
+                    except:
+                        pass
+        finally:
+            # Restore original streams
+            sys.stdout = original_stdout
+            sys.stderr = original_stderr
         
         success = (failures == 0 and errors == 0)
         
