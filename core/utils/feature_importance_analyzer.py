@@ -127,21 +127,31 @@ class FeatureImportanceAnalyzer:
             for i, name in enumerate(self.FEATURE_NAMES[:len(iso_importances)]):
                 iso_importance[name] = float(iso_importances[i])
         else:
-            # Fallback: use permutation importance
+            # Fallback: use permutation importance with custom scorer
+            def iso_scorer(estimator, X, y):
+                scores = estimator.decision_function(X)
+                return np.mean(scores)
+            
             perm_importance = permutation_importance(
                 iso_forest, features_scaled[:min(1000, len(features_scaled))],
                 features_scaled[:min(1000, len(features_scaled))],
-                n_repeats=10, random_state=42, n_jobs=-1
+                n_repeats=10, random_state=42, n_jobs=-1, scoring=iso_scorer
             )
             for i, name in enumerate(self.FEATURE_NAMES[:len(perm_importance.importances_mean)]):
                 iso_importance[name] = float(perm_importance.importances_mean[i])
         
         # Permutation importance (more reliable)
+        # For unsupervised models, use decision_function as scoring
         print("   Computing permutation importance...")
+        def iso_forest_scorer(estimator, X, y):
+            """Custom scorer for Isolation Forest using decision function"""
+            scores = estimator.decision_function(X)
+            return np.mean(scores)  # Higher is better (more normal)
+        
         perm_importance_iso = permutation_importance(
             iso_forest, features_scaled[:min(500, len(features_scaled))],
             features_scaled[:min(500, len(features_scaled))],
-            n_repeats=5, random_state=42, n_jobs=-1, scoring='neg_mean_squared_error'
+            n_repeats=5, random_state=42, n_jobs=-1, scoring=iso_forest_scorer
         )
         
         perm_importance_dict = {}
