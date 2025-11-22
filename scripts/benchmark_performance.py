@@ -268,19 +268,19 @@ class PerformanceBenchmark:
         print(f"\n{'─'*70}")
         print("📈 CPU Overhead Results")
         print(f"{'─'*70}")
-        print(f"  {'Metric':<35} {'Value':>15} {'Target':>15}")
-        print(f"  {'-'*35} {'-'*15} {'-'*15}")
-        print(f"  {'System baseline (no agent)':<35} {baseline_cpu:>14.2f}% {'N/A':>15}")
-        print(f"  {'Agent CPU (idle, no load)':<35} {agent_idle_cpu:>14.2f}% {'N/A':>15}")
-        print(f"  {'Agent CPU (under load, avg)':<35} {agent_load_cpu:>14.2f}% {'N/A':>15}")
-        print(f"  {'Agent CPU (under load, max)':<35} {agent_max_cpu:>14.2f}% {'N/A':>15}")
-        print(f"  {'CPU Overhead (avg)':<35} {overhead:>14.2f}% {'<5%':>15}")
-        print(f"  {'CPU Overhead (max)':<35} {agent_max_cpu:>14.2f}% {'<10%':>15}")
+        print(f"  {'Metric':<38} {'Value':>12} {'Target':>12}")
+        print(f"  {'-'*38} {'-'*12} {'-'*12}")
+        print(f"  {'System baseline (no agent)':<38} {baseline_cpu:>11.2f}% {'N/A':>12}")
+        print(f"  {'Agent CPU (idle, no load)':<38} {agent_idle_cpu:>11.2f}% {'N/A':>12}")
+        print(f"  {'Agent CPU (under load, avg)':<38} {agent_load_cpu:>11.2f}% {'N/A':>12}")
+        print(f"  {'Agent CPU (under load, max)':<38} {agent_max_cpu:>11.2f}% {'N/A':>12}")
+        print(f"  {'CPU Overhead (avg)':<38} {overhead:>11.2f}% {'<5%':>12}")
+        print(f"  {'CPU Overhead (max)':<38} {agent_max_cpu:>11.2f}% {'<10%':>12}")
         print(f"{'─'*70}")
         if overhead < 5.0 and agent_max_cpu < 10.0:
-            print(f"  {'Status':<35} {'✅ PASS':>15} {'Meets target':>15}")
+            print(f"  {'Status':<38} {'✅ PASS':>12} {'Meets target':>12}")
         else:
-            print(f"  {'Status':<35} {'⚠️  FAIL':>15} {'Exceeds target':>15}")
+            print(f"  {'Status':<38} {'⚠️  FAIL':>12} {'Exceeds target':>12}")
         
         # Cleanup
         self._cleanup_agent()
@@ -551,18 +551,19 @@ class PerformanceBenchmark:
         agent_max = cpu.get('agent_max_cpu_percent', 0)
         overhead = cpu.get('cpu_overhead_percent', 0)
         
-        print(f"  {'Metric':<30} {'Value':>15} {'Status':>20}")
-        print(f"  {'-'*30} {'-'*15} {'-'*20}")
-        print(f"  {'System baseline':<30} {baseline:>14.2f}% {'':>20}")
-        print(f"  {'Agent (idle)':<30} {agent_idle:>14.2f}% {'':>20}")
-        print(f"  {'Agent (load, avg)':<30} {agent_load:>14.2f}% {'':>20}")
-        print(f"  {'Agent (load, max)':<30} {agent_max:>14.2f}% {'':>20}")
-        print(f"  {'CPU Overhead (avg)':<30} {overhead:>14.2f}% {'':>20}")
+        print(f"  {'Metric':<38} {'Value':>12} {'Status':>18}")
+        print(f"  {'-'*38} {'-'*12} {'-'*18}")
+        print(f"  {'System baseline (no agent)':<38} {baseline:>11.2f}% {'':>18}")
+        print(f"  {'Agent CPU (idle, no load)':<38} {agent_idle:>11.2f}% {'':>18}")
+        print(f"  {'Agent CPU (under load, avg)':<38} {agent_load:>11.2f}% {'':>18}")
+        print(f"  {'Agent CPU (under load, max)':<38} {agent_max:>11.2f}% {'':>18}")
+        print(f"  {'CPU Overhead (avg)':<38} {overhead:>11.2f}% {'':>18}")
+        print(f"  {'CPU Overhead (max)':<38} {agent_max:>11.2f}% {'':>18}")
         
         if cpu.get('meets_target'):
-            print(f"  {'Target Status':<30} {'':>15} {'✅ Meets target':>20}")
+            print(f"  {'Target Status':<38} {'':>12} {'✅ Meets target':>18}")
         else:
-            print(f"  {'Target Status':<30} {'':>15} {'⚠️  Exceeds target':>20}")
+            print(f"  {'Target Status':<38} {'':>12} {'⚠️  Exceeds target':>18}")
         
         # Memory Usage
         memory = results.get('memory_usage', {})
