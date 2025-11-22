@@ -58,6 +58,29 @@ Examples:
     config = {'enable_calibration': True}
     detector = EnhancedAnomalyDetector(config)
     
+    # Check if models are trained, if not, train them first
+    if not detector.is_fitted:
+        print("⚠️  Models not trained. Attempting to load pre-trained models...")
+        try:
+            detector._load_models()
+        except Exception:
+            pass
+        
+        if not detector.is_fitted:
+            print("📚 No pre-trained models found. Training models first...")
+            # Load training data
+            if args.file:
+                training_data = detector.load_training_data_from_file(args.file)
+                if not training_data:
+                    print("❌ No training data loaded")
+                    return 1
+                detector.train_models(training_data)
+                print("✅ Models trained successfully")
+            else:
+                print("❌ Cannot train models: no training data file provided")
+                print("   Use --file to specify training data")
+                return 1
+    
     # Load training/calibration data
     if args.file:
         print(f"📂 Loading calibration data from {args.file}...")
@@ -73,10 +96,16 @@ Examples:
         
         for syscalls, process_info in training_data[:200]:  # Use subset for calibration
             result = detector.detect_anomaly_ensemble(syscalls, process_info)
-            raw_scores.append(result.anomaly_score)
+            score = result.anomaly_score
+            raw_scores.append(score)
             true_labels.append(0)  # All normal
+            
+            # Debug: show first few scores
+            if len(raw_scores) <= 3:
+                print(f"   Sample {len(raw_scores)}: Raw score = {score:.2f}")
         
         print(f"✅ Generated {len(raw_scores)} calibration samples")
+        print(f"   Score range: [{min(raw_scores):.2f}, {max(raw_scores):.2f}], Mean: {sum(raw_scores)/len(raw_scores):.2f}")
         
     elif args.normal and args.anomalous:
         print("📂 Loading normal and anomalous data...")
