@@ -122,8 +122,29 @@ Examples:
         
         if not os.path.exists(args.anomalous):
             print(f"❌ File not found: {args.anomalous}")
-            print(f"   💡 Tip: Create attack dataset or use --file option with normal data only")
-            return 1
+            print(f"   💡 Generating anomalous dataset automatically...")
+            # Try to generate anomalous data
+            try:
+                gen_script = Path(__file__).parent / "generate_anomalous_data.py"
+                if gen_script.exists():
+                    result = subprocess.run(
+                        [sys.executable, str(gen_script), '--output', args.anomalous, '--samples', '200'],
+                        capture_output=True,
+                        text=True
+                    )
+                    if result.returncode == 0:
+                        print(f"✅ Generated anomalous dataset: {args.anomalous}")
+                    else:
+                        print(f"⚠️  Failed to generate: {result.stderr}")
+                        print(f"   💡 Tip: Run manually: python3 scripts/generate_anomalous_data.py --output {args.anomalous}")
+                        return 1
+                else:
+                    print(f"   💡 Tip: Run: python3 scripts/generate_anomalous_data.py --output {args.anomalous}")
+                    return 1
+            except Exception as e:
+                print(f"⚠️  Could not auto-generate: {e}")
+                print(f"   💡 Tip: Run manually: python3 scripts/generate_anomalous_data.py --output {args.anomalous}")
+                return 1
         
         normal_data = detector.load_training_data_from_file(args.normal)
         anomalous_data = detector.load_training_data_from_file(args.anomalous)
