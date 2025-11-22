@@ -43,8 +43,9 @@ class TestFullPipelineIntegration(unittest.TestCase):
         if self.agent:
             try:
                 self.agent.stop_monitoring()
-            except:
-                pass
+            except Exception as e:
+                import logging
+                logging.warning(f"Error stopping agent in tearDown: {e}")
     
     def test_agent_initialization(self):
         """Test that agent initializes correctly"""
@@ -187,8 +188,9 @@ class TestAttackSimulation(unittest.TestCase):
         if self.agent:
             try:
                 self.agent.stop_monitoring()
-            except:
-                pass
+            except Exception as e:
+                import logging
+                logging.warning(f"Error stopping agent in tearDown: {e}")
     
     def test_privilege_escalation_simulation(self):
         """Simulate privilege escalation attack pattern"""
@@ -271,8 +273,9 @@ class TestPerformanceBenchmarks(unittest.TestCase):
         if self.agent:
             try:
                 self.agent.stop_monitoring()
-            except:
-                pass
+            except Exception as e:
+                import logging
+                logging.warning(f"Error stopping agent in tearDown: {e}")
     
     def test_event_processing_performance(self):
         """Test event processing performance"""

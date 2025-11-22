@@ -14,3 +14,19 @@ base_risk_scores:
   mount: 4
   umount2: 4
 
+# System constants (moved from hardcoded values)
+system:
+  max_valid_pid: 2147483647
+  stale_process_timeout: 300  # 5 minutes in seconds
+  process_name_cache_ttl: 300  # 5 minutes cache TTL
+  syscall_name_max_length: 64
+
+# Performance optimization settings
+performance:
+  dashboard_refresh_rate: 2  # Dashboard updates per second
+  cleanup_check_interval: 0.1  # Seconds between cleanup checks
+  ml_inference_interval: 10  # Run ML inference every N syscalls per process
+  ml_inference_time_interval: 2.0  # Minimum seconds between ML inferences per process
+  risk_score_cache_ttl: 0.5  # Cache risk scores for 0.5 seconds
+  min_syscalls_for_ml: 5  # Minimum syscalls before running ML inference
+

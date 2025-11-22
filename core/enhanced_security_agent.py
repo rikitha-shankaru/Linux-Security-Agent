@@ -426,18 +426,22 @@ class EnhancedSecurityAgent:
         self._process_name_cache = {}
         self._process_name_cache_time = {}
         self._process_name_cache_lock = threading.Lock()
-        self._process_name_cache_ttl = PROCESS_NAME_CACHE_TTL
+        # Load from config, fallback to constant
+        system_config = self.config.get('system', {})
+        self._process_name_cache_ttl = system_config.get('process_name_cache_ttl', PROCESS_NAME_CACHE_TTL)
         
         # ML inference rate limiting (PID -> (last_inference_time, syscall_count))
         self._ml_inference_tracking = {}  # pid -> (last_time, count)
         self._ml_inference_lock = threading.Lock()
-        self._ml_inference_interval = self.config.get('ml_inference_interval', ML_INFERENCE_INTERVAL)
-        self._ml_inference_time_interval = self.config.get('ml_inference_time_interval', ML_INFERENCE_TIME_INTERVAL)
+        # Load from config, fallback to constants
+        perf_config = self.config.get('performance', {})
+        self._ml_inference_interval = perf_config.get('ml_inference_interval', ML_INFERENCE_INTERVAL)
+        self._ml_inference_time_interval = perf_config.get('ml_inference_time_interval', ML_INFERENCE_TIME_INTERVAL)
         
         # Risk score cache (PID -> (score, timestamp)) to avoid recalculation
         self._risk_score_cache = {}
         self._risk_score_cache_lock = threading.Lock()
-        self._risk_score_cache_ttl = RISK_SCORE_CACHE_TTL
+        self._risk_score_cache_ttl = perf_config.get('risk_score_cache_ttl', RISK_SCORE_CACHE_TTL)
         
         # Incremental retraining: collect samples during monitoring for automatic retraining
         self._enable_incremental_training = self.config.get('enable_incremental_training', True)
