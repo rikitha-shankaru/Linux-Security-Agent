@@ -436,20 +436,39 @@ class AutomatedAttackTestRunner:
         class UnittestFilter:
             def __init__(self, original):
                 self.original = original
+                self.buffer = ""  # Buffer to catch multi-chunk unittest output
             def write(self, text):
-                # Filter out unittest progress indicators
-                # Check for patterns like "test_name (module.Class) ... ok"
-                text_str = str(text)
-                if any(pattern in text_str for pattern in [
-                    'test_', ' (tests.', ' (__main__.', 
-                    '... ', 'ok\n', 'FAIL\n', 'ERROR\n', 
-                    'Ran ', ' in ', 's\n', 'OK\n'
-                ]):
-                    # This is unittest output - suppress it
-                    return
-                # Allow everything else (our formatted output)
-                self.original.write(text)
+                # Add to buffer to catch multi-chunk output
+                self.buffer += text
+                
+                # Check if buffer contains complete unittest progress line
+                if '\n' in self.buffer:
+                    lines = self.buffer.split('\n')
+                    # Process all but last line (might be incomplete)
+                    for line in lines[:-1]:
+                        # Check if this line is unittest output
+                        is_unittest = any(pattern in line for pattern in [
+                            'test_', ' (tests.', ' (__main__.', 
+                            '...', 'ok', 'FAIL', 'ERROR', 
+                            'Ran ', ' in ', 'OK'
+                        ])
+                        if not is_unittest:
+                            # Not unittest - write it
+                            self.original.write(line + '\n')
+                    # Keep last line in buffer (might be incomplete)
+                    self.buffer = lines[-1]
+                # If no newline, keep buffering
             def flush(self):
+                # Flush any remaining buffer if it's not unittest output
+                if self.buffer:
+                    is_unittest = any(pattern in self.buffer for pattern in [
+                        'test_', ' (tests.', ' (__main__.', 
+                        '...', 'ok', 'FAIL', 'ERROR', 
+                        'Ran ', ' in ', 'OK'
+                    ])
+                    if not is_unittest:
+                        self.original.write(self.buffer)
+                    self.buffer = ""
                 self.original.flush()
         
         # Install filter before running tests
