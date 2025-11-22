@@ -171,64 +171,77 @@ class PerformanceBenchmark:
             print("   📝 Using simulation mode...")
             return self._simulate_cpu_overhead(duration)
         
-        # Step 3: Measure CPU with agent running (idle)
-        print("\n3️⃣  Measuring CPU with agent (idle)...")
-        # Use system-wide CPU to measure agent impact, not just agent process
-        idle_samples = []
-        for _ in range(10):
-            idle_samples.append(psutil.cpu_percent(interval=1))
-        idle_cpu = statistics.mean(idle_samples) if idle_samples else 0.0
-        print(f"   ✅ System CPU (idle): {idle_cpu:.2f}%")
+        # Step 3: Measure agent CPU when idle (no load)
+        print("\n3️⃣  Measuring agent CPU (idle, no load)...")
+        agent_idle_samples = []
+        for _ in range(5):
+            try:
+                # Measure agent process CPU directly
+                agent_cpu = self.agent_process.cpu_percent(interval=1)
+                agent_idle_samples.append(agent_cpu)
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                break
+        agent_idle_cpu = statistics.mean(agent_idle_samples) if agent_idle_samples else 0.0
+        print(f"   ✅ Agent CPU (idle): {agent_idle_cpu:.2f}%")
         
-        # Step 4: Generate syscall load and measure
+        # Step 4: Generate syscall load and measure agent CPU under load
         print("\n4️⃣  Generating syscall load (100 processes)...")
         load_thread = threading.Thread(target=generate_syscall_load, args=(100, duration))
         load_thread.start()
         
-        # Measure system-wide CPU during load (more accurate)
-        load_samples = []
+        # Measure agent process CPU during load (this is the actual overhead)
+        agent_load_samples = []
         for _ in range(int(duration)):
-            load_samples.append(psutil.cpu_percent(interval=1))
+            try:
+                agent_cpu = self.agent_process.cpu_percent(interval=1)
+                agent_load_samples.append(agent_cpu)
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                break
         load_thread.join()
         
-        load_cpu = statistics.mean(load_samples) if load_samples else 0.0
-        max_cpu = max(load_samples) if load_samples else 0.0
+        agent_load_cpu = statistics.mean(agent_load_samples) if agent_load_samples else 0.0
+        agent_max_cpu = max(agent_load_samples) if agent_load_samples else 0.0
         
-        print(f"   ✅ System CPU (load, avg): {load_cpu:.2f}%")
-        print(f"   ✅ System CPU (load, max): {max_cpu:.2f}%")
+        print(f"   ✅ Agent CPU (under load, avg): {agent_load_cpu:.2f}%")
+        print(f"   ✅ Agent CPU (under load, max): {agent_max_cpu:.2f}%")
         
-        # Step 5: Calculate overhead (difference between load and baseline)
-        # Overhead = additional CPU used by agent when processing syscalls
-        overhead = load_cpu - baseline_cpu
-        overhead_percent = (overhead / baseline_cpu * 100) if baseline_cpu > 0 else 0.0
+        # Step 5: Calculate overhead
+        # Overhead = agent CPU under load (this is the actual CPU used by the agent)
+        # The agent's CPU usage is the overhead we're measuring
+        overhead = agent_load_cpu
+        # Also calculate the increase from idle to load
+        overhead_increase = agent_load_cpu - agent_idle_cpu
         
         print(f"\n{'─'*70}")
         print("📈 CPU Overhead Results")
         print(f"{'─'*70}")
-        print(f"  {'Metric':<30} {'Value':>15} {'Target':>15}")
-        print(f"  {'-'*30} {'-'*15} {'-'*15}")
-        print(f"  {'Baseline CPU (system idle)':<30} {baseline_cpu:>14.2f}% {'N/A':>15}")
-        print(f"  {'Agent CPU (idle)':<30} {idle_cpu:>14.2f}% {'N/A':>15}")
-        print(f"  {'Agent CPU (under load)':<30} {load_cpu:>14.2f}% {'N/A':>15}")
-        print(f"  {'CPU Overhead':<30} {overhead:>14.2f}% {'<5%':>15}")
+        print(f"  {'Metric':<35} {'Value':>15} {'Target':>15}")
+        print(f"  {'-'*35} {'-'*15} {'-'*15}")
+        print(f"  {'System baseline (no agent)':<35} {baseline_cpu:>14.2f}% {'N/A':>15}")
+        print(f"  {'Agent CPU (idle, no load)':<35} {agent_idle_cpu:>14.2f}% {'N/A':>15}")
+        print(f"  {'Agent CPU (under load, avg)':<35} {agent_load_cpu:>14.2f}% {'N/A':>15}")
+        print(f"  {'Agent CPU (under load, max)':<35} {agent_max_cpu:>14.2f}% {'N/A':>15}")
+        print(f"  {'CPU Overhead (avg)':<35} {overhead:>14.2f}% {'<5%':>15}")
+        print(f"  {'CPU Overhead (max)':<35} {agent_max_cpu:>14.2f}% {'<10%':>15}")
         print(f"{'─'*70}")
-        if overhead < 5.0:
-            print(f"  {'Status':<30} {'✅ PASS':>15} {'Meets target':>15}")
+        if overhead < 5.0 and agent_max_cpu < 10.0:
+            print(f"  {'Status':<35} {'✅ PASS':>15} {'Meets target':>15}")
         else:
-            print(f"  {'Status':<30} {'⚠️  FAIL':>15} {'Exceeds target':>15}")
+            print(f"  {'Status':<35} {'⚠️  FAIL':>15} {'Exceeds target':>15}")
         
         # Cleanup
         self._cleanup_agent()
         
         return {
             'baseline_cpu_percent': baseline_cpu,
-            'idle_cpu_percent': idle_cpu,
-            'load_cpu_percent': load_cpu,
-            'max_cpu_percent': max_cpu,
-            'cpu_overhead_percent': overhead,
-            'overhead_increase_percent': overhead_percent,
+            'agent_idle_cpu_percent': agent_idle_cpu,
+            'agent_load_cpu_percent': agent_load_cpu,
+            'agent_max_cpu_percent': agent_max_cpu,
+            'cpu_overhead_percent': overhead,  # Average CPU overhead
+            'cpu_overhead_max_percent': agent_max_cpu,  # Max CPU overhead
+            'overhead_increase_percent': overhead_increase,  # Increase from idle to load
             'duration_seconds': duration,
-            'meets_target': overhead < 5.0  # Target: <5% overhead
+            'meets_target': overhead < 5.0 and agent_max_cpu < 10.0  # Target: <5% avg, <10% max
         }
     
     def _simulate_cpu_overhead(self, duration: int) -> Dict[str, Any]:
@@ -464,19 +477,23 @@ class PerformanceBenchmark:
         cpu = results.get('cpu_overhead', {})
         print(f"\n💻 CPU Overhead:")
         baseline = cpu.get('baseline_cpu_percent', 0)
-        load_cpu = cpu.get('load_cpu_percent', 0)
+        agent_idle = cpu.get('agent_idle_cpu_percent', 0)
+        agent_load = cpu.get('agent_load_cpu_percent', 0)
+        agent_max = cpu.get('agent_max_cpu_percent', 0)
         overhead = cpu.get('cpu_overhead_percent', 0)
         
-        print(f"  {'Metric':<25} {'Value':>15} {'Status':>20}")
-        print(f"  {'-'*25} {'-'*15} {'-'*20}")
-        print(f"  {'Baseline (idle)':<25} {baseline:>14.2f}% {'':>20}")
-        print(f"  {'Agent (under load)':<25} {load_cpu:>14.2f}% {'':>20}")
-        print(f"  {'CPU Overhead':<25} {overhead:>14.2f}% {'':>20}")
+        print(f"  {'Metric':<30} {'Value':>15} {'Status':>20}")
+        print(f"  {'-'*30} {'-'*15} {'-'*20}")
+        print(f"  {'System baseline':<30} {baseline:>14.2f}% {'':>20}")
+        print(f"  {'Agent (idle)':<30} {agent_idle:>14.2f}% {'':>20}")
+        print(f"  {'Agent (load, avg)':<30} {agent_load:>14.2f}% {'':>20}")
+        print(f"  {'Agent (load, max)':<30} {agent_max:>14.2f}% {'':>20}")
+        print(f"  {'CPU Overhead (avg)':<30} {overhead:>14.2f}% {'':>20}")
         
         if cpu.get('meets_target'):
-            print(f"  {'Target Status':<25} {'':>15} {'✅ Meets target':>20}")
+            print(f"  {'Target Status':<30} {'':>15} {'✅ Meets target':>20}")
         else:
-            print(f"  {'Target Status':<25} {'':>15} {'⚠️  Exceeds target':>20}")
+            print(f"  {'Target Status':<30} {'':>15} {'⚠️  Exceeds target':>20}")
         
         # Memory Usage
         memory = results.get('memory_usage', {})
