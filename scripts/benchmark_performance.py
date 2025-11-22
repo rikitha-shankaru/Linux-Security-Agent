@@ -330,8 +330,15 @@ class PerformanceBenchmark:
                 })
                 
                 # Cleanup
-                agent_proc.terminate()
-                agent_proc.wait(timeout=10)
+                try:
+                    agent_proc.terminate()
+                    try:
+                        agent_proc.wait(timeout=15)  # Increased timeout
+                    except subprocess.TimeoutExpired:
+                        agent_proc.kill()
+                        agent_proc.wait()
+                except (OSError, ProcessLookupError):
+                    pass  # Process may already be dead
                 time.sleep(2)
                 
             except Exception as e:
@@ -423,8 +430,15 @@ class PerformanceBenchmark:
                 })
                 
                 # Cleanup
-                agent_proc.terminate()
-                agent_proc.wait(timeout=10)
+                try:
+                    agent_proc.terminate()
+                    try:
+                        agent_proc.wait(timeout=15)  # Increased timeout
+                    except subprocess.TimeoutExpired:
+                        agent_proc.kill()
+                        agent_proc.wait()
+                except (OSError, ProcessLookupError):
+                    pass  # Process may already be dead
                 time.sleep(2)
                 
             except Exception as e:
