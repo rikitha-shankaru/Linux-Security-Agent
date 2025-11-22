@@ -178,6 +178,18 @@ class SimpleSecurityAgent:
             
             syscall_list = list(proc['syscalls'])
             
+            # Initialize process_info (needed for risk scoring)
+            process_info = {}
+            try:
+                p = psutil.Process(pid)
+                process_info = {
+                    'cpu_percent': p.cpu_percent(interval=0.1) if p.is_running() else 0.0,
+                    'memory_percent': p.memory_percent() if p.is_running() else 0.0,
+                    'num_threads': p.num_threads() if p.is_running() else 0
+                }
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                process_info = {}  # Use empty dict if process not available
+            
             # Calculate anomaly score FIRST (needed for risk score)
             anomaly_score = 0.0
             if self.anomaly_detector:
@@ -190,18 +202,6 @@ class SimpleSecurityAgent:
                 
                 if self.anomaly_detector.is_fitted:
                     try:
-                        # Get process info for ML
-                        process_info = {}
-                        try:
-                            p = psutil.Process(pid)
-                            process_info = {
-                                'cpu_percent': p.cpu_percent(interval=0.1) if p.is_running() else 0.0,
-                                'memory_percent': p.memory_percent() if p.is_running() else 0.0,
-                                'num_threads': p.num_threads() if p.is_running() else 0
-                            }
-                        except (psutil.NoSuchProcess, psutil.AccessDenied):
-                            pass
-                        
                         # CORRECT function signature: (syscalls, process_info, pid)
                         anomaly_result = self.anomaly_detector.detect_anomaly_ensemble(
                             syscall_list, process_info, pid
