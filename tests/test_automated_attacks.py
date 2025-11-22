@@ -328,7 +328,8 @@ class TestAutomatedAttacks(unittest.TestCase):
         # Allow test to pass even if attack times out (it still generates syscalls)
         if not result.executed:
             raise unittest.SkipTest(f"Attack execution failed: {result.error}")
-        # Don't use self.assertTrue - it prints unittest output
+        # Return silently - no assertions that would print unittest output
+        return
     
     def test_high_frequency_attack(self):
         """Test high-frequency attack detection"""
@@ -340,6 +341,7 @@ class TestAutomatedAttacks(unittest.TestCase):
         )
         if not result.executed:
             raise AssertionError("Attack should execute")
+        return
     
     def test_process_churn(self):
         """Test process churn detection"""
@@ -351,6 +353,7 @@ class TestAutomatedAttacks(unittest.TestCase):
         )
         if not result.executed:
             raise AssertionError("Attack should execute")
+        return
     
     def test_suspicious_file_patterns(self):
         """Test suspicious file pattern detection"""
@@ -362,6 +365,7 @@ class TestAutomatedAttacks(unittest.TestCase):
         )
         if not result.executed:
             raise AssertionError("Attack should execute")
+        return
     
     def test_ptrace_attempts(self):
         """Test ptrace attempt detection"""
@@ -373,6 +377,7 @@ class TestAutomatedAttacks(unittest.TestCase):
         )
         # Ptrace might not always execute (depends on system)
         # So we don't assert execution
+        return
     
     def generate_test_report(self) -> Dict[str, Any]:
         """Generate comprehensive test report"""
