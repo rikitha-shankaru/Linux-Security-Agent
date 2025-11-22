@@ -292,6 +292,10 @@ class EnhancedAnomalyDetector:
         features = np.array([self.extract_advanced_features(syscalls, process_info) 
                              for syscalls, process_info in training_data], dtype=np.float32)
         print(f"Extracted {features.shape[0]} samples with {features.shape[1]} features")
+        
+        # Store features for potential calibration (if enabled)
+        self._training_features = features
+        self._training_data = training_data
 
         # Merge with previous feature store if requested
         if append:
