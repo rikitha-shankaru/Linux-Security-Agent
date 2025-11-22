@@ -437,9 +437,17 @@ class AutomatedAttackTestRunner:
             def __init__(self, original):
                 self.original = original
             def write(self, text):
-                # Filter out unittest progress indicators (dots, test names, etc)
-                if any(x in text for x in ['test_', ' (tests.', '...', 'ok\n', 'FAIL\n', 'ERROR\n', 'Ran ', ' in ', 's\n']):
-                    return  # Suppress unittest output
+                # Filter out unittest progress indicators
+                # Check for patterns like "test_name (module.Class) ... ok"
+                text_str = str(text)
+                if any(pattern in text_str for pattern in [
+                    'test_', ' (tests.', ' (__main__.', 
+                    '... ', 'ok\n', 'FAIL\n', 'ERROR\n', 
+                    'Ran ', ' in ', 's\n', 'OK\n'
+                ]):
+                    # This is unittest output - suppress it
+                    return
+                # Allow everything else (our formatted output)
                 self.original.write(text)
             def flush(self):
                 self.original.flush()
@@ -447,8 +455,10 @@ class AutomatedAttackTestRunner:
         # Install filter before running tests
         original_stdout = sys.stdout
         original_stderr = sys.stderr
-        sys.stdout = UnittestFilter(original_stdout)
-        sys.stderr = UnittestFilter(original_stderr)
+        filtered_stdout = UnittestFilter(original_stdout)
+        filtered_stderr = UnittestFilter(original_stderr)
+        sys.stdout = filtered_stdout
+        sys.stderr = filtered_stderr
         
         try:
             for test_name, test_method in test_methods:
