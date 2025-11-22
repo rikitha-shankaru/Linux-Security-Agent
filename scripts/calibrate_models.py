@@ -58,13 +58,15 @@ Examples:
     config = {'enable_calibration': True}
     detector = EnhancedAnomalyDetector(config)
     
-    # Check if models are trained, if not, train them first
+    # Check if models are trained, if not, load or train them first
     if not detector.is_fitted:
-        print("⚠️  Models not trained. Attempting to load pre-trained models...")
+        print("📚 Models not yet loaded. Attempting to load pre-trained models...")
         try:
             detector._load_models()
-        except Exception:
-            pass
+            if detector.is_fitted:
+                print("✅ Pre-trained models loaded successfully")
+        except Exception as e:
+            print(f"⚠️  Could not load pre-trained models: {e}")
         
         if not detector.is_fitted:
             print("📚 No pre-trained models found. Training models first...")
@@ -80,6 +82,8 @@ Examples:
                 print("❌ Cannot train models: no training data file provided")
                 print("   Use --file to specify training data")
                 return 1
+    else:
+        print("✅ Models already loaded and ready")
     
     # Load training/calibration data
     if args.file:
