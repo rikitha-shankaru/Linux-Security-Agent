@@ -368,12 +368,12 @@ class PerformanceBenchmark:
                 
                 memory_per_process = ((final_memory - initial_memory) / count * 1024) if count > 0 else 0
                 
-                print(f"   {'Metric':<20} {'Value':>15}")
-                print(f"   {'-'*20} {'-'*15}")
-                print(f"   {'Initial Memory':<20} {initial_memory:>14.2f} MB")
-                print(f"   {'Final Memory':<20} {final_memory:>14.2f} MB")
-                print(f"   {'Memory Increase':<20} {final_memory - initial_memory:>14.2f} MB")
-                print(f"   {'Per Process':<20} {memory_per_process:>14.2f} KB")
+                print(f"   {'Metric':<25} {'Value':>18}")
+                print(f"   {'-'*25} {'-'*18}")
+                print(f"   {'Initial Memory':<25} {initial_memory:>17.2f} MB")
+                print(f"   {'Final Memory':<25} {final_memory:>17.2f} MB")
+                print(f"   {'Memory Increase':<25} {final_memory - initial_memory:>17.2f} MB")
+                print(f"   {'Per Process':<25} {memory_per_process:>17.2f} KB")
                 
                 results.append({
                     'process_count': count,
@@ -424,7 +424,7 @@ class PerformanceBenchmark:
         results = []
         
         for count in test_points:
-            print(f"\n📊 Testing {count} processes...")
+            print(f"\n📊 Testing with {count} processes...")
             
             start_time = time.time()
             
@@ -466,15 +466,15 @@ class PerformanceBenchmark:
                 
                 avg_cpu = statistics.mean(cpu_samples) if cpu_samples else 0.0
                 
-                print(f"   {'Metric':<15} {'Value':>15}")
-                print(f"   {'-'*15} {'-'*15}")
-                print(f"   {'CPU Usage':<15} {avg_cpu:>14.2f}%")
-                print(f"   {'Memory':<15} {memory:>14.2f} MB")
-                print(f"   {'Elapsed Time':<15} {elapsed:>14.2f}s")
+                print(f"   {'Metric':<20} {'Value':>18}")
+                print(f"   {'-'*20} {'-'*18}")
+                print(f"   {'CPU Usage':<20} {avg_cpu:>17.2f}%")
+                print(f"   {'Memory':<20} {memory:>17.2f} MB")
+                print(f"   {'Elapsed Time':<20} {elapsed:>17.2f}s")
                 if avg_cpu < 20.0:
-                    print(f"   {'Status':<15} {'✅ PASS':>15}")
+                    print(f"   {'Status':<20} {'✅ PASS':>18}")
                 else:
-                    print(f"   {'Status':<15} {'⚠️  FAIL':>15}")
+                    print(f"   {'Status':<20} {'⚠️  FAIL':>18}")
                 
                 results.append({
                     'process_count': count,
@@ -571,10 +571,10 @@ class PerformanceBenchmark:
         max_procs = summary.get('max_processes_tested', 0)
         avg_mem = summary.get('avg_memory_per_process_kb', 0)
         
-        print(f"  {'Metric':<25} {'Value':>15} {'':>20}")
-        print(f"  {'-'*25} {'-'*15} {'-'*20}")
-        print(f"  {'Max processes tested':<25} {max_procs:>15} {'':>20}")
-        print(f"  {'Avg per process':<25} {avg_mem:>14.2f} KB {'':>20}")
+        print(f"  {'Metric':<28} {'Value':>18} {'':>18}")
+        print(f"  {'-'*28} {'-'*18} {'-'*18}")
+        print(f"  {'Max processes tested':<28} {max_procs:>18} {'':>18}")
+        print(f"  {'Avg per process':<28} {avg_mem:>17.2f} KB {'':>18}")
         
         # Scalability
         scale = results.get('scalability', {})
@@ -582,8 +582,8 @@ class PerformanceBenchmark:
         scale_tests = scale.get('scalability_tests', [])
         
         if scale_tests:
-            print(f"  {'Process Count':<20} {'CPU %':>10} {'Memory (MB)':>15} {'Status':>15}")
-            print(f"  {'-'*20} {'-'*10} {'-'*15} {'-'*15}")
+            print(f"  {'Process Count':<18} {'CPU %':>12} {'Memory (MB)':>16} {'Status':>18}")
+            print(f"  {'-'*18} {'-'*12} {'-'*16} {'-'*18}")
             
             for test in sorted(scale_tests, key=lambda x: x.get('process_count', 0)):
                 proc_count = test.get('process_count', 0)
@@ -591,11 +591,11 @@ class PerformanceBenchmark:
                 mem_mb = test.get('memory_mb', 0)
                 handles = test.get('handles_load', False)
                 
-                status = "✅ Pass" if handles else "⚠️  Fail"
+                status = "✅ PASS" if handles else "⚠️  FAIL"
                 if 'error' in test:
-                    status = "❌ Error"
+                    status = "❌ ERROR"
                 
-                print(f"  {proc_count:<20} {cpu_pct:>9.2f}% {mem_mb:>14.2f} {status:>15}")
+                print(f"  {proc_count:<18} {cpu_pct:>11.2f}% {mem_mb:>15.2f} {status:>18}")
             
             if scale.get('all_tests_passed'):
                 print(f"\n  ✅ All scalability tests passed (handles 1000+ processes)")
