@@ -1028,7 +1028,10 @@ class EnhancedSecurityAgent:
             for pid, proc in list(self.processes.items()):
                 # Remove if not updated in configured timeout
                 last_update = proc.get('last_update', 0)
-                if current_time - last_update > STALE_PROCESS_TIMEOUT:
+                # Load timeout from config, fallback to constant
+                system_config = self.config.get('system', {})
+                stale_timeout = system_config.get('stale_process_timeout', STALE_PROCESS_TIMEOUT)
+                if current_time - last_update > stale_timeout:
                     stale_pids.append(pid)
             
             # Remove stale processes
@@ -1408,7 +1411,10 @@ class EnhancedSecurityAgent:
             time_since_last = current_time - last_ml_time
             syscalls_since_last = syscall_count - ml_count
             
-            if (syscall_count >= MIN_SYSCALLS_FOR_ML and 
+            # Load from config, fallback to constant
+            perf_config = self.config.get('performance', {})
+            min_syscalls = perf_config.get('min_syscalls_for_ml', MIN_SYSCALLS_FOR_ML)
+            if (syscall_count >= min_syscalls and 
                 (time_since_last >= self._ml_inference_time_interval or 
                  syscalls_since_last >= self._ml_inference_interval)):
                 self._ml_inference_tracking[pid] = (current_time, syscall_count)
@@ -1638,8 +1644,10 @@ class EnhancedSecurityAgent:
     
     def _get_process_name(self, pid: int) -> str:
         """Get process name by PID with caching"""
-        # Validate PID
-        if not isinstance(pid, int) or pid <= 0 or pid > MAX_VALID_PID:
+        # Validate PID - load from config, fallback to constant
+        system_config = self.config.get('system', {})
+        max_pid = system_config.get('max_valid_pid', MAX_VALID_PID)
+        if not isinstance(pid, int) or pid <= 0 or pid > max_pid:
             return f"<invalid:{pid}>"
         
         current_time = time.time()
@@ -2116,6 +2124,12 @@ def main():
         
         # Debug mode
         validated['debug'] = bool(cfg.get('debug', args.debug))
+        
+        # Merge system and performance configs into main config
+        if 'system' in cfg:
+            validated['system'] = cfg['system']
+        if 'performance' in cfg:
+            validated['performance'] = cfg['performance']
         
         # Collector: ebpf or auditd
         collector = str(cfg.get('collector', args.collector)).lower()
