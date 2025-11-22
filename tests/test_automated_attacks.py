@@ -253,11 +253,12 @@ class AutomatedAttackTestRunner:
             print(f"   ⚠️  Attack execution timeout")
         
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        print(f"   {'Status:':<18} {status}")
+        # Use exact fixed spacing - all values align at column 20
+        print(f"   Status:            {status}")
         if executed:
-            print(f"   {'Risk Score:':<18} {risk_score:.2f}")
-            print(f"   {'Anomaly Score:':<18} {anomaly_score:.2f}")
-            print(f"   {'Execution Time:':<18} {execution_time:.2f}s")
+            print(f"   Risk Score:        {risk_score:.2f}")
+            print(f"   Anomaly Score:     {anomaly_score:.2f}")
+            print(f"   Execution Time:    {execution_time:.2f}s")
         print()
         
         return result
