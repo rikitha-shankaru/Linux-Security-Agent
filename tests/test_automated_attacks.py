@@ -305,21 +305,18 @@ class TestAutomatedAttacks(unittest.TestCase):
         
         self.test_results.append(result)
         
-        # Print result with EXACT fixed spacing - no variables in format
+        # Print result with EXACT fixed spacing
         if error:
             print(f"   ⚠️  Attack execution timeout")
         
         status = "✅ DETECTED" if detected else "❌ NOT DETECTED"
-        # Hard-coded exact spacing to ensure perfect alignment
+        # Exact hard-coded spacing - 20 spaces after colon
         print("   Status:            " + status)
         if executed:
-            # Format numbers with exact spacing
-            risk_str = f"{risk_score:6.2f}"
-            anomaly_str = f"{anomaly_score:6.2f}"
-            time_str = f"{execution_time:6.2f}"
-            print("   Risk Score:        " + risk_str)
-            print("   Anomaly Score:     " + anomaly_str)
-            print("   Execution Time:    " + time_str + "s")
+            # All numbers use same format: 6 chars right-aligned
+            print(f"   Risk Score:        {risk_score:>6.2f}")
+            print(f"   Anomaly Score:     {anomaly_score:>6.2f}")
+            print(f"   Execution Time:    {execution_time:>6.2f}s")
         print()  # Blank line for spacing
         sys.stdout.flush()
         
