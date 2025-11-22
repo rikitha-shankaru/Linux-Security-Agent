@@ -71,7 +71,7 @@
 - ⚠️ **Error handling** - improved but still some silent `try/except: pass` blocks
 - ⚠️ **Thread safety** - uses locks but not comprehensively tested for race conditions
 - ⚠️ **Hardcoded values** - some values still hardcoded despite config system
-- ⚠️ **Incomplete features** - Some features (cloud backend) stashed, not integrated
+- ✅ **Platform API decision** - Removed from scope (not needed for academic submission, stashed code preserved)
 
 ---
 

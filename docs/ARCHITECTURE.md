@@ -27,8 +27,8 @@ This is a **research prototype** implementing EDR (Endpoint Detection and Respon
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ MITRE ATT&CK    │    │ Performance      │    │ Cloud Backend   │
-│   Detector      │    │  Optimizer       │    │ (Management)    │
+│ MITRE ATT&CK    │    │ Performance      │    │ Dashboard/TUI   │
+│   Detector      │    │  Optimizer       │    │ (Visualization) │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
@@ -251,11 +251,11 @@ Dashboard/TUI/List/JSON → optional actions (warn/freeze/kill; if enabled)
 - **Process protection** (memory monitoring, process isolation)
 - **Security policy enforcement** (configurable rules)
 
-### **☁️ Enterprise Features**
-- **Cloud backend integration** (centralized management)
-- **Multi-agent coordination** (enterprise deployment)
-- **REST API** (integration with SIEM systems)
+### **📊 Output & Visualization**
+- **Real-time dashboard** (Rich TUI with live updates)
+- **JSON export** (structured event logs for analysis)
 - **Comprehensive logging** (audit trails, compliance)
+- **Process monitoring** (detailed process and syscall tracking)
 
 ### **⚡ Performance & Scalability**
 - **Low overhead monitoring** (<5% CPU usage)

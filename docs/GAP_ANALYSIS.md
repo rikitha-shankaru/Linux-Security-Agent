@@ -140,10 +140,14 @@ This document identifies gaps between the current research prototype and a produ
 ### 9. Platform API Integration
 **Issue:** Platform API stashed, not integrated
 - **Location:** `_platform-api-stash/`
-- **Current Status:** Stashed code exists but not integrated
-- **Fix:** Integrate or remove, document decision
-- **Effort:** 1-2 weeks (if integrating)
-- **Priority for Research:** Low (not needed for core functionality)
+- **Decision:** **REMOVED** - Not integrated for academic submission
+- **Rationale:** 
+  - Platform API is a separate service requiring database, server, and additional dependencies
+  - Does not contribute to core research (eBPF monitoring, ML anomaly detection)
+  - Agent works perfectly standalone, which is sufficient for academic demonstration
+  - Integration would require 1-2 weeks of effort better spent on core features
+  - Stashed code preserved in `_platform-api-stash/` for future reference
+- **Status:** ✅ Decision documented, references removed from main docs
 
 ---
 

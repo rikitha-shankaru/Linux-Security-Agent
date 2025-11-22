@@ -266,7 +266,7 @@ Permission errors on Linux - need to run with sudo for eBPF. On macOS it works w
 - **ProcessMonitor**: Process tracking and updates
 - **AnomalyDetector**: ML-based anomaly detection
 - **ActionHandler**: Automated response system
-- **CloudBackend**: Optional cloud integration
+- **Dashboard**: Real-time TUI visualization
 
 ### **Enhanced Components (Research-Based)**
 - **EnhancedSecurityAgent**: Main orchestrator with all research enhancements

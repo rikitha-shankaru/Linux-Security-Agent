@@ -2055,7 +2055,6 @@ def main():
     parser.add_argument('--train-from-files', nargs='+', metavar='FILE', help='Train models from multiple JSON files (merged)')
     parser.add_argument('--train-from-directory', type=str, metavar='DIR', help='Train models from all JSON files in directory')
     parser.add_argument('--train-from-url', type=str, metavar='URL', help='Train models from URL (HTTP/HTTPS)')
-    parser.add_argument('--train-from-api', type=str, metavar='URL', help='Train models from Platform API endpoint')
     parser.add_argument('--merge-and-train', action='store_true', help='Merge local + external data before training')
     parser.add_argument('--external-files', nargs='+', metavar='FILE', help='External training data files to merge (use with --merge-and-train)')
     parser.add_argument('--no-incremental-training', action='store_true', help='Disable automatic incremental retraining')
@@ -2269,33 +2268,6 @@ def main():
         # Load from URL
         elif args.train_from_url:
             training_data = agent.enhanced_anomaly_detector.load_training_data_from_url(args.train_from_url)
-        
-        # Load from Platform API
-        elif args.train_from_api:
-            # Platform API returns events, need to convert to training format
-            try:
-                import requests
-                response = requests.get(args.train_from_api, timeout=30)
-                response.raise_for_status()
-                api_data = response.json()
-                
-                # Convert API events to training format
-                # This is a simplified conversion - adjust based on your API format
-                training_data = []
-                if 'data' in api_data:
-                    for event in api_data['data']:
-                        if 'syscall' in event:
-                            syscalls = [event['syscall']]  # Single syscall per event
-                            process_info = {
-                                'cpu_percent': event.get('cpu_percent', 0.0),
-                                'memory_percent': event.get('memory_percent', 0.0),
-                                'num_threads': event.get('num_threads', 1),
-                                'pid': event.get('pid', 0)
-                            }
-                            training_data.append((syscalls, process_info))
-            except Exception as e:
-                print(f"❌ Error loading from API: {e}")
-                return
         
         if not training_data:
             print("❌ No training data loaded")
