@@ -487,10 +487,10 @@ class AutomatedAttackTestRunner:
         print(f"\n{'='*70}")
         print("📊 TEST SUMMARY")
         print(f"{'='*70}")
-        print(f"  {'Tests run:':<20} {tests_run:>3}")
-        print(f"  {'Failures:':<20} {failures:>3}")
-        print(f"  {'Errors:':<20} {errors:>3}")
-        print(f"  {'Success:':<20} {'✅ YES' if success else '❌ NO'}")
+        print(f"  Tests run:   {tests_run:>3}")
+        print(f"  Failures:    {failures:>3}")
+        print(f"  Errors:      {errors:>3}")
+        print(f"  Success:     {'✅ YES' if success else '❌ NO'}")
         sys.stdout.flush()
         
         # Save report
