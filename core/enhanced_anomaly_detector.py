@@ -1,7 +1,23 @@
 #!/usr/bin/env python3
 """
 Enhanced Anomaly Detection with Unsupervised Learning
+======================================================
+
+This module implements the core ML-based anomaly detection system using
+ensemble methods (Isolation Forest, One-Class SVM, DBSCAN) to identify
+suspicious system call patterns.
+
+Key Features:
+- 50-dimensional feature extraction (temporal, frequency, n-gram patterns)
+- Ensemble voting across 3 ML algorithms
+- Incremental model retraining support
+- Process context awareness
+- Model persistence and loading
+
 Based on recent research: U-SCAD and advanced ML techniques (2024-2025)
+
+Author: Likitha Shankar
+Academic Project: Linux Security Agent
 """
 
 import numpy as np
@@ -736,8 +752,11 @@ class EnhancedAnomalyDetector:
                     self.ngram_avg_prob = float(payload.get('avg_prob', 0.0))
             except Exception as e:
                 print(f"❌ Error loading n-gram model: {e}")
+            
+            return self.is_fitted
         except Exception as e:
             print(f"❌ Error loading models: {e}")
+            return False
     
     def get_detection_stats(self) -> Dict[str, Any]:
         """Get detection statistics"""

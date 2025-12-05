@@ -1,7 +1,24 @@
 #!/usr/bin/env python3
 """
 Enhanced Linux Security Agent - Research-Based Implementation
-Integrates stateful eBPF monitoring, unsupervised anomaly detection, and container security
+==============================================================
+
+Main orchestrator for the security monitoring system. Integrates stateful 
+eBPF monitoring, unsupervised ML anomaly detection, container security, and 
+automatic incremental retraining.
+
+Key Components:
+- Enhanced eBPF Monitor: Kernel-level syscall tracking
+- Anomaly Detector: Ensemble ML models (IF, OCSVM, DBSCAN)
+- Incremental Trainer: Automatic model retraining
+- Container Monitor: Docker security tracking
+- Risk Scorer: Threat prioritization
+- TUI Dashboard: Real-time visualization
+
+Usage:
+    sudo python3 enhanced_security_agent.py --collector ebpf --threshold 30
+
+Author: Likitha Shankar
 Based on recent research findings (2023-2025)
 """
 

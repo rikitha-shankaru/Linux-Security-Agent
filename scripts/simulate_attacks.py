@@ -312,7 +312,15 @@ def run_all_attacks():
     print(f"{YELLOW}⚠️  All operations are safe and non-destructive{RESET}")
     print()
     
-    input(f"{GREEN}Press Enter to start attack simulation...{RESET}")
+    # Only prompt if running interactively
+    if sys.stdin.isatty():
+        try:
+            input(f"{GREEN}Press Enter to start attack simulation...{RESET}")
+        except (EOFError, KeyboardInterrupt):
+            print(f"\n{YELLOW}Starting attack simulation...{RESET}")
+    else:
+        print(f"{GREEN}Non-interactive mode - starting attack simulation...{RESET}")
+        time.sleep(2)
     
     attacks = [
         ("Privilege Escalation", simulate_privilege_escalation),
