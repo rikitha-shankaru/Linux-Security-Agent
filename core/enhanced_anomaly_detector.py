@@ -519,8 +519,17 @@ class EnhancedAnomalyDetector:
                 risk_score = calibrated_score
         else:
             # Use improved ensemble confidence calculation
-            from core.utils.model_calibration import calculate_ensemble_confidence
-            confidence = calculate_ensemble_confidence(scores, predictions)
+            try:
+                from core.utils.model_calibration import calculate_ensemble_confidence
+                confidence = calculate_ensemble_confidence(scores, predictions)
+            except ImportError:
+                # Fallback if calibration module not available
+                try:
+                    from utils.model_calibration import calculate_ensemble_confidence
+                    confidence = calculate_ensemble_confidence(scores, predictions)
+                except ImportError:
+                    # Use basic confidence calculation
+                    confidence = sum(predictions.values()) / len(predictions) if predictions else 0.5
         
         # Generate explanation
         explanation = self._generate_explanation(predictions, scores, features)
