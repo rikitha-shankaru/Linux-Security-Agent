@@ -297,7 +297,15 @@ def main():
     if os.geteuid() != 0:
         print("\n⚠️  Note: Will need sudo password for eBPF agent")
     
-    input("\nPress Enter to start the test...")
+    # Only prompt if running interactively
+    if sys.stdin.isatty():
+        try:
+            input("\nPress Enter to start the test...")
+        except (EOFError, KeyboardInterrupt):
+            print("\nStarting test...")
+    else:
+        print("\nStarting test automatically (non-interactive mode)...")
+        time.sleep(2)
     
     # Run the test
     run_agent_and_collect_stats(duration_seconds=args.duration)
