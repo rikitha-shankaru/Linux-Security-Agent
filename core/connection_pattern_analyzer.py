@@ -49,12 +49,12 @@ class ConnectionPatternAnalyzer:
         # Port scanning detection
         self.port_access_history = defaultdict(set)  # pid -> set of ports
         
-        # Beaconing detection parameters
+        # Beaconing detection parameters (lowered thresholds for better detection)
         self.beacon_threshold_variance = self.config.get('beacon_variance_threshold', 5.0)  # seconds
-        self.min_connections_for_beacon = self.config.get('min_connections_for_beacon', 5)
+        self.min_connections_for_beacon = self.config.get('min_connections_for_beacon', 3)  # Lowered from 5 to 3
         
-        # Port scanning parameters
-        self.port_scan_threshold = self.config.get('port_scan_threshold', 10)  # unique ports
+        # Port scanning parameters (lowered thresholds for better detection)
+        self.port_scan_threshold = self.config.get('port_scan_threshold', 5)  # unique ports (lowered from 10 to 5)
         self.port_scan_timeframe = self.config.get('port_scan_timeframe', 60)  # seconds
         
         # Data transfer tracking

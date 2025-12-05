@@ -512,8 +512,9 @@ class SimpleSecurityAgent:
                                      f"Memory={process_info.get('memory_percent', 0):.1f}% "
                                      f"Threads={process_info.get('num_threads', 0)}")
                 
-                # Also log anomalies even if risk is low
-                if anomaly_result and anomaly_result.is_anomaly and anomaly_score > 50:
+                # Also log anomalies even if risk is low (lower threshold to actually log)
+                # Use is_anomaly flag OR score > 30 (more reasonable threshold)
+                if anomaly_result and anomaly_result.is_anomaly and anomaly_score > 30:
                     comm = proc.get('name', 'unknown')
                     logger.warning(f"⚠️  ANOMALY DETECTED: PID={pid} Process={comm} AnomalyScore={anomaly_score:.1f}")
                     logger.warning(f"   Confidence: {anomaly_result.confidence:.2f} | Explanation: {anomaly_result.explanation}")
