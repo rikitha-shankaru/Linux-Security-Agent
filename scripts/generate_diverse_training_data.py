@@ -107,11 +107,11 @@ def generate_syscall_sequence(behavior_type, length=100):
         syscalls.append(syscall)
     
     # Add burst patterns if applicable
-    if pattern.get('burst_patterns'):
+    if pattern.get('burst_patterns') and len(syscalls) > 30:
         # Insert a burst of similar syscalls
         burst_syscall = random.choice(pattern['common_syscalls'])
-        burst_length = random.randint(10, 30)
-        burst_position = random.randint(0, len(syscalls) - burst_length)
+        burst_length = min(random.randint(10, 30), len(syscalls) // 2)
+        burst_position = random.randint(0, max(0, len(syscalls) - burst_length))
         syscalls[burst_position:burst_position] = [burst_syscall] * burst_length
     
     return syscalls
