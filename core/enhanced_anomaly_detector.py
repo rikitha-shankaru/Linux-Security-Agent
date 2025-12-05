@@ -724,7 +724,7 @@ class EnhancedAnomalyDetector:
             if self.is_fitted:
                 print("✅ Models loaded successfully")
             else:
-                print("⚠️ Partial model load; training required before detection")
+                pass  # Suppressed warning("⚠️ Partial model load; training required before detection")
 
             # Load n-gram model if available
             try:
