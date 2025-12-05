@@ -49,6 +49,18 @@ except ImportError:
         ML_AVAILABLE = False
         EnhancedAnomalyDetector = None
 
+# Connection pattern analyzer
+try:
+    from connection_pattern_analyzer import ConnectionPatternAnalyzer
+    CONN_PATTERN_AVAILABLE = True
+except ImportError:
+    try:
+        from core.connection_pattern_analyzer import ConnectionPatternAnalyzer
+        CONN_PATTERN_AVAILABLE = True
+    except ImportError:
+        CONN_PATTERN_AVAILABLE = False
+        ConnectionPatternAnalyzer = None
+
 import psutil
 from rich.console import Console
 from rich.table import Table
@@ -69,6 +81,13 @@ class SimpleSecurityAgent:
         self.risk_scorer = EnhancedRiskScorer(config)
         self.anomaly_detector = None
         
+        # Connection pattern analyzer (for C2, port scanning, exfiltration)
+        if CONN_PATTERN_AVAILABLE:
+            self.connection_analyzer = ConnectionPatternAnalyzer(config)
+            logger.info("✅ Connection pattern analyzer enabled")
+        else:
+            self.connection_analyzer = None
+        
         # Process tracking
         self.processes = {}  # pid -> {name, syscalls, risk_score, anomaly_score, last_update}
         self.processes_lock = threading.Lock()
@@ -78,7 +97,9 @@ class SimpleSecurityAgent:
             'total_processes': 0,
             'high_risk': 0,
             'anomalies': 0,
-            'total_syscalls': 0
+            'total_syscalls': 0,
+            'c2_beacons': 0,
+            'port_scans': 0
         }
         
         # Cache info panel to prevent re-creation (reduces blinking)
@@ -235,10 +256,33 @@ class SimpleSecurityAgent:
                 proc['anomaly_score'] = 0.0
                 anomaly_result = None
             
-            # Calculate risk score WITH anomaly score included
-            risk_score = self.risk_scorer.update_risk_score(
+            # Check for network connection patterns (C2, port scanning, exfiltration)
+            connection_risk_bonus = 0.0
+            if self.connection_analyzer and syscall in ['socket', 'connect', 'sendto', 'sendmsg']:
+                # Simulate connection analysis (would extract IP/port from event_info in real impl)
+                # For now, just track the syscall pattern
+                conn_result = self.connection_analyzer.analyze_connection(
+                    pid=pid,
+                    dest_ip=event.event_info.get('dest_ip', '0.0.0.0') if hasattr(event, 'event_info') else '0.0.0.0',
+                    dest_port=event.event_info.get('dest_port', 0) if hasattr(event, 'event_info') else 0,
+                    timestamp=time.time()
+                )
+                
+                if conn_result:
+                    connection_risk_bonus = 30.0  # Boost risk for connection patterns
+                    logger.warning(f"🌐 CONNECTION PATTERN DETECTED: {conn_result['type']} PID={pid} {conn_result['explanation']}")
+                    
+                    # Update stats
+                    if conn_result['type'] == 'C2_BEACONING':
+                        self.stats['c2_beacons'] += 1
+                    elif conn_result['type'] == 'PORT_SCANNING':
+                        self.stats['port_scans'] += 1
+            
+            # Calculate risk score WITH anomaly score AND connection pattern bonus
+            base_risk_score = self.risk_scorer.update_risk_score(
                 pid, syscall_list, process_info, anomaly_score
             )
+            risk_score = base_risk_score + connection_risk_bonus
             proc['risk_score'] = risk_score
             
             # DEBUG: Log all scores periodically
@@ -348,6 +392,8 @@ class SimpleSecurityAgent:
                 f"Processes: {self.stats['total_processes']} | "
                 f"High Risk: {self.stats['high_risk']} | "
                 f"Anomalies: {self.stats['anomalies']} | "
+                f"C2: {self.stats['c2_beacons']} | "
+                f"Scans: {self.stats['port_scans']} | "
                 f"Syscalls: {self.stats['total_syscalls']}"
             )
             
