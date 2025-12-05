@@ -134,6 +134,10 @@ class SimpleSecurityAgent:
         if not self.running:
             return
         
+        # DEBUG: Log first few events to confirm flow
+        if self.stats['total_syscalls'] < 5:
+            logger.info(f"🔍 EVENT RECEIVED: PID={event.pid} Syscall={event.syscall}")
+        
         pid = event.pid
         syscall = event.syscall
         
@@ -229,6 +233,11 @@ class SimpleSecurityAgent:
                 pid, syscall_list, process_info, anomaly_score
             )
             proc['risk_score'] = risk_score
+            
+            # DEBUG: Log all scores periodically
+            if len(syscall_list) >= 20 and len(syscall_list) % 20 == 0:
+                comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
+                logger.info(f"📊 PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f} Syscalls={len(syscall_list)}")
             
             # Update high risk count and LOG detections
             threshold = self.config.get('risk_threshold', 30.0)
