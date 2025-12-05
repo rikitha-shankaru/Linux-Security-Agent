@@ -64,8 +64,8 @@ class TestMLAnomalyDetector(unittest.TestCase):
         }
         features = self.detector.extract_advanced_features(syscalls, process_info)
         self.assertEqual(len(features), 50)
-        # Resource features should be non-zero
-        self.assertTrue(any(features[20:] > 0))  # Resource features are later in array
+        # Resource features should be non-zero (cpu_percent, memory_percent, num_threads at indices 17-19)
+        self.assertTrue(any(features[15:20] > 0))  # Resource features are at indices 17-19
 
 
 if __name__ == '__main__':
