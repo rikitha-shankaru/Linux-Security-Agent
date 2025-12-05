@@ -9,21 +9,66 @@ import time
 import signal
 import threading
 import logging
+from logging.handlers import RotatingFileHandler
 from collections import defaultdict, deque
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pathlib import Path
 
 # Add core to path
 _core_dir = os.path.dirname(os.path.abspath(__file__))
 if _core_dir not in sys.path:
     sys.path.insert(0, _core_dir)
 
+# Setup logging with file output
+def setup_logging(log_dir=None):
+    """Setup logging to both console and file"""
+    if log_dir is None:
+        # Default: ~/.cache/security_agent/logs or ./logs
+        home_log = Path.home() / '.cache' / 'security_agent' / 'logs'
+        local_log = Path(__file__).parent.parent / 'logs'
+        log_dir = local_log if local_log.exists() else home_log
+    
+    log_dir = Path(log_dir)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Log file path
+    log_file = log_dir / 'security_agent.log'
+    
+    # Create formatters
+    detailed_format = '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+    console_format = '%(asctime)s - %(levelname)s - %(message)s'
+    
+    # Root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    
+    # Remove existing handlers
+    root_logger.handlers = []
+    
+    # File handler with rotation (10MB, keep 5 backups)
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=10*1024*1024,  # 10 MB
+        backupCount=5,
+        encoding='utf-8'
+    )
+    file_handler.setLevel(logging.DEBUG)  # More detailed in file
+    file_handler.setFormatter(logging.Formatter(detailed_format))
+    root_logger.addHandler(file_handler)
+    
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)  # Less verbose on console
+    console_handler.setFormatter(logging.Formatter(console_format))
+    root_logger.addHandler(console_handler)
+    
+    return str(log_file)
+
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+log_file_path = setup_logging()
 logger = logging.getLogger('security_agent.simple')
+logger.info(f"📝 Logging to file: {log_file_path}")
 
 # Imports
 try:
@@ -155,14 +200,15 @@ class SimpleSecurityAgent:
         if not self.running:
             return
         
-        # DEBUG: Log first few events to confirm flow
-        if self.stats['total_syscalls'] < 5:
-            logger.info(f"🔍 EVENT RECEIVED: PID={event.pid} Syscall={event.syscall}")
-        
-        pid = event.pid
-        syscall = event.syscall
-        
-        with self.processes_lock:
+        try:
+            # DEBUG: Log first few events to confirm flow
+            if self.stats['total_syscalls'] < 5:
+                logger.info(f"🔍 EVENT RECEIVED: PID={event.pid} Syscall={event.syscall}")
+            
+            pid = event.pid
+            syscall = event.syscall
+            
+            with self.processes_lock:
             # Update process info
             if pid not in self.processes:
                 # Get actual process name from psutil if comm is empty
@@ -321,6 +367,10 @@ class SimpleSecurityAgent:
             if anomaly_result and anomaly_result.is_anomaly and anomaly_score > 50:
                 comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
                 logger.warning(f"⚠️  ANOMALY DETECTED: PID={pid} Process={comm} AnomalyScore={anomaly_score:.1f}")
+        
+        except Exception as e:
+            # Log errors but don't crash the agent
+            logger.error(f"Error processing event for PID={event.pid if hasattr(event, 'pid') else 'unknown'}: {e}", exc_info=True)
     
     def create_dashboard(self) -> Panel:
         """Create dashboard view"""
@@ -460,7 +510,12 @@ class SimpleSecurityAgent:
         """Run with dashboard"""
         # Show startup info
         self.console.print("\n[bold green]🛡️  Security Agent Starting...[/bold green]")
-        self.console.print("[yellow]ℹ️  Score information will be displayed in the dashboard[/yellow]\n")
+        self.console.print("[yellow]ℹ️  Score information will be displayed in the dashboard[/yellow]")
+        self.console.print(f"[cyan]📝 Log file: {log_file_path}[/cyan]\n")
+        logger.info("="*60)
+        logger.info("Security Agent Starting")
+        logger.info(f"Log file: {log_file_path}")
+        logger.info("="*60)
         time.sleep(2)  # Give user time to read startup message
         
         if not self.start():
@@ -476,9 +531,14 @@ class SimpleSecurityAgent:
                     # Sleep matches refresh rate to avoid unnecessary updates
                     time.sleep(0.5)
         except KeyboardInterrupt:
-            pass
+            logger.info("Agent stopped by user (Ctrl+C)")
+        except Exception as e:
+            logger.error(f"Fatal error in dashboard: {e}", exc_info=True)
+            raise
         finally:
+            logger.info("Shutting down agent...")
             self.stop()
+            logger.info("Agent shutdown complete")
 
 
 def main():
@@ -505,8 +565,14 @@ def main():
             logger.warning(f"Failed to load config: {e}")
     
     # Create and run agent
-    agent = SimpleSecurityAgent(config)
-    agent.run_dashboard()
+    try:
+        agent = SimpleSecurityAgent(config)
+        agent.run_dashboard()
+    except Exception as e:
+        logger.error(f"Fatal error: {e}", exc_info=True)
+        print(f"\n❌ Fatal error: {e}")
+        print(f"📝 Check log file for details: {log_file_path}")
+        sys.exit(1)
 
 
 if __name__ == '__main__':
