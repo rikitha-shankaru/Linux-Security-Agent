@@ -189,9 +189,10 @@ def main():
             with open(log_file, 'r') as f:
                 initial_log_content = f.read()
         
-        # Run attack simulation
+        # Run attack simulation - call the specific function
+        attack_func_name = attack_name.lower().replace(' ', '_').replace('-', '_')
         attack_result = run_command(
-            f"python3 scripts/simulate_attacks.py 2>&1 | grep -A 5 '{attack_name}' || python3 -c \"import sys; sys.path.insert(0, 'scripts'); from simulate_attacks import *; simulate_{attack_name.lower().replace(' ', '_').replace('-', '_')}()\"",
+            f"python3 -c \"import sys; sys.path.insert(0, 'scripts'); from simulate_attacks import {attack_func_name}; {attack_func_name}()\"",
             timeout=30
         )
         
