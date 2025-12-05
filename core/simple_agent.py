@@ -200,6 +200,7 @@ class SimpleSecurityAgent:
                     except Exception:
                         pass  # Models not available
                 
+                anomaly_result = None
                 if self.anomaly_detector.is_fitted:
                     try:
                         # CORRECT function signature: (syscalls, process_info, pid)
@@ -221,6 +222,7 @@ class SimpleSecurityAgent:
             else:
                 anomaly_score = 0.0
                 proc['anomaly_score'] = 0.0
+                anomaly_result = None
             
             # Calculate risk score WITH anomaly score included
             risk_score = self.risk_scorer.update_risk_score(
@@ -228,11 +230,19 @@ class SimpleSecurityAgent:
             )
             proc['risk_score'] = risk_score
             
-            # Update high risk count
+            # Update high risk count and LOG detections
             threshold = self.config.get('risk_threshold', 30.0)
             if risk_score >= threshold:
                 self.stats['high_risk'] = sum(1 for p in self.processes.values() 
                                              if p['risk_score'] >= threshold)
+                # LOG HIGH-RISK DETECTION
+                comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
+                logger.warning(f"🔴 HIGH RISK DETECTED: PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f}")
+            
+            # Also log anomalies even if risk is low
+            if anomaly_result and anomaly_result.is_anomaly and anomaly_score > 50:
+                comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
+                logger.warning(f"⚠️  ANOMALY DETECTED: PID={pid} Process={comm} AnomalyScore={anomaly_score:.1f}")
     
     def create_dashboard(self) -> Panel:
         """Create dashboard view"""
