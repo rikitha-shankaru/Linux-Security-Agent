@@ -152,6 +152,16 @@ class SimpleSecurityAgent:
         # Cache info panel to prevent re-creation (reduces blinking)
         self._info_panel_cache = None
         
+        # Store agent's own PID to exclude from detection (prevent self-detection false positives)
+        self.agent_pid = os.getpid()
+        logger.info(f"Agent PID: {self.agent_pid} (will be excluded from detection)")
+        
+        # Known system processes to exclude (optional, can be configured)
+        self.excluded_pids = set([self.agent_pid])
+        excluded_processes = self.config.get('excluded_processes', [])
+        if excluded_processes:
+            logger.info(f"Excluding processes from detection: {excluded_processes}")
+        
         # Initialize ML if available
         if ML_AVAILABLE:
             try:
@@ -276,6 +286,9 @@ class SimpleSecurityAgent:
             return
         
         try:
+            # Skip detection for agent's own PID (prevent self-detection false positives)
+            if event.pid == self.agent_pid or event.pid in self.excluded_pids:
+                return
             # DEBUG: Log first few events to confirm flow
             if self.stats['total_syscalls'] < 5:
                 logger.info(f"🔍 EVENT RECEIVED: PID={event.pid} Syscall={event.syscall} Comm={getattr(event, 'comm', 'N/A')}")
