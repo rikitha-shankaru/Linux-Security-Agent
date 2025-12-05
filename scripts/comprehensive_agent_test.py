@@ -190,7 +190,9 @@ def main():
                 initial_log_content = f.read()
         
         # Run attack simulation - call the specific function
+        # Convert attack name to function name: "Privilege Escalation" -> "simulate_privilege_escalation"
         attack_func_name = attack_name.lower().replace(' ', '_').replace('-', '_')
+        attack_func_name = f"simulate_{attack_func_name}"  # Add simulate_ prefix
         attack_result = run_command(
             f"python3 -c \"import sys; sys.path.insert(0, 'scripts'); from simulate_attacks import {attack_func_name}; {attack_func_name}()\"",
             timeout=30
@@ -316,4 +318,3 @@ if __name__ == "__main__":
         traceback.print_exc()
         run_command("sudo pkill -9 -f 'simple_agent.py'", timeout=5)
         sys.exit(1)
-
