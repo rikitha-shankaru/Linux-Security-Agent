@@ -209,164 +209,164 @@ class SimpleSecurityAgent:
             syscall = event.syscall
             
             with self.processes_lock:
-            # Update process info
-            if pid not in self.processes:
-                # Get actual process name from psutil if comm is empty
-                process_name = event.comm
-                if not process_name or process_name.startswith('pid_'):
-                    try:
-                        p = psutil.Process(pid)
-                        process_name = p.name()
-                    except (psutil.NoSuchProcess, psutil.AccessDenied):
-                        process_name = event.comm or f'pid_{pid}'
-                
-                self.processes[pid] = {
-                    'name': process_name,
-                    'syscalls': deque(maxlen=100),  # Last 100 for analysis
-                    'total_syscalls': 0,  # Actual total count
-                    'risk_score': 0.0,
-                    'anomaly_score': 0.0,
-                    'last_update': time.time()
-                }
-                self.stats['total_processes'] += 1
-            else:
-                # Update process name if we have a better one
-                if not self.processes[pid]['name'] or self.processes[pid]['name'].startswith('pid_'):
-                    if event.comm:
-                        self.processes[pid]['name'] = event.comm
-                    else:
+                # Update process info
+                if pid not in self.processes:
+                    # Get actual process name from psutil if comm is empty
+                    process_name = event.comm
+                    if not process_name or process_name.startswith('pid_'):
                         try:
                             p = psutil.Process(pid)
-                            self.processes[pid]['name'] = p.name()
+                            process_name = p.name()
                         except (psutil.NoSuchProcess, psutil.AccessDenied):
-                            pass
-            
-            proc = self.processes[pid]
-            proc['syscalls'].append(syscall)
-            proc['total_syscalls'] += 1  # Increment actual total count
-            proc['last_update'] = time.time()
-            self.stats['total_syscalls'] += 1
-            
-            syscall_list = list(proc['syscalls'])
-            
-            # Initialize process_info (needed for risk scoring)
-            process_info = {}
-            try:
-                p = psutil.Process(pid)
-                process_info = {
-                    'cpu_percent': p.cpu_percent(interval=0.1) if p.is_running() else 0.0,
-                    'memory_percent': p.memory_percent() if p.is_running() else 0.0,
-                    'num_threads': p.num_threads() if p.is_running() else 0
-                }
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                process_info = {}  # Use empty dict if process not available
-            
-            # Calculate anomaly score FIRST (needed for risk score)
-            anomaly_score = 0.0
-            if self.anomaly_detector:
-                # Try to load models if not fitted
-                if not self.anomaly_detector.is_fitted:
-                    try:
-                        self.anomaly_detector._load_models()
-                    except Exception:
-                        pass  # Models not available
+                            process_name = event.comm or f'pid_{pid}'
+                    
+                    self.processes[pid] = {
+                        'name': process_name,
+                        'syscalls': deque(maxlen=100),  # Last 100 for analysis
+                        'total_syscalls': 0,  # Actual total count
+                        'risk_score': 0.0,
+                        'anomaly_score': 0.0,
+                        'last_update': time.time()
+                    }
+                    self.stats['total_processes'] += 1
+                else:
+                    # Update process name if we have a better one
+                    if not self.processes[pid]['name'] or self.processes[pid]['name'].startswith('pid_'):
+                        if event.comm:
+                            self.processes[pid]['name'] = event.comm
+                        else:
+                            try:
+                                p = psutil.Process(pid)
+                                self.processes[pid]['name'] = p.name()
+                            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                                pass
                 
-                anomaly_result = None
-                if self.anomaly_detector.is_fitted:
-                    try:
-                        # CORRECT function signature: (syscalls, process_info, pid)
-                        anomaly_result = self.anomaly_detector.detect_anomaly_ensemble(
-                            syscall_list, process_info, pid
-                        )
-                        anomaly_score = abs(anomaly_result.anomaly_score)  # Use absolute value
-                        proc['anomaly_score'] = anomaly_score
-                        
-                        # DEBUG: Log ML result for first few processes
-                        if len(syscall_list) == 20:  # First time we have 20 syscalls
-                            logger.info(f"🤖 ML RESULT: PID={pid} Score={anomaly_score:.1f} IsAnomaly={anomaly_result.is_anomaly}")
-                        
-                        if anomaly_result.is_anomaly:
-                            self.stats['anomalies'] += 1
-                    except Exception as e:
-                        logger.warning(f"⚠️  ML detection failed for PID {pid}: {e}")
-                        import traceback
-                        logger.warning(f"Traceback: {traceback.format_exc()}")
+                proc = self.processes[pid]
+                proc['syscalls'].append(syscall)
+                proc['total_syscalls'] += 1  # Increment actual total count
+                proc['last_update'] = time.time()
+                self.stats['total_syscalls'] += 1
+                
+                syscall_list = list(proc['syscalls'])
+                
+                # Initialize process_info (needed for risk scoring)
+                process_info = {}
+                try:
+                    p = psutil.Process(pid)
+                    process_info = {
+                        'cpu_percent': p.cpu_percent(interval=0.1) if p.is_running() else 0.0,
+                        'memory_percent': p.memory_percent() if p.is_running() else 0.0,
+                        'num_threads': p.num_threads() if p.is_running() else 0
+                    }
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    process_info = {}  # Use empty dict if process not available
+                
+                # Calculate anomaly score FIRST (needed for risk score)
+                anomaly_score = 0.0
+                if self.anomaly_detector:
+                    # Try to load models if not fitted
+                    if not self.anomaly_detector.is_fitted:
+                        try:
+                            self.anomaly_detector._load_models()
+                        except Exception:
+                            pass  # Models not available
+                    
+                    anomaly_result = None
+                    if self.anomaly_detector.is_fitted:
+                        try:
+                            # CORRECT function signature: (syscalls, process_info, pid)
+                            anomaly_result = self.anomaly_detector.detect_anomaly_ensemble(
+                                syscall_list, process_info, pid
+                            )
+                            anomaly_score = abs(anomaly_result.anomaly_score)  # Use absolute value
+                            proc['anomaly_score'] = anomaly_score
+                            
+                            # DEBUG: Log ML result for first few processes
+                            if len(syscall_list) == 20:  # First time we have 20 syscalls
+                                logger.info(f"🤖 ML RESULT: PID={pid} Score={anomaly_score:.1f} IsAnomaly={anomaly_result.is_anomaly}")
+                            
+                            if anomaly_result.is_anomaly:
+                                self.stats['anomalies'] += 1
+                        except Exception as e:
+                            logger.warning(f"⚠️  ML detection failed for PID {pid}: {e}")
+                            import traceback
+                            logger.warning(f"Traceback: {traceback.format_exc()}")
+                            anomaly_score = 0.0
+                            proc['anomaly_score'] = 0.0
+                    else:
+                        # ML not trained yet - set to 0.00
                         anomaly_score = 0.0
                         proc['anomaly_score'] = 0.0
                 else:
-                    # ML not trained yet - set to 0.00
                     anomaly_score = 0.0
                     proc['anomaly_score'] = 0.0
-            else:
-                anomaly_score = 0.0
-                proc['anomaly_score'] = 0.0
-                anomaly_result = None
-            
-            # Check for network connection patterns (C2, port scanning, exfiltration)
-            connection_risk_bonus = 0.0
-            if self.connection_analyzer and syscall in ['socket', 'connect', 'sendto', 'sendmsg']:
-                try:
-                    # Extract connection info from event
-                    dest_ip = '0.0.0.0'
-                    dest_port = 0
-                    
-                    # Try to get from event_info if available
-                    if hasattr(event, 'event_info') and event.event_info:
-                        dest_ip = event.event_info.get('dest_ip', '0.0.0.0')
-                        dest_port = event.event_info.get('dest_port', 0)
-                    
-                    # For socket/connect syscalls, use a simulated port based on PID for pattern detection
-                    # (In real implementation, would extract from syscall arguments via eBPF)
-                    if dest_port == 0 and syscall in ['socket', 'connect']:
-                        # Use a hash of PID + syscall count to simulate different ports
-                        dest_port = 1000 + (pid % 1000) + (len(syscall_list) % 100)
-                    
-                    # Analyze connection pattern
-                    conn_result = self.connection_analyzer.analyze_connection(
-                        pid=pid,
-                        dest_ip=dest_ip,
-                        dest_port=dest_port,
-                        timestamp=time.time()
-                    )
-                    
-                    if conn_result:
-                        connection_risk_bonus = 30.0  # Boost risk for connection patterns
-                        logger.warning(f"🌐 CONNECTION PATTERN DETECTED: {conn_result['type']} PID={pid} {conn_result['explanation']}")
+                    anomaly_result = None
+                
+                # Check for network connection patterns (C2, port scanning, exfiltration)
+                connection_risk_bonus = 0.0
+                if self.connection_analyzer and syscall in ['socket', 'connect', 'sendto', 'sendmsg']:
+                    try:
+                        # Extract connection info from event
+                        dest_ip = '0.0.0.0'
+                        dest_port = 0
                         
-                        # Update stats
-                        if conn_result['type'] == 'C2_BEACONING':
-                            self.stats['c2_beacons'] += 1
-                        elif conn_result['type'] == 'PORT_SCANNING':
-                            self.stats['port_scans'] += 1
-                except Exception as e:
-                    # Don't fail on connection analysis errors
-                    logger.debug(f"Connection pattern analysis error for PID {pid}: {e}")
-            
-            # Calculate risk score WITH anomaly score AND connection pattern bonus
-            base_risk_score = self.risk_scorer.update_risk_score(
-                pid, syscall_list, process_info, anomaly_score
-            )
-            risk_score = base_risk_score + connection_risk_bonus
-            proc['risk_score'] = risk_score
-            
-            # DEBUG: Log all scores periodically
-            if len(syscall_list) >= 20 and len(syscall_list) % 20 == 0:
-                comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
-                logger.info(f"📊 PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f} Syscalls={len(syscall_list)}")
-            
-            # Update high risk count and LOG detections
-            threshold = self.config.get('risk_threshold', 30.0)
-            if risk_score >= threshold:
-                self.stats['high_risk'] = sum(1 for p in self.processes.values() 
-                                             if p['risk_score'] >= threshold)
-                # LOG HIGH-RISK DETECTION
-                comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
-                logger.warning(f"🔴 HIGH RISK DETECTED: PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f}")
-            
-            # Also log anomalies even if risk is low
-            if anomaly_result and anomaly_result.is_anomaly and anomaly_score > 50:
-                comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
-                logger.warning(f"⚠️  ANOMALY DETECTED: PID={pid} Process={comm} AnomalyScore={anomaly_score:.1f}")
+                        # Try to get from event_info if available
+                        if hasattr(event, 'event_info') and event.event_info:
+                            dest_ip = event.event_info.get('dest_ip', '0.0.0.0')
+                            dest_port = event.event_info.get('dest_port', 0)
+                        
+                        # For socket/connect syscalls, use a simulated port based on PID for pattern detection
+                        # (In real implementation, would extract from syscall arguments via eBPF)
+                        if dest_port == 0 and syscall in ['socket', 'connect']:
+                            # Use a hash of PID + syscall count to simulate different ports
+                            dest_port = 1000 + (pid % 1000) + (len(syscall_list) % 100)
+                        
+                        # Analyze connection pattern
+                        conn_result = self.connection_analyzer.analyze_connection(
+                            pid=pid,
+                            dest_ip=dest_ip,
+                            dest_port=dest_port,
+                            timestamp=time.time()
+                        )
+                        
+                        if conn_result:
+                            connection_risk_bonus = 30.0  # Boost risk for connection patterns
+                            logger.warning(f"🌐 CONNECTION PATTERN DETECTED: {conn_result['type']} PID={pid} {conn_result['explanation']}")
+                            
+                            # Update stats
+                            if conn_result['type'] == 'C2_BEACONING':
+                                self.stats['c2_beacons'] += 1
+                            elif conn_result['type'] == 'PORT_SCANNING':
+                                self.stats['port_scans'] += 1
+                    except Exception as e:
+                        # Don't fail on connection analysis errors
+                        logger.debug(f"Connection pattern analysis error for PID {pid}: {e}")
+                
+                # Calculate risk score WITH anomaly score AND connection pattern bonus
+                base_risk_score = self.risk_scorer.update_risk_score(
+                    pid, syscall_list, process_info, anomaly_score
+                )
+                risk_score = base_risk_score + connection_risk_bonus
+                proc['risk_score'] = risk_score
+                
+                # DEBUG: Log all scores periodically
+                if len(syscall_list) >= 20 and len(syscall_list) % 20 == 0:
+                    comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
+                    logger.info(f"📊 PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f} Syscalls={len(syscall_list)}")
+                
+                # Update high risk count and LOG detections
+                threshold = self.config.get('risk_threshold', 30.0)
+                if risk_score >= threshold:
+                    self.stats['high_risk'] = sum(1 for p in self.processes.values() 
+                                                 if p['risk_score'] >= threshold)
+                    # LOG HIGH-RISK DETECTION
+                    comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
+                    logger.warning(f"🔴 HIGH RISK DETECTED: PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f}")
+                
+                # Also log anomalies even if risk is low
+                if anomaly_result and anomaly_result.is_anomaly and anomaly_score > 50:
+                    comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
+                    logger.warning(f"⚠️  ANOMALY DETECTED: PID={pid} Process={comm} AnomalyScore={anomaly_score:.1f}")
         
         except Exception as e:
             # Log errors but don't crash the agent
