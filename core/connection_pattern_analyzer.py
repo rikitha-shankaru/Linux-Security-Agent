@@ -137,8 +137,8 @@ class ConnectionPatternAnalyzer:
         try:
             mean_interval = statistics.mean(intervals)
             
-            # Only consider if intervals are reasonably long (> 1 second)
-            if mean_interval < 1.0:
+            # Only consider if intervals are reasonably long (> 0.5 second) - lowered for better detection
+            if mean_interval < 0.5:
                 return None
             
             # Calculate variance
