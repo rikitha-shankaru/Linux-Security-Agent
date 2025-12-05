@@ -12,7 +12,7 @@ import logging
 import traceback
 import pickle
 from logging.handlers import RotatingFileHandler
-from collections import defaultdict, deque
+from collections import defaultdict, deque, Counter
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from pathlib import Path
@@ -554,9 +554,40 @@ class SimpleSecurityAgent:
                 # Use is_anomaly flag OR score > 30 (more reasonable threshold)
                 if anomaly_result and anomaly_result.is_anomaly and anomaly_score > 30:
                     comm = proc.get('name', 'unknown')
+                    
+                    # Get recent syscalls for context
+                    recent_syscalls = list(proc['syscalls'])[-15:] if len(proc['syscalls']) > 0 else []
+                    syscall_counts = Counter(recent_syscalls)
+                    top_syscalls = syscall_counts.most_common(5)
+                    
+                    # Identify high-risk syscalls in recent activity
+                    high_risk_syscalls = ['ptrace', 'setuid', 'setgid', 'chroot', 'mount', 'umount', 
+                                         'execve', 'clone', 'fork', 'chmod', 'chown', 'unlink', 'rename']
+                    detected_risky = [sc for sc, count in top_syscalls if sc in high_risk_syscalls]
+                    
+                    # Enhanced anomaly logging with specific details
                     logger.warning(f"⚠️  ANOMALY DETECTED: PID={pid} Process={comm} AnomalyScore={anomaly_score:.1f}")
-                    logger.warning(f"   Confidence: {anomaly_result.confidence:.2f} | Explanation: {anomaly_result.explanation}")
-                    logger.warning(f"   Risk Score: {risk_score:.1f} | Total Syscalls: {proc.get('total_syscalls', 0)}")
+                    logger.warning(f"   ┌─ What's Anomalous:")
+                    logger.warning(f"   │  {anomaly_result.explanation}")
+                    logger.warning(f"   │  Confidence: {anomaly_result.confidence:.2f} | Risk Score: {risk_score:.1f}")
+                    logger.warning(f"   ├─ Process Activity:")
+                    logger.warning(f"   │  Total Syscalls: {proc.get('total_syscalls', 0)} | Recent: {len(recent_syscalls)}")
+                    if top_syscalls:
+                        top_str = ", ".join([f"{sc}({count})" for sc, count in top_syscalls])
+                        logger.warning(f"   │  Top Syscalls: {top_str}")
+                    if detected_risky:
+                        logger.warning(f"   │  ⚠️  High-Risk Syscalls Detected: {', '.join(detected_risky)}")
+                    if process_info:
+                        logger.warning(f"   │  Resources: CPU={process_info.get('cpu_percent', 0):.1f}% "
+                                     f"Memory={process_info.get('memory_percent', 0):.1f}% "
+                                     f"Threads={process_info.get('num_threads', 0)}")
+                    if recent_syscalls:
+                        recent_str = ", ".join(recent_syscalls[-10:])  # Last 10 syscalls
+                        if len(recent_str) > 80:
+                            recent_str = recent_str[:77] + "..."
+                        logger.warning(f"   └─ Recent Sequence: {recent_str}")
+                    else:
+                        logger.warning(f"   └─ No recent syscalls recorded")
         
         except AttributeError as e:
             # Missing attribute in event
