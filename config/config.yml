@@ -30,3 +30,10 @@ performance:
   risk_score_cache_ttl: 0.5  # Cache risk scores for 0.5 seconds
   min_syscalls_for_ml: 5  # Minimum syscalls before running ML inference
 
+# Incremental Training Settings (NEW)
+enable_incremental_training: false  # Set to true to enable automatic model retraining
+retrain_interval: 3600  # Seconds between automatic retraining (default: 1 hour)
+min_samples_for_retrain: 100  # Minimum normal samples needed before retraining
+max_buffer_size: 1000  # Maximum samples to keep in retraining buffer
+anomaly_score_threshold: 30.0  # Scores below this are considered normal and used for retraining
+

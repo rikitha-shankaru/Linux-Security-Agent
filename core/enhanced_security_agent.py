@@ -374,6 +374,7 @@ class EnhancedSecurityAgent:
         # Enhanced components
         self.enhanced_ebpf_monitor = None
         self.enhanced_anomaly_detector = None
+        self.incremental_trainer = None  # NEW: Automatic retraining
         self.container_security_monitor = None
         self.enhanced_risk_scorer = None
         self.action_handler = None
@@ -492,6 +493,19 @@ class EnhancedSecurityAgent:
             try:
                 self.enhanced_anomaly_detector = EnhancedAnomalyDetector(self.config)
                 self.console.print("✅ Enhanced anomaly detector initialized", style="green")
+                
+                # Initialize incremental trainer if enabled
+                if self.config.get('enable_incremental_training', False):
+                    try:
+                        from core.incremental_trainer import IncrementalTrainer
+                        self.incremental_trainer = IncrementalTrainer(
+                            self.enhanced_anomaly_detector, 
+                            self.config
+                        )
+                        self.incremental_trainer.start()
+                        self.console.print("✅ Incremental trainer started", style="green")
+                    except Exception as e:
+                        self.console.print(f"⚠️  Incremental trainer initialization failed: {e}", style="yellow")
             except Exception as e:
                 self.console.print(f"❌ Enhanced anomaly detector failed: {e}", style="red")
         
@@ -1125,6 +1139,14 @@ class EnhancedSecurityAgent:
         # Set running=False FIRST before any other operations
         self.running = False
         
+        # Stop incremental trainer (if running)
+        if self.incremental_trainer:
+            try:
+                self.incremental_trainer.stop()
+            except Exception as e:
+                self.logger.debug(f"Error stopping incremental trainer during shutdown: {e}")
+                pass
+        
         # Stop enhanced eBPF monitoring immediately (non-blocking)
         if self.enhanced_ebpf_monitor:
             try:
@@ -1555,6 +1577,17 @@ class EnhancedSecurityAgent:
                         anomaly_result = self.enhanced_anomaly_detector.detect_anomaly_ensemble(
                             process_snapshot['syscalls'], process_info, pid
                         )
+                        
+                        # Feed sample to incremental trainer (if enabled)
+                        if self.incremental_trainer and anomaly_result:
+                            try:
+                                self.incremental_trainer.add_sample(
+                                    list(process_snapshot['syscalls']),
+                                    process_info,
+                                    anomaly_result.anomaly_score
+                                )
+                            except Exception as e:
+                                self.logger.debug(f"Incremental trainer sample collection failed: {e}")
                     except Exception as e:
                         self.logger.warning(f"ML inference failed for PID {pid}: {e}")
                 
@@ -1713,6 +1746,7 @@ class EnhancedSecurityAgent:
             'enhanced_ebpf_stats': self.enhanced_ebpf_monitor.get_monitoring_stats() if self.enhanced_ebpf_monitor else {},
             'anomaly_detection_stats': self.enhanced_anomaly_detector.get_detection_stats() if self.enhanced_anomaly_detector else {},
             'container_security_stats': self.container_security_monitor.get_security_stats() if self.container_security_monitor else {},
+            'incremental_training_stats': self.incremental_trainer.get_stats() if self.incremental_trainer else {},
             'total_syscalls': sum(self.syscall_counts.values()),
             'unique_syscalls': len(self.syscall_counts),
             'security_events': len(self.security_events)
