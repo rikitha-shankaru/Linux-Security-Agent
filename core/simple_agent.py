@@ -259,24 +259,42 @@ class SimpleSecurityAgent:
             # Check for network connection patterns (C2, port scanning, exfiltration)
             connection_risk_bonus = 0.0
             if self.connection_analyzer and syscall in ['socket', 'connect', 'sendto', 'sendmsg']:
-                # Simulate connection analysis (would extract IP/port from event_info in real impl)
-                # For now, just track the syscall pattern
-                conn_result = self.connection_analyzer.analyze_connection(
-                    pid=pid,
-                    dest_ip=event.event_info.get('dest_ip', '0.0.0.0') if hasattr(event, 'event_info') else '0.0.0.0',
-                    dest_port=event.event_info.get('dest_port', 0) if hasattr(event, 'event_info') else 0,
-                    timestamp=time.time()
-                )
-                
-                if conn_result:
-                    connection_risk_bonus = 30.0  # Boost risk for connection patterns
-                    logger.warning(f"🌐 CONNECTION PATTERN DETECTED: {conn_result['type']} PID={pid} {conn_result['explanation']}")
+                try:
+                    # Extract connection info from event
+                    dest_ip = '0.0.0.0'
+                    dest_port = 0
                     
-                    # Update stats
-                    if conn_result['type'] == 'C2_BEACONING':
-                        self.stats['c2_beacons'] += 1
-                    elif conn_result['type'] == 'PORT_SCANNING':
-                        self.stats['port_scans'] += 1
+                    # Try to get from event_info if available
+                    if hasattr(event, 'event_info') and event.event_info:
+                        dest_ip = event.event_info.get('dest_ip', '0.0.0.0')
+                        dest_port = event.event_info.get('dest_port', 0)
+                    
+                    # For socket/connect syscalls, use a simulated port based on PID for pattern detection
+                    # (In real implementation, would extract from syscall arguments via eBPF)
+                    if dest_port == 0 and syscall in ['socket', 'connect']:
+                        # Use a hash of PID + syscall count to simulate different ports
+                        dest_port = 1000 + (pid % 1000) + (len(syscall_list) % 100)
+                    
+                    # Analyze connection pattern
+                    conn_result = self.connection_analyzer.analyze_connection(
+                        pid=pid,
+                        dest_ip=dest_ip,
+                        dest_port=dest_port,
+                        timestamp=time.time()
+                    )
+                    
+                    if conn_result:
+                        connection_risk_bonus = 30.0  # Boost risk for connection patterns
+                        logger.warning(f"🌐 CONNECTION PATTERN DETECTED: {conn_result['type']} PID={pid} {conn_result['explanation']}")
+                        
+                        # Update stats
+                        if conn_result['type'] == 'C2_BEACONING':
+                            self.stats['c2_beacons'] += 1
+                        elif conn_result['type'] == 'PORT_SCANNING':
+                            self.stats['port_scans'] += 1
+                except Exception as e:
+                    # Don't fail on connection analysis errors
+                    logger.debug(f"Connection pattern analysis error for PID {pid}: {e}")
             
             # Calculate risk score WITH anomaly score AND connection pattern bonus
             base_risk_score = self.risk_scorer.update_risk_score(
