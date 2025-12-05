@@ -9,6 +9,8 @@ import time
 import signal
 import threading
 import logging
+import traceback
+import pickle
 from logging.handlers import RotatingFileHandler
 from collections import defaultdict, deque
 from typing import Dict, List, Optional, Any
@@ -153,47 +155,120 @@ class SimpleSecurityAgent:
         # Initialize ML if available
         if ML_AVAILABLE:
             try:
+                logger.info("Initializing ML anomaly detector...")
                 self.anomaly_detector = EnhancedAnomalyDetector(config)
+                logger.info(f"ML detector initialized. Model directory: {getattr(self.anomaly_detector, 'model_dir', 'default')}")
+                
                 # Try to load pre-trained models
                 try:
-                    self.anomaly_detector._load_models()
+                    logger.debug("Attempting to load pre-trained ML models...")
+                    load_result = self.anomaly_detector._load_models()
                     if self.anomaly_detector.is_fitted:
-                        logger.info("✅ Loaded pre-trained ML models")
-                except Exception:
-                    logger.info("ℹ️ No pre-trained models found - train with --train-models")
+                        models_loaded = [name for name, trained in self.anomaly_detector.models_trained.items() if trained]
+                        logger.info(f"✅ Loaded pre-trained ML models: {', '.join(models_loaded) if models_loaded else 'all models'}")
+                        logger.info(f"   Models available: IsolationForest={models_loaded.count('isolation_forest')>0}, "
+                                  f"SVM={models_loaded.count('one_class_svm')>0}, "
+                                  f"Scaler={hasattr(self.anomaly_detector, 'scaler') and self.anomaly_detector.scaler is not None}, "
+                                  f"PCA={hasattr(self.anomaly_detector, 'pca') and self.anomaly_detector.pca is not None}")
+                    else:
+                        logger.warning("⚠️  ML models not fully loaded - some components missing")
+                        logger.warning(f"   is_fitted={self.anomaly_detector.is_fitted}, "
+                                     f"models_trained={self.anomaly_detector.models_trained}")
+                except FileNotFoundError as e:
+                    logger.info(f"ℹ️  No pre-trained models found at expected location: {e}")
+                    logger.info("   Train models with: python3 scripts/train_with_dataset.py")
+                except pickle.UnpicklingError as e:
+                    logger.error(f"❌ Error loading ML models (corrupted file): {e}")
+                    logger.error("   Models may be corrupted. Retrain with: python3 scripts/train_with_dataset.py")
+                except Exception as e:
+                    logger.error(f"❌ Error loading ML models: {type(e).__name__}: {e}")
+                    logger.debug(f"   Full traceback: {traceback.format_exc()}")
+                    logger.info("   Agent will continue without ML detection. Train models to enable ML features.")
+            except ImportError as e:
+                logger.warning(f"⚠️  ML detector import failed: {e}")
+                logger.warning("   ML features will be disabled")
             except Exception as e:
-                logger.warning(f"ML detector not available: {e}")
+                logger.error(f"❌ ML detector initialization failed: {type(e).__name__}: {e}")
+                logger.debug(f"   Full traceback: {traceback.format_exc()}")
+                logger.warning("   Agent will continue without ML detection")
     
     def start(self) -> bool:
         """Start the agent"""
+        logger.info("="*60)
+        logger.info("Starting Security Agent...")
+        logger.info(f"Collector type: {self.config.get('collector', 'ebpf')}")
+        logger.info(f"Risk threshold: {self.config.get('risk_threshold', 30.0)}")
+        logger.info(f"ML detector available: {self.anomaly_detector is not None}")
+        logger.info(f"Connection analyzer available: {self.connection_analyzer is not None}")
+        
         # Validate system
+        logger.debug("Validating system requirements...")
         is_valid, errors = validate_system(self.config)
         if not is_valid:
+            logger.error("System validation failed:")
+            for error in errors:
+                logger.error(f"  - {error}")
             print_validation_results(False, errors)
             return False
+        logger.info("✅ System validation passed")
         
         # Get collector (default to eBPF, fallback to auditd)
         collector_type = self.config.get('collector', 'ebpf')
+        logger.info(f"Initializing collector: {collector_type}")
         self.collector = get_collector(self.config, preferred=collector_type)
         if not self.collector:
-            logger.error("No collector available")
+            logger.error("❌ No collector available - cannot start agent")
             return False
+        logger.info(f"✅ Collector initialized: {self.collector.get_name()}")
         
         # Start collector
+        logger.info("Starting event monitoring...")
         if not self.collector.start_monitoring(self._handle_event):
-            logger.error("Failed to start collector")
+            logger.error("❌ Failed to start collector - cannot start agent")
             return False
         
         self.running = True
-        logger.info(f"✅ Agent started with {self.collector.get_name()}")
+        logger.info(f"✅ Agent started successfully with {self.collector.get_name()}")
+        
+        # Health check: Wait a few seconds and verify events are being captured
+        logger.info("Performing health check (waiting 5 seconds for events)...")
+        initial_syscalls = self.stats['total_syscalls']
+        time.sleep(5)
+        events_captured = self.stats['total_syscalls'] - initial_syscalls
+        
+        if events_captured > 0:
+            logger.info(f"✅ Health check passed: Captured {events_captured} syscalls in 5 seconds")
+            logger.info(f"   Capture rate: ~{events_captured/5:.0f} syscalls/second")
+        else:
+            logger.warning("⚠️  Health check warning: No events captured in 5 seconds")
+            logger.warning("   This may indicate:")
+            logger.warning("   - eBPF not capturing events (check kernel support)")
+            logger.warning("   - No system activity (normal if system is idle)")
+            logger.warning("   - Collector issue (check logs for errors)")
+            logger.warning("   Agent will continue, but monitor for events...")
+        
+        logger.info("="*60)
         return True
     
     def stop(self):
         """Stop the agent"""
+        logger.info("Stopping agent...")
         self.running = False
         if self.collector:
+            logger.debug("Stopping collector...")
             self.collector.stop_monitoring()
-        logger.info("Agent stopped")
+            logger.debug("Collector stopped")
+        
+        # Log final statistics
+        logger.info("="*60)
+        logger.info("Agent stopped - Final Statistics:")
+        logger.info(f"  Total processes monitored: {self.stats['total_processes']}")
+        logger.info(f"  Total syscalls processed: {self.stats['total_syscalls']}")
+        logger.info(f"  High risk detections: {self.stats['high_risk']}")
+        logger.info(f"  Anomalies detected: {self.stats['anomalies']}")
+        logger.info(f"  C2 beacons detected: {self.stats['c2_beacons']}")
+        logger.info(f"  Port scans detected: {self.stats['port_scans']}")
+        logger.info("="*60)
     
     def _handle_event(self, event: SyscallEvent):
         """Handle syscall event"""
@@ -203,7 +278,8 @@ class SimpleSecurityAgent:
         try:
             # DEBUG: Log first few events to confirm flow
             if self.stats['total_syscalls'] < 5:
-                logger.info(f"🔍 EVENT RECEIVED: PID={event.pid} Syscall={event.syscall}")
+                logger.info(f"🔍 EVENT RECEIVED: PID={event.pid} Syscall={event.syscall} Comm={getattr(event, 'comm', 'N/A')}")
+                logger.debug(f"   Event details: {vars(event) if hasattr(event, '__dict__') else 'N/A'}")
             
             pid = event.pid
             syscall = event.syscall
@@ -262,45 +338,86 @@ class SimpleSecurityAgent:
                     process_info = {}  # Use empty dict if process not available
                 
                 # Calculate anomaly score FIRST (needed for risk score)
-                anomaly_score = 0.0
+                # Preserve previous anomaly score if ML fails temporarily
+                previous_anomaly_score = proc.get('anomaly_score', 0.0)
+                anomaly_score = previous_anomaly_score  # Default to previous score
+                anomaly_result = None
+                
                 if self.anomaly_detector:
-                    # Try to load models if not fitted
+                    # Try to load models if not fitted (only log once per process)
                     if not self.anomaly_detector.is_fitted:
-                        try:
-                            self.anomaly_detector._load_models()
-                        except Exception:
-                            pass  # Models not available
+                        if pid not in getattr(self, '_model_load_attempted', set()):
+                            if not hasattr(self, '_model_load_attempted'):
+                                self._model_load_attempted = set()
+                            self._model_load_attempted.add(pid)
+                            
+                            try:
+                                logger.debug(f"Attempting to load ML models for PID {pid}...")
+                                self.anomaly_detector._load_models()
+                                if self.anomaly_detector.is_fitted:
+                                    logger.info(f"✅ ML models loaded successfully for PID {pid}")
+                                else:
+                                    logger.warning(f"⚠️  ML models partially loaded for PID {pid} - some components missing")
+                            except FileNotFoundError as e:
+                                logger.debug(f"ML models not found for PID {pid}: {e}")
+                            except pickle.UnpicklingError as e:
+                                logger.error(f"❌ Corrupted ML model file for PID {pid}: {e}")
+                            except Exception as e:
+                                logger.warning(f"⚠️  Failed to load ML models for PID {pid}: {type(e).__name__}: {e}")
+                                logger.debug(f"   Traceback: {traceback.format_exc()}")
                     
-                    anomaly_result = None
                     if self.anomaly_detector.is_fitted:
                         try:
                             # CORRECT function signature: (syscalls, process_info, pid)
+                            logger.debug(f"Running ML detection for PID {pid} (syscalls={len(syscall_list)})")
                             anomaly_result = self.anomaly_detector.detect_anomaly_ensemble(
                                 syscall_list, process_info, pid
                             )
                             anomaly_score = abs(anomaly_result.anomaly_score)  # Use absolute value
                             proc['anomaly_score'] = anomaly_score
                             
-                            # DEBUG: Log ML result for first few processes
+                            # Log ML result for first few processes or when anomaly detected
                             if len(syscall_list) == 20:  # First time we have 20 syscalls
-                                logger.info(f"🤖 ML RESULT: PID={pid} Score={anomaly_score:.1f} IsAnomaly={anomaly_result.is_anomaly}")
+                                logger.info(f"🤖 ML RESULT: PID={pid} Process={proc['name']} "
+                                          f"Score={anomaly_score:.1f} IsAnomaly={anomaly_result.is_anomaly} "
+                                          f"Confidence={anomaly_result.confidence:.2f}")
                             
                             if anomaly_result.is_anomaly:
                                 self.stats['anomalies'] += 1
+                                logger.debug(f"Anomaly detected: PID={pid} Score={anomaly_score:.1f} "
+                                           f"Explanation={anomaly_result.explanation}")
+                        except ValueError as e:
+                            logger.warning(f"⚠️  ML detection ValueError for PID {pid}: {e}")
+                            logger.debug(f"   This may indicate insufficient features or data. Traceback: {traceback.format_exc()}")
+                            # Keep previous score instead of resetting to 0
+                            anomaly_score = previous_anomaly_score
+                            proc['anomaly_score'] = anomaly_score
+                        except AttributeError as e:
+                            logger.error(f"❌ ML detection AttributeError for PID {pid}: {e}")
+                            logger.error(f"   ML model may be corrupted. Traceback: {traceback.format_exc()}")
+                            anomaly_score = previous_anomaly_score
+                            proc['anomaly_score'] = anomaly_score
                         except Exception as e:
-                            logger.warning(f"⚠️  ML detection failed for PID {pid}: {e}")
-                            import traceback
-                            logger.warning(f"Traceback: {traceback.format_exc()}")
-                            anomaly_score = 0.0
-                            proc['anomaly_score'] = 0.0
+                            logger.error(f"❌ ML detection failed for PID {pid}: {type(e).__name__}: {e}")
+                            logger.error(f"   Traceback: {traceback.format_exc()}")
+                            # Keep previous score instead of resetting to 0
+                            anomaly_score = previous_anomaly_score
+                            proc['anomaly_score'] = anomaly_score
                     else:
-                        # ML not trained yet - set to 0.00
-                        anomaly_score = 0.0
-                        proc['anomaly_score'] = 0.0
+                        # ML not trained yet - keep previous score or set to 0.00
+                        if previous_anomaly_score == 0.0:
+                            logger.debug(f"ML not fitted for PID {pid} - using default score 0.0")
+                        anomaly_score = previous_anomaly_score if previous_anomaly_score > 0 else 0.0
+                        proc['anomaly_score'] = anomaly_score
                 else:
-                    anomaly_score = 0.0
-                    proc['anomaly_score'] = 0.0
-                    anomaly_result = None
+                    # No ML detector available
+                    anomaly_score = previous_anomaly_score if previous_anomaly_score > 0 else 0.0
+                    proc['anomaly_score'] = anomaly_score
+                    if pid not in getattr(self, '_ml_unavailable_logged', set()):
+                        if not hasattr(self, '_ml_unavailable_logged'):
+                            self._ml_unavailable_logged = set()
+                        self._ml_unavailable_logged.add(pid)
+                        logger.debug(f"ML detector not available for PID {pid}")
                 
                 # Check for network connection patterns (C2, port scanning, exfiltration)
                 connection_risk_bonus = 0.0
@@ -314,14 +431,19 @@ class SimpleSecurityAgent:
                         if hasattr(event, 'event_info') and event.event_info:
                             dest_ip = event.event_info.get('dest_ip', '0.0.0.0')
                             dest_port = event.event_info.get('dest_port', 0)
+                            logger.debug(f"Connection event for PID {pid}: syscall={syscall} dest_ip={dest_ip} dest_port={dest_port}")
+                        else:
+                            logger.debug(f"Connection event for PID {pid}: syscall={syscall} (no event_info available)")
                         
                         # For socket/connect syscalls, use a simulated port based on PID for pattern detection
                         # (In real implementation, would extract from syscall arguments via eBPF)
                         if dest_port == 0 and syscall in ['socket', 'connect']:
                             # Use a hash of PID + syscall count to simulate different ports
                             dest_port = 1000 + (pid % 1000) + (len(syscall_list) % 100)
+                            logger.debug(f"Using simulated port for PID {pid}: {dest_port} (NOTE: This is simulated, not real eBPF data)")
                         
                         # Analyze connection pattern
+                        logger.debug(f"Analyzing connection pattern for PID {pid}: IP={dest_ip} Port={dest_port}")
                         conn_result = self.connection_analyzer.analyze_connection(
                             pid=pid,
                             dest_ip=dest_ip,
@@ -331,16 +453,31 @@ class SimpleSecurityAgent:
                         
                         if conn_result:
                             connection_risk_bonus = 30.0  # Boost risk for connection patterns
-                            logger.warning(f"🌐 CONNECTION PATTERN DETECTED: {conn_result['type']} PID={pid} {conn_result['explanation']}")
+                            pattern_type = conn_result.get('type', 'UNKNOWN')
+                            explanation = conn_result.get('explanation', 'No explanation')
+                            
+                            logger.warning(f"🌐 CONNECTION PATTERN DETECTED: {pattern_type} PID={pid} Process={proc['name']}")
+                            logger.warning(f"   Details: {explanation}")
+                            logger.warning(f"   Destination: {dest_ip}:{dest_port} (NOTE: Port may be simulated)")
+                            logger.warning(f"   Risk bonus added: +{connection_risk_bonus:.1f}")
                             
                             # Update stats
-                            if conn_result['type'] == 'C2_BEACONING':
+                            if pattern_type == 'C2_BEACONING':
                                 self.stats['c2_beacons'] += 1
-                            elif conn_result['type'] == 'PORT_SCANNING':
+                                logger.warning(f"   C2 beaconing count: {self.stats['c2_beacons']}")
+                            elif pattern_type == 'PORT_SCANNING':
                                 self.stats['port_scans'] += 1
+                                logger.warning(f"   Port scan count: {self.stats['port_scans']}")
+                    except AttributeError as e:
+                        logger.debug(f"Connection pattern analysis AttributeError for PID {pid}: {e}")
+                        logger.debug(f"   Traceback: {traceback.format_exc()}")
+                    except KeyError as e:
+                        logger.debug(f"Connection pattern analysis KeyError for PID {pid}: {e}")
+                        logger.debug(f"   Missing key in connection result. Traceback: {traceback.format_exc()}")
                     except Exception as e:
                         # Don't fail on connection analysis errors
-                        logger.debug(f"Connection pattern analysis error for PID {pid}: {e}")
+                        logger.warning(f"⚠️  Connection pattern analysis error for PID {pid}: {type(e).__name__}: {e}")
+                        logger.debug(f"   Traceback: {traceback.format_exc()}")
                 
                 # Calculate risk score WITH anomaly score AND connection pattern bonus
                 base_risk_score = self.risk_scorer.update_risk_score(
@@ -351,26 +488,53 @@ class SimpleSecurityAgent:
                 
                 # DEBUG: Log all scores periodically
                 if len(syscall_list) >= 20 and len(syscall_list) % 20 == 0:
-                    comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
-                    logger.info(f"📊 PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f} Syscalls={len(syscall_list)}")
+                    comm = proc.get('name', 'unknown')
+                    logger.info(f"📊 SCORE UPDATE: PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f} "
+                              f"Syscalls={len(syscall_list)} TotalSyscalls={proc.get('total_syscalls', 0)} "
+                              f"ConnectionBonus={connection_risk_bonus:.1f}")
+                    logger.debug(f"   Process info: CPU={process_info.get('cpu_percent', 0):.1f}% "
+                               f"Memory={process_info.get('memory_percent', 0):.1f}% "
+                               f"Threads={process_info.get('num_threads', 0)}")
                 
                 # Update high risk count and LOG detections
                 threshold = self.config.get('risk_threshold', 30.0)
                 if risk_score >= threshold:
                     self.stats['high_risk'] = sum(1 for p in self.processes.values() 
                                                  if p['risk_score'] >= threshold)
-                    # LOG HIGH-RISK DETECTION
-                    comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
+                    # LOG HIGH-RISK DETECTION with full details
+                    comm = proc.get('name', 'unknown')
                     logger.warning(f"🔴 HIGH RISK DETECTED: PID={pid} Process={comm} Risk={risk_score:.1f} Anomaly={anomaly_score:.1f}")
+                    logger.warning(f"   Threshold: {threshold:.1f} | Base Risk: {base_risk_score:.1f} | "
+                                 f"Connection Bonus: {connection_risk_bonus:.1f} | Total Syscalls: {proc.get('total_syscalls', 0)}")
+                    logger.warning(f"   Recent syscalls: {', '.join(list(proc['syscalls'])[-10:])}")
+                    if process_info:
+                        logger.warning(f"   Process resources: CPU={process_info.get('cpu_percent', 0):.1f}% "
+                                     f"Memory={process_info.get('memory_percent', 0):.1f}% "
+                                     f"Threads={process_info.get('num_threads', 0)}")
                 
                 # Also log anomalies even if risk is low
                 if anomaly_result and anomaly_result.is_anomaly and anomaly_score > 50:
-                    comm = process_info.get('comm', 'unknown') if process_info else 'unknown'
+                    comm = proc.get('name', 'unknown')
                     logger.warning(f"⚠️  ANOMALY DETECTED: PID={pid} Process={comm} AnomalyScore={anomaly_score:.1f}")
+                    logger.warning(f"   Confidence: {anomaly_result.confidence:.2f} | Explanation: {anomaly_result.explanation}")
+                    logger.warning(f"   Risk Score: {risk_score:.1f} | Total Syscalls: {proc.get('total_syscalls', 0)}")
         
+        except AttributeError as e:
+            # Missing attribute in event
+            logger.error(f"❌ AttributeError processing event for PID={event.pid if hasattr(event, 'pid') else 'unknown'}: {e}")
+            logger.error(f"   Event object may be malformed. Traceback: {traceback.format_exc()}")
+        except KeyError as e:
+            # Missing key in dictionary
+            logger.error(f"❌ KeyError processing event for PID={event.pid if hasattr(event, 'pid') else 'unknown'}: {e}")
+            logger.error(f"   Missing key in process data. Traceback: {traceback.format_exc()}")
+        except ValueError as e:
+            # Invalid value
+            logger.error(f"❌ ValueError processing event for PID={event.pid if hasattr(event, 'pid') else 'unknown'}: {e}")
+            logger.error(f"   Invalid data in event. Traceback: {traceback.format_exc()}")
         except Exception as e:
             # Log errors but don't crash the agent
-            logger.error(f"Error processing event for PID={event.pid if hasattr(event, 'pid') else 'unknown'}: {e}", exc_info=True)
+            logger.error(f"❌ Unexpected error processing event for PID={event.pid if hasattr(event, 'pid') else 'unknown'}: {type(e).__name__}: {e}")
+            logger.error(f"   Full traceback: {traceback.format_exc()}")
     
     def create_dashboard(self) -> Panel:
         """Create dashboard view"""
