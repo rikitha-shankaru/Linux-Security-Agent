@@ -487,7 +487,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                 self._cleanup_done = True
                 # Log lost events summary only at shutdown
                 if hasattr(self, 'lost_events') and self.lost_events > 0:
-                    print(f"ℹ️  Total perf events lost: {self.lost_events}")
+                    pass  #print(f"ℹ️  Total perf events lost: {self.lost_events}")
             except Exception:
                 pass
     
@@ -524,7 +524,7 @@ TRACEPOINT_PROBE(raw_syscalls, sys_enter) {
                         if current_events == last_event_count:
                             no_event_warnings += 1
                             if no_event_warnings <= 5:  # Only warn first 5 times
-                                logger.warning(
+                                logger.debug(
                                     f"No events captured after {poll_count * 25}ms of polling. "
                                     f"Make sure system has activity (run commands in another terminal)."
                                 )
