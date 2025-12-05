@@ -238,9 +238,9 @@ def start_agent():
     if log_file.exists():
         log_file.unlink()
     
-    # Start agent
-    print_status("Starting agent with eBPF collector...", "running")
-    agent_cmd = "sudo python3 core/simple_agent.py --collector ebpf --threshold 20"
+    # Start agent in headless mode (no dashboard blinking)
+    print_status("Starting agent with eBPF collector (headless mode)...", "running")
+    agent_cmd = "sudo python3 core/simple_agent.py --collector ebpf --threshold 20 --headless"
     agent_process = run_command(agent_cmd, background=True, capture_output=False)
     
     if agent_process:

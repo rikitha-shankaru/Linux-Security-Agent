@@ -709,6 +709,32 @@ class SimpleSecurityAgent:
         
         return self._info_panel_cache
     
+    def run_headless(self):
+        """Run without dashboard (headless mode for automation)"""
+        logger.info("="*60)
+        logger.info("Security Agent Starting (Headless Mode)")
+        logger.info(f"Log file: {log_file_path}")
+        logger.info("="*60)
+        
+        if not self.start():
+            return False
+        
+        try:
+            # Just run the monitoring loop without dashboard
+            while self.running:
+                time.sleep(1)  # Check every second
+        except KeyboardInterrupt:
+            logger.info("Agent stopped by user (Ctrl+C)")
+        except Exception as e:
+            logger.error(f"Fatal error in headless mode: {e}", exc_info=True)
+            raise
+        finally:
+            logger.info("Shutting down agent...")
+            self.stop()
+            logger.info("Agent shutdown complete")
+        
+        return True
+    
     def run_dashboard(self):
         """Run with dashboard"""
         # Show startup info
@@ -754,6 +780,8 @@ def main():
     parser.add_argument('--threshold', type=float, default=30.0,
                        help='Risk threshold (default: 30.0)')
     parser.add_argument('--config', type=str, help='Config file path')
+    parser.add_argument('--headless', action='store_true',
+                       help='Run without dashboard (for automation)')
     
     args = parser.parse_args()
     
@@ -770,7 +798,10 @@ def main():
     # Create and run agent
     try:
         agent = SimpleSecurityAgent(config)
-        agent.run_dashboard()
+        if args.headless:
+            agent.run_headless()
+        else:
+            agent.run_dashboard()
     except Exception as e:
         logger.error(f"Fatal error: {e}", exc_info=True)
         print(f"\n❌ Fatal error: {e}")
