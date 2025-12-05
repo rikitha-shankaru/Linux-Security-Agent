@@ -80,11 +80,12 @@ def run_command(cmd, timeout=60, background=False, capture_output=True):
     """Run a command and return result"""
     try:
         if background:
+            # Redirect all output to /dev/null to prevent dashboard from showing
             process = subprocess.Popen(
                 cmd,
                 shell=True,
-                stdout=subprocess.PIPE if capture_output else None,
-                stderr=subprocess.PIPE if capture_output else None,
+                stdout=subprocess.DEVNULL if not capture_output else subprocess.PIPE,
+                stderr=subprocess.DEVNULL if not capture_output else subprocess.PIPE,
                 preexec_fn=os.setsid if hasattr(os, 'setsid') else None
             )
             return process
@@ -240,8 +241,19 @@ def start_agent():
     
     # Start agent in headless mode (no dashboard blinking)
     print_status("Starting agent with eBPF collector (headless mode)...", "running")
-    agent_cmd = "sudo python3 core/simple_agent.py --collector ebpf --threshold 20 --headless"
-    agent_process = run_command(agent_cmd, background=True, capture_output=False)
+    
+    # Use subprocess with proper output redirection to prevent dashboard from showing
+    agent_cmd = ["sudo", "python3", "core/simple_agent.py", "--collector", "ebpf", "--threshold", "20", "--headless"]
+    try:
+        agent_process = subprocess.Popen(
+            agent_cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            preexec_fn=os.setsid if hasattr(os, 'setsid') else None
+        )
+    except Exception as e:
+        print_status(f"Failed to start agent: {e}", "error")
+        agent_process = None
     
     if agent_process:
         print_status(f"Agent started (PID: {agent_process.pid})", "success")
