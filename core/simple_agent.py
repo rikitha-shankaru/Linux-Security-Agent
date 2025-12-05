@@ -213,10 +213,17 @@ class SimpleSecurityAgent:
                         )
                         anomaly_score = abs(anomaly_result.anomaly_score)  # Use absolute value
                         proc['anomaly_score'] = anomaly_score
+                        
+                        # DEBUG: Log ML result for first few processes
+                        if len(syscall_list) == 20:  # First time we have 20 syscalls
+                            logger.info(f"🤖 ML RESULT: PID={pid} Score={anomaly_score:.1f} IsAnomaly={anomaly_result.is_anomaly}")
+                        
                         if anomaly_result.is_anomaly:
                             self.stats['anomalies'] += 1
                     except Exception as e:
-                        logger.debug(f"ML detection failed for PID {pid}: {e}")
+                        logger.warning(f"⚠️  ML detection failed for PID {pid}: {e}")
+                        import traceback
+                        logger.warning(f"Traceback: {traceback.format_exc()}")
                         anomaly_score = 0.0
                         proc['anomaly_score'] = 0.0
                 else:
