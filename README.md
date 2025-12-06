@@ -23,6 +23,7 @@ Real-time system call monitoring and threat detection agent for Linux. Uses eBPF
 - Real-time syscall monitoring via eBPF on Linux
 - ML-based anomaly detection trained on real system behavior
 - **Automatic incremental retraining** - Models continuously improve with new data
+- **Web Dashboard** - Browser-based interface for monitoring and control
 - Risk scoring (0-100) based on syscall patterns
 - Process tracking with automatic memory cleanup
 - Container detection for Docker and Kubernetes

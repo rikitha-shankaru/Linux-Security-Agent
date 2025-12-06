@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Security Agent - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .section p {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #764ba2;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .tech-stack {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .tech-stack ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .tech-stack li {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ Linux Security Agent</h1>
+            <p class="subtitle">Real-time System Call Monitoring & ML-Based Threat Detection</p>
+        </header>
+        
+        <div class="content">
+            <div class="section">
+                <h2>About This Project</h2>
+                <p>
+                    The Linux Security Agent is an advanced security monitoring system that uses eBPF (Extended Berkeley Packet Filter) 
+                    to capture system calls at the kernel level and machine learning algorithms to detect anomalies and threats in real-time.
+                </p>
+                <p>
+                    This project was developed as part of a Master's degree program to explore kernel-level security monitoring 
+                    and machine learning-based threat detection. It demonstrates state-of-the-art techniques in cybersecurity, 
+                    including unsupervised anomaly detection and behavioral analysis.
+                </p>
+            </div>
+            
+            <div class="section">
+                <h2>Key Features</h2>
+                <div class="features">
+                    <div class="feature-card">
+                        <h3>🔍 Kernel-Level Monitoring</h3>
+                        <p>Uses eBPF to capture system calls directly from the Linux kernel with minimal overhead.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🤖 ML Anomaly Detection</h3>
+                        <p>Employs Isolation Forest, One-Class SVM, and DBSCAN for unsupervised threat detection.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📊 Real-Time Dashboard</h3>
+                        <p>Live monitoring with risk scores, anomaly detection, and detailed process tracking.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎯 Attack Detection</h3>
+                        <p>Detects privilege escalation, suspicious file patterns, port scanning, and more.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🐳 Container Aware</h3>
+                        <p>Monitors Docker containers and detects cross-container attacks.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📈 Risk Scoring</h3>
+                        <p>Dynamic risk scoring (0-100) based on syscall patterns and behavioral analysis.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Technology Stack</h2>
+                <div class="tech-stack">
+                    <ul>
+                        <li>Python 3</li>
+                        <li>eBPF/BCC</li>
+                        <li>scikit-learn</li>
+                        <li>Flask</li>
+                        <li>WebSocket</li>
+                        <li>SQLite</li>
+                        <li>Linux Kernel</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="cta-buttons">
+                <a href="/monitor" class="btn btn-primary">🚀 Start Monitoring</a>
+                <a href="https://github.com/likitha-shankar/Linux-Security-Agent" class="btn btn-secondary" target="_blank">📚 View on GitHub</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
