@@ -107,6 +107,28 @@ python3 -c "from core.container_security_monitor import ContainerSecurityMonitor
 
 ## Usage
 
+### Option 0: Web Dashboard (Recommended for Easy Monitoring)
+
+```bash
+# Install web dependencies
+cd web
+pip install -r requirements.txt
+
+# Start web server
+python app.py
+
+# Open browser to http://localhost:5000
+```
+
+**Features:**
+- 🏠 Landing page with project overview
+- 📊 Live monitoring dashboard with real-time logs
+- ▶️ Start/stop agent from web interface
+- 🚨 Visual alerts for attacks and anomalies
+- 📈 Real-time statistics
+
+See [web/README.md](web/README.md) for details.
+
 ### Option 1: Simple Agent (Recommended for Testing)
 ```bash
 # Run simple agent with auditd (most reliable)
