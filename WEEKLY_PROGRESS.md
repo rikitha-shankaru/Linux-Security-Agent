@@ -21,6 +21,47 @@
 
 ## 🎉 Latest Updates (December 2024)
 
+### ✅ Enhanced Anomaly Logging & Automation (December 5, 2024)
+
+#### **Enhanced Anomaly Detection Logging**
+- [x] **Detailed Anomaly Explanations**: Enhanced logging now shows exactly what's anomalous
+  - Shows ML model explanations (Isolation Forest, One-Class SVM, DBSCAN)
+  - Displays top syscalls with counts
+  - Highlights high-risk syscalls detected (setuid, execve, ptrace, etc.)
+  - Shows process resource usage (CPU, memory, threads)
+  - Displays recent syscall sequence (last 10 syscalls)
+  - Format: Structured output with clear sections for easy reading
+  - File: `core/simple_agent.py` (enhanced logging section)
+
+#### **Complete Automation Script**
+- [x] **Automated Testing & Execution**: Full automation of testing and agent execution
+  - Script: `scripts/automate_all_tests.py`
+  - Features:
+    - Pre-flight checks (dependencies, eBPF, ML models, permissions)
+    - Unit tests execution
+    - Agent startup in headless mode (no dashboard blinking)
+    - Attack simulation (6 attack types)
+    - Real-time detection monitoring
+    - Comprehensive report generation (JSON + text)
+    - Automatic cleanup
+  - Options: `--keep-agent`, `--no-unit-tests`
+  - Wrapper: `run_automated_tests.sh` for easy execution
+
+#### **Headless Mode for Agent**
+- [x] **Background Operation**: Agent can run without dashboard
+  - Flag: `--headless` prevents dashboard from showing during automation
+  - Use case: Automated testing, background monitoring
+  - Output: All monitoring happens in logs only
+
+#### **Testing Tools**
+- [x] **Anomaly Logging Test Script**: `scripts/test_anomaly_logging.py`
+  - Automatically checks if agent is running
+  - Simulates suspicious activity
+  - Shows enhanced anomaly logs
+- [x] **Agent Output Demo**: `scripts/demo_agent_output.py`
+  - Demonstrates how agent runs and what output looks like
+  - Shows all detection types with examples
+
 ### ✅ Testing & Validation Suite Complete
 
 All remaining testing and ML validation tools have been implemented and verified:

@@ -8,7 +8,10 @@ Real-time system call monitoring and threat detection agent for Linux. Uses eBPF
 **Status:** Functional Prototype - Research/Academic Project  
 **Classification:** Not Production Ready - See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for details
 
-**Recent fixes:**
+**Recent updates (December 2024):**
+- **Enhanced Anomaly Logging**: Detailed explanations showing exactly what's anomalous (ML models, top syscalls, high-risk patterns, resources, recent sequence)
+- **Complete Automation**: Full automation script for testing and agent execution (`scripts/automate_all_tests.py`)
+- **Headless Mode**: Agent can run without dashboard for automation (`--headless` flag)
 - Now captures actual syscall names (333 mapped) instead of just counting
 - ML trains on real system behavior instead of random data
 - Added automatic memory cleanup to prevent leaks
@@ -110,6 +113,9 @@ sudo python3 core/simple_agent.py --collector auditd --threshold 30
 
 # Or with eBPF
 sudo python3 core/simple_agent.py --collector ebpf --threshold 30
+
+# Run in headless mode (no dashboard, for automation)
+sudo python3 core/simple_agent.py --collector ebpf --threshold 20 --headless
 ```
 
 **Benefits:**
@@ -175,6 +181,20 @@ base_risk_scores:
 
 ## 🧪 Demo and Testing
 
+### Automated Testing
+```bash
+# Run complete automation (pre-flight checks, unit tests, attacks, reports)
+sudo python3 scripts/automate_all_tests.py
+
+# Or use the wrapper script
+./run_automated_tests.sh
+
+# Options:
+#   --keep-agent    Keep agent running after tests
+#   --no-unit-tests Skip unit tests
+```
+
+### Manual Testing
 ```bash
 # Run comprehensive demo (normal + suspicious behavior)
 python3 demo/run_demo.py
@@ -183,8 +203,27 @@ python3 demo/run_demo.py
 python3 demo/normal_behavior.py
 python3 demo/suspicious_behavior.py
 
+# Test enhanced anomaly logging
+python3 scripts/test_anomaly_logging.py
+
+# See agent output demo
+python3 scripts/demo_agent_output.py
+
 # Run test suite
 python3 run_tests.py
+```
+
+### Enhanced Anomaly Logging
+The agent now provides detailed explanations when anomalies are detected:
+- **What's Anomalous**: ML model explanations (Isolation Forest, One-Class SVM, DBSCAN)
+- **Process Activity**: Top syscalls with counts, total syscalls
+- **High-Risk Syscalls**: Specific risky syscalls detected (setuid, execve, ptrace, etc.)
+- **Resources**: CPU, memory, thread usage
+- **Recent Sequence**: Last 10 syscalls in order
+
+View enhanced logs:
+```bash
+tail -f logs/security_agent.log | grep -A 15 'ANOMALY DETECTED'
 ```
 
 ## 📊 Current Progress & Demo
