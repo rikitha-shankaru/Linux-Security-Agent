@@ -104,10 +104,35 @@ def api_status():
     """Get agent status"""
     global agent_process, monitoring_active
     
+    # Check if agent is running by checking for the process
+    log_file = Path(__file__).parent.parent / 'logs' / 'security_agent.log'
+    agent_running = False
+    agent_pid = None
+    
+    # Check if log file exists and is being written to (indicates agent is running)
+    if log_file.exists():
+        # Check if file is recent (modified in last 10 seconds)
+        import time
+        if time.time() - log_file.stat().st_mtime < 10:
+            agent_running = True
+            # Try to find the agent process
+            try:
+                result = subprocess.run(['pgrep', '-f', 'simple_agent.py'], 
+                                      capture_output=True, text=True, timeout=2)
+                if result.returncode == 0 and result.stdout.strip():
+                    agent_pid = int(result.stdout.strip().split('\n')[0])
+            except:
+                pass
+    
+    # Also check our tracked process
+    if agent_process and agent_process.poll() is None:
+        agent_running = True
+        agent_pid = agent_process.pid
+    
     status = {
-        'running': agent_process is not None and agent_process.poll() is None,
-        'monitoring': monitoring_active,
-        'pid': agent_process.pid if agent_process and agent_process.poll() is None else None
+        'running': agent_running,
+        'monitoring': monitoring_active or agent_running,
+        'pid': agent_pid
     }
     return jsonify(status)
 

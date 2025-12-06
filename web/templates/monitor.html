@@ -401,7 +401,7 @@
             }
         }
         
-        // Check agent status on load
+        // Check agent status on load and periodically
         async function checkStatus() {
             try {
                 const response = await fetch('/api/status');
@@ -412,6 +412,11 @@
                     statusText.textContent = 'Running';
                     btnStart.disabled = true;
                     btnStop.disabled = false;
+                } else {
+                    statusIndicator.classList.remove('active');
+                    statusText.textContent = 'Stopped';
+                    btnStart.disabled = false;
+                    btnStop.disabled = true;
                 }
             } catch (error) {
                 console.error('Error checking status:', error);
@@ -419,6 +424,8 @@
         }
         
         checkStatus();
+        // Check status every 5 seconds
+        setInterval(checkStatus, 5000);
     </script>
 </body>
 </html>
