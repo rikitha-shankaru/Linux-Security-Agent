@@ -360,6 +360,9 @@
         
         async function startAgent() {
             try {
+                addLog('Attempting to start agent...', 'info');
+                addLog('Note: Agent needs to be started manually with: sudo python3 core/simple_agent.py --collector ebpf --threshold 20', 'info');
+                
                 const response = await fetch('/api/agent/start', { method: 'POST' });
                 const data = await response.json();
                 
@@ -371,9 +374,11 @@
                     addLog('Agent started successfully', 'info');
                 } else {
                     addLog(`Error: ${data.error}`, 'error');
+                    addLog('Tip: Start agent manually in terminal, then refresh this page to see logs', 'info');
                 }
             } catch (error) {
                 addLog(`Error starting agent: ${error.message}`, 'error');
+                addLog('Tip: Start agent manually: sudo python3 core/simple_agent.py --collector ebpf --threshold 20', 'info');
             }
         }
         

@@ -216,19 +216,26 @@ def monitor_agent_logs():
     
     log_file = Path(__file__).parent.parent / 'logs' / 'security_agent.log'
     
-    # Wait for log file to be created
-    max_wait = 30
+    # Wait for log file to be created (longer wait for manual starts)
+    max_wait = 60
     waited = 0
     while not log_file.exists() and waited < max_wait and monitoring_active:
         time.sleep(1)
         waited += 1
-        if waited % 5 == 0:
-            socketio.emit('log', {'type': 'info', 'message': f'Waiting for agent to initialize... ({waited}s)'})
+        if waited % 10 == 0:
+            socketio.emit('log', {'type': 'info', 'message': f'Waiting for agent logs... ({waited}s) - Start agent manually if needed'})
     
     if not log_file.exists():
-        socketio.emit('log', {'type': 'error', 'message': 'Log file not found - agent may not have started properly'})
-        socketio.emit('log', {'type': 'error', 'message': 'Check if agent has sudo permissions and eBPF support'})
-        return
+        socketio.emit('log', {'type': 'info', 'message': 'No log file found yet. Start the agent manually:'})
+        socketio.emit('log', {'type': 'info', 'message': '  sudo python3 core/simple_agent.py --collector ebpf --threshold 20'})
+        socketio.emit('log', {'type': 'info', 'message': 'Then refresh this page to see live logs'})
+        # Keep monitoring in case file appears later
+        while monitoring_active:
+            if log_file.exists():
+                break
+            time.sleep(5)
+        if not log_file.exists():
+            return
     
     # Read log file line by line
     with open(log_file, 'r') as f:
