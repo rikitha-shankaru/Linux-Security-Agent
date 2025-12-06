@@ -20,7 +20,7 @@ import sqlite3
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder=None)
 app.config['SECRET_KEY'] = 'security-agent-dashboard-2024'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -140,6 +140,10 @@ def api_start_agent():
     try:
         # Start agent in headless mode
         project_root = Path(__file__).parent.parent
+        log_dir = project_root / 'logs'
+        log_dir.mkdir(exist_ok=True)
+        
+        # Try with sudo first, but handle errors gracefully
         agent_cmd = [
             'sudo', 'python3', 
             str(project_root / 'core' / 'simple_agent.py'),
@@ -156,6 +160,19 @@ def api_start_agent():
             bufsize=1,
             cwd=str(project_root)
         )
+        
+        # Wait a moment to check if process started successfully
+        time.sleep(2)
+        if agent_process.poll() is not None:
+            # Process already exited - get error
+            try:
+                _, stderr_output = agent_process.communicate(timeout=1)
+                error_msg = stderr_output if stderr_output else "Agent process exited immediately"
+            except:
+                error_msg = "Agent failed to start (check sudo permissions and eBPF support)"
+            
+            socketio.emit('log', {'type': 'error', 'message': f'Agent start failed: {error_msg[:200]}'})
+            return jsonify({'error': f'Agent failed to start: {error_msg[:200]}'}), 500
         
         monitoring_active = True
         
@@ -205,9 +222,12 @@ def monitor_agent_logs():
     while not log_file.exists() and waited < max_wait and monitoring_active:
         time.sleep(1)
         waited += 1
+        if waited % 5 == 0:
+            socketio.emit('log', {'type': 'info', 'message': f'Waiting for agent to initialize... ({waited}s)'})
     
     if not log_file.exists():
-        socketio.emit('log', {'type': 'error', 'message': 'Log file not found'})
+        socketio.emit('log', {'type': 'error', 'message': 'Log file not found - agent may not have started properly'})
+        socketio.emit('log', {'type': 'error', 'message': 'Check if agent has sudo permissions and eBPF support'})
         return
     
     # Read log file line by line
@@ -291,11 +311,11 @@ if __name__ == '__main__':
     print("="*60)
     print()
     print("Starting web server...")
-    print("Access the dashboard at: http://localhost:5000")
+    print("Access the dashboard at: http://localhost:5001")
     print()
     print("Press Ctrl+C to stop")
     print("="*60)
     print()
     
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5001, debug=True)
 
