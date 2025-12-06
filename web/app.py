@@ -344,12 +344,21 @@ if __name__ == '__main__':
     print()
     print("Starting web server...")
     print()
+    # Get public IP if on cloud
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except:
+        local_ip = "localhost"
+    
     print("Access options:")
-    print("  1. Local: http://localhost:5001")
-    print("  2. From your machine (SSH tunnel):")
-    print("     ssh -L 5001:localhost:5001 user@vm_ip")
-    print("     Then open: http://localhost:5001")
-    print("  3. Direct (if public IP): http://VM_IP:5001")
+    print(f"  1. Local: http://localhost:5001")
+    print(f"  2. From browser SSH: http://localhost:5001 (in new tab)")
+    print(f"  3. Direct (if firewall allows): http://{local_ip}:5001")
+    print(f"  4. Public IP: http://136.112.137.224:5001 (if firewall rule added)")
     print()
     print("Press Ctrl+C to stop")
     print("="*60)
